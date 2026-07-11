@@ -1,10 +1,11 @@
 ---
 phase: 1
 slug: schema-foundation-data-layer-safety
-status: draft
-nyquist_compliant: false
-wave_0_complete: false
+status: approved
+nyquist_compliant: true
+wave_0_complete: true
 created: 2026-07-12
+approved: 2026-07-12
 ---
 
 # Phase 1 — Validation Strategy
@@ -39,12 +40,13 @@ created: 2026-07-12
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| {planner} | — | — | SCHEMA-01 | T-ReDoS | Bundled schema recognizes every real fixture leaf key (zero missing, after reconciling all 4 sources: manifest `validKeys` + `config-schema.cjs` + `capability-registry.cjs` configSchema + `config-defaults.manifest.json`) | unit (completeness diff) | `npx vitest run test/schema-data/completeness.test.ts` | ❌ W0 | ⬜ pending |
-| {planner} | — | — | DISC-06 | — | `load()` locates `~/.gsd/defaults.json` via `GSD_HOME \|\| os.homedir()` and merges it as the `'global'` layer | unit | `npx vitest run test/config-io/discovery.test.ts` | ❌ W0 | ⬜ pending |
-| {planner} | — | — | SAVE-01 | T-InputValidation | `validate()` blocks a structurally-invalid document with field-level Ajv errors; `saveConfig()` never calls `writeFileAtomic` when validation fails; error messages log only `instancePath`, never secret-shaped values | unit | `npx vitest run test/config-io/validate.test.ts` | ❌ W0 | ⬜ pending |
-| {planner} | — | — | SAVE-02 | T-AtomicWrite | Repeated kill-mid-save (mocked `EPERM`/`EBUSY` fault injection + real spawn+`SIGKILL` stress harness) never leaves a truncated/corrupt file; Windows retry-with-backoff wraps `write-file-atomic@7` | unit (fault injection) + stress | `npx vitest run test/config-io/atomic-write.test.ts` / `node test/stress/kill-mid-save.mjs` | ❌ W0 | ⬜ pending |
-| {planner} | — | — | SAVE-03 | T-UnknownKeyDrop | No-op load→save round-trip preserves every key (incl. fabricated unknown keys) and key order; patch-in-place of the original parsed object, never a schema-reconstructed rebuild | integration | `npx vitest run test/config-io/round-trip-identity.test.ts` | ❌ W0 | ⬜ pending |
-| {planner} | — | — | SAVE-03 (provenance) | — | `EffectiveTree` tags `from: 'canonical' \| 'global' \| 'project'` per 3-layer precedence, for keys present at each layer combination | unit | `npx vitest run test/config-io/merge.test.ts` | ❌ W0 | ⬜ pending |
+| 01-02-03 | 01-02 | 2 | SCHEMA-01 | ReDoS (patternProperties) | Bundled schema recognizes every real fixture leaf key with ZERO missing, after reconciling all 4 sources (manifest `validKeys` + `config-schema.cjs` + `capability-registry.cjs` configSchema + `config-defaults.manifest.json`); `gates.*`/`safety.*` INCLUDED as `x-provenance: fixture-observed` (NOT allowlisted away) | unit (completeness diff) | `npx vitest run test/schema-data/completeness.test.ts` | ❌ W0 | ⬜ pending |
+| 01-04-01 | 01-04 | 2 | DISC-06 | — | `load()` locates `~/.gsd/defaults.json` via `GSD_HOME \|\| os.homedir()` and merges it as the `'global'` layer | unit | `npx vitest run test/config-io/discovery.test.ts` | ❌ W0 | ⬜ pending |
+| 01-03-01 | 01-03 | 2 | SAVE-01 | input-validation + secret-in-logs | `validate()` blocks a structurally-invalid document with field-level Ajv errors; `saveConfig()` never calls `writeFileAtomic` when validation fails; `formatErrors` logs only `instancePath`/keyword, never secret-shaped values | unit | `npx vitest run test/config-io/validate.test.ts` | ❌ W0 | ⬜ pending |
+| 01-06-01 | 01-06 | 3 | SAVE-02, SAVE-01 | atomic-write | Mocked `EPERM`/`EBUSY` fault injection never leaves a truncated/corrupt file; Windows retry-with-backoff wraps `write-file-atomic@7`; validation blocks before any write | unit (fault injection) | `npx vitest run test/config-io/atomic-write.test.ts` | ❌ W0 | ⬜ pending |
+| 01-06-02 | 01-06 | 3 | SAVE-02 | atomic-write | Real spawn+`SIGKILL` stress loop: `config.json` always fully-parseable old-or-new content after each kill (criterion #4, Windows target) | stress (standalone) | `node test/stress/kill-mid-save.mjs` | ❌ W0 | ⬜ pending |
+| 01-07-02 | 01-07 | 4 | SAVE-03 | key-drop | No-op load→save round-trip preserves every key (incl. fabricated structurally-novel unknown keys) and key order; patch-in-place of the original parsed object, never a schema-reconstructed rebuild | integration | `npx vitest run test/config-io/round-trip-identity.test.ts` | ❌ W0 | ⬜ pending |
+| 01-04-02 | 01-04 | 2 | SAVE-03 (provenance) | — | `EffectiveTree` tags `from: 'canonical' \| 'global' \| 'project'` per 3-layer precedence, for keys present at each layer combination | unit | `npx vitest run test/config-io/merge.test.ts` | ❌ W0 | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -70,11 +72,11 @@ created: 2026-07-12
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 10s
-- [ ] `nyquist_compliant: true` set in frontmatter
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers all MISSING references (Plan 01-01 scaffolds package.json/tsconfig/vitest.config.ts + fixtures)
+- [x] No watch-mode flags
+- [x] Feedback latency < 10s (unit tier)
+- [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending
+**Approval:** approved 2026-07-12 (gsd-plan-checker verified every task carries an automated verify; sampling continuity holds)

@@ -579,17 +579,19 @@ describe('round-trip identity', () => {
 
 **If this table is empty:** N/A — see entries above; none of them are training-data guesses, all are reasoning built on directly-read local source this session, but the *generalizability* of "this local install" to "gsd-core in general" carries residual risk worth flagging.
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Does the real, current `open-gsd/gsd-core` repo (fetched live, not the locally-installed copy) confirm `gates.*`/`safety.*` belong exactly where observed, or do they live under a different canonical path (e.g. a TypeScript SDK source with a different shape)?**
    - What we know: both namespaces are present, structurally consistent, and clearly consumed (real `grep` hits in `bin/lib/`) across all three local real fixtures and the locally-installed gsd-core copy.
    - What's unclear: whether the *authoritative* upstream TypeScript source (`sdk/src/config-schema.ts`, mentioned in CONTEXT.md's own drift note but not read this session, since it lives in the separate `open-gsd/gsd-core` repo rather than the locally-installed package) declares a richer shape (e.g. per-gate override reasons, or additional keys within `safety.*`) than the flat-boolean pattern observed locally.
    - Recommendation: model from the observed shape now (per Assumption A1), tag `x-provenance: fixture-observed`, and treat a live-repo confirmation as Phase 6 (SCHEMA-05) work rather than blocking Phase 1 on a repo fetch this research session did not perform.
+   - **RESOLVED (2026-07-12, user decision):** Include `gates.*` (8 boolean leaves) and `safety.*` (2 boolean leaves) in the bundled schema tagged `x-provenance: fixture-observed`, per this recommendation. Implemented in Plan 01-02 (schema) and reflected in Plan 01-05 (they resolve as KNOWN, not in the `unknown[]` bucket). Live-repo confirmation deferred to Phase 6.
 
 2. **Should the bundled schema encode `planning.granularity` (found as a `CONFIG_DEFAULTS` nested default but absent from `validKeys`) at all, given it appears to be dead/vestigial in the installed manifest?**
    - What we know: `CONFIG_DEFAULTS.planning.granularity` exists with default `"standard"`; no real fixture (including this project's own `config.json`) actually sets `planning.granularity` — all three fixtures only set the bare top-level `granularity`.
    - What's unclear: whether this is truly dead code in the installed gsd-core version, or a forward-looking field not yet wired up.
    - Recommendation: omit `planning.granularity` from the bundled schema's *known-keys* list for now (don't manufacture a key with zero real-world evidence of use), but ensure it would land in the `unknown[]` bucket (not silently dropped) if a future gsd-core version ever writes it — the open-`additionalProperties` design already guarantees this without extra work.
+   - **RESOLVED (2026-07-12):** Adopt this recommendation — `planning.granularity` is omitted from known-keys; the open-`additionalProperties` design guarantees it surfaces in `unknown[]` if ever written. No plan change required (already the default behavior).
 
 ## Environment Availability
 
