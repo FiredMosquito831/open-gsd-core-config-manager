@@ -102,13 +102,50 @@ Which phases cover which requirements. Populated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| (to be filled by roadmap) | — | Pending |
+| SCHEMA-01 | Phase 1 | Pending |
+| DISC-06 | Phase 1 | Pending |
+| SAVE-01 | Phase 1 | Pending |
+| SAVE-02 | Phase 1 | Pending |
+| SAVE-03 | Phase 1 | Pending |
+| DIST-01 | Phase 2 | Pending |
+| DIST-02 | Phase 2 | Pending |
+| DIST-03 | Phase 2 | Pending |
+| DIST-04 | Phase 2 | Pending |
+| SEC-01 | Phase 2 | Pending |
+| SEC-02 | Phase 2 | Pending |
+| SAVE-04 | Phase 2 | Pending |
+| SCHEMA-02 | Phase 3 | Pending |
+| SCHEMA-03 | Phase 3 | Pending |
+| SCHEMA-04 | Phase 3 | Pending |
+| SCHEMA-06 | Phase 3 | Pending |
+| DISC-01 | Phase 3 | Pending |
+| DISC-02 | Phase 3 | Pending |
+| DISC-03 | Phase 3 | Pending |
+| DISC-04 | Phase 3 | Pending |
+| DISC-05 | Phase 3 | Pending |
+| EDIT-01 | Phase 3 | Pending |
+| EDIT-02 | Phase 3 | Pending |
+| EDIT-04 | Phase 3 | Pending |
+| EDIT-05 | Phase 3 | Pending |
+| EDIT-06 | Phase 3 | Pending |
+| SEC-03 | Phase 4 | Pending |
+| EDIT-03 | Phase 4 | Pending |
+| POOL-01 | Phase 4 | Pending |
+| POOL-02 | Phase 4 | Pending |
+| POOL-03 | Phase 4 | Pending |
+| PROF-01 | Phase 4 | Pending |
+| PROF-02 | Phase 4 | Pending |
+| PROF-03 | Phase 4 | Pending |
+| PROF-04 | Phase 4 | Pending |
+| SAVE-05 | Phase 5 | Pending |
+| SAVE-06 | Phase 5 | Pending |
+| SCHEMA-05 | Phase 6 | Pending |
 
 **Coverage:**
-- v1 requirements: 34 total
-- Mapped to phases: 0 (pending roadmap)
-- Unmapped: 34 ⚠️
+- v1 requirements: 38 total (corrected from a stale "34" count in the initial requirements draft — the enumerated list above has always contained 38 items)
+- Mapped to phases: 38/38
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-07-11*
-*Last updated: 2026-07-11 after initial definition*
+*Last updated: 2026-07-11 after roadmap creation — traceability populated, requirement count corrected*
