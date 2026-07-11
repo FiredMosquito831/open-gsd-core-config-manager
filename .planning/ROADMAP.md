@@ -31,7 +31,15 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. Saving a config that fails schema validation is blocked with clear, field-level errors, and no partial write occurs.
   4. Killing the write process mid-save never leaves config.json truncated or corrupted on Windows — the file is always fully the old content or fully the new content, verified by repeated kill-mid-save testing.
   5. Loading a project config resolves effective values by merging canonical schema defaults with the global `~/.gsd/defaults.json` layer and the project's `config.json`, with each value traceable to the layer that supplied it.
-**Plans**: TBD
+**Plans**: 7 plans
+Plans:
+- [ ] 01-01-PLAN.md — Project scaffold (locked pinned stack), frozen data contracts (types.ts), and real + fabricated-unknown test fixtures [wave 1]
+- [ ] 01-02-PLAN.md — Bundled canonical schema via 4-source reconciliation + one-line docs + completeness gate (SCHEMA-01) [wave 2]
+- [ ] 01-03-PLAN.md — Ajv 2020-12 validator (open additionalProperties) + prototype-pollution-safe safeSet (SAVE-01) [wave 2]
+- [ ] 01-04-PLAN.md — Global-defaults discovery (DISC-06) + layered merge with provenance (SAVE-03) [wave 2]
+- [ ] 01-05-PLAN.md — load(): raw + merge + provenance + unknown-key bucket (DISC-06, SAVE-03) [wave 3]
+- [ ] 01-06-PLAN.md — Atomic write + Windows retry + validate-block + kill-mid-save stress harness (SAVE-02, SAVE-01) [wave 3]
+- [ ] 01-07-PLAN.md — Round-trip identity gate (100% fidelity) + frozen config-io public API barrel (SAVE-03) [wave 4]
 
 ### Phase 2: Local Loopback Server, CLI & Security Hardening
 **Goal**: Users can launch the entire tool with one `npx` command, reach a local server that only they can talk to, and have every save automatically protected by a snapshot.
@@ -101,7 +109,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Schema Foundation & Data-Layer Safety | 0/TBD | Not started | - |
+| 1. Schema Foundation & Data-Layer Safety | 0/7 | Not started | - |
 | 2. Local Loopback Server, CLI & Security Hardening | 0/TBD | Not started | - |
 | 3. Generic Schema-Driven UI Shell | 0/TBD | Not started | - |
 | 4. Pool Editors & Model Profile Specialization | 0/TBD | Not started | - |
