@@ -170,3 +170,15 @@ None - no external service configuration required.
 ---
 *Phase: 02-local-loopback-server-cli-security-hardening*
 *Completed: 2026-07-12*
+
+## Self-Check: PASSED
+
+- FOUND: packages/server/src/snapshot-store/paths.ts
+- FOUND: packages/server/src/snapshot-store/index.ts
+- FOUND: packages/server/src/snapshot-store/save-with-snapshot.ts
+- FOUND: test/server/snapshot-store.test.ts
+- FOUND: .planning/phases/02-local-loopback-server-cli-security-hardening/02-02-SUMMARY.md
+- FOUND commit: bb273c2
+- FOUND commit: 7853f81
+- FOUND commit: f052d90
+- FOUND commit: 0b180a8
