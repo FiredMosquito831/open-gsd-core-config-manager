@@ -1,0 +1,1511 @@
+{
+  "agent_skills": {
+    "type": [
+      "object",
+      "null"
+    ],
+    "title": "Agent Skills",
+    "x-category": "Model & Routing",
+    "x-description": "",
+    "x-provenance": "dynamicKeyPattern:agent_skills",
+    "x-dynamic-key-hint": "agent_skills.<agent-type>",
+    "patternProperties": {
+      "^agent_skills\\.[a-zA-Z0-9_-]+$": {
+        "type": [
+          "object",
+          "null"
+        ],
+        "title": "Agent Skills Entry",
+        "x-category": "Model & Routing",
+        "x-description": "See agent_skills — agent_skills.<agent-type>",
+        "x-provenance": "dynamicKeyPattern:agent_skills"
+      }
+    }
+  },
+  "agent_skills_security.trusted_global_roots": {
+    "type": "array",
+    "default": [],
+    "title": "Trusted Global Roots",
+    "x-category": "Model & Routing",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "brave_search": {
+    "type": "boolean",
+    "default": false,
+    "title": "Brave Search",
+    "x-category": "General",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "capabilities.auto_update": {
+    "type": "boolean",
+    "default": false,
+    "title": "Auto Update",
+    "x-category": "Workflow",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "capabilities.strict_known_registries": {
+    "type": [
+      "string",
+      "null"
+    ],
+    "default": null,
+    "title": "Strict Known Registries",
+    "x-category": "Workflow",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "claude_md_assembly.blocks": {
+    "type": [
+      "object",
+      "null"
+    ],
+    "title": "Blocks",
+    "x-category": "Discovery",
+    "x-description": "",
+    "x-provenance": "dynamicKeyPattern:claude_md_assembly",
+    "x-dynamic-key-hint": "claude_md_assembly.blocks.<section>",
+    "patternProperties": {
+      "^claude_md_assembly\\.blocks\\.[a-zA-Z0-9_]+$": {
+        "type": "string",
+        "title": "Blocks Entry",
+        "x-category": "Discovery",
+        "x-description": "See claude_md_assembly.blocks — claude_md_assembly.blocks.<section>",
+        "x-provenance": "dynamicKeyPattern:claude_md_assembly"
+      }
+    }
+  },
+  "claude_md_assembly.mode": {
+    "type": "string",
+    "title": "Mode",
+    "x-category": "Discovery",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "claude_md_path": {
+    "type": "string",
+    "default": "./.claude/CLAUDE.md",
+    "title": "Claude Md Path",
+    "x-category": "Discovery",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "code_quality.fallow.enabled": {
+    "type": "boolean",
+    "default": false,
+    "title": "Enabled",
+    "x-category": "Workflow",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "code_quality.fallow.mcp": {
+    "type": "boolean",
+    "default": false,
+    "title": "Mcp",
+    "x-category": "Workflow",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "code_quality.fallow.profile": {
+    "type": "string",
+    "default": "standard",
+    "title": "Profile",
+    "x-category": "Workflow",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "code_quality.fallow.scope": {
+    "type": "string",
+    "default": "phase",
+    "title": "Scope",
+    "x-category": "Workflow",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "commit_docs": {
+    "type": "boolean",
+    "default": true,
+    "title": "Commit Docs",
+    "x-category": "General",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "context": {
+    "type": [
+      "string",
+      "null"
+    ],
+    "default": null,
+    "title": "Context",
+    "x-category": "General",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "context_window": {
+    "type": "number",
+    "default": 200000,
+    "title": "Context Window",
+    "x-category": "General",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "dynamic_routing": {
+    "type": [
+      "object",
+      "null"
+    ],
+    "title": "Dynamic Routing",
+    "x-category": "Model & Routing",
+    "x-description": "",
+    "x-provenance": "dynamicKeyPattern:dynamic_routing",
+    "x-dynamic-key-hint": "dynamic_routing.<enabled|escalate_on_failure|max_escalations|tier_models.<light|standard|heavy>>",
+    "patternProperties": {
+      "^dynamic_routing\\.(enabled|escalate_on_failure|max_escalations|tier_models\\.(light|standard|heavy))$": {
+        "type": [
+          "string",
+          "number",
+          "boolean",
+          "null"
+        ],
+        "title": "Dynamic Routing Entry",
+        "x-category": "Model & Routing",
+        "x-description": "See dynamic_routing — dynamic_routing.<enabled|escalate_on_failure|max_escalations|tier_models.<light|standard|heavy>>",
+        "x-provenance": "dynamicKeyPattern:dynamic_routing"
+      }
+    }
+  },
+  "effort.agent_overrides": {
+    "type": [
+      "object",
+      "null"
+    ],
+    "title": "Agent Overrides",
+    "x-category": "Effort",
+    "x-description": "",
+    "x-provenance": "dynamicKeyPattern:effort",
+    "x-dynamic-key-hint": "effort.agent_overrides.<agent-id>",
+    "patternProperties": {
+      "^effort\\.agent_overrides\\.[a-zA-Z0-9_-]+$": {
+        "type": "string",
+        "title": "Agent Overrides Entry",
+        "x-category": "Effort",
+        "x-description": "See effort.agent_overrides — effort.agent_overrides.<agent-id>",
+        "x-provenance": "dynamicKeyPattern:effort"
+      }
+    }
+  },
+  "effort.default": {
+    "type": "string",
+    "default": "high",
+    "title": "Default",
+    "x-category": "Effort",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "effort.routing_tier_defaults": {
+    "type": [
+      "object",
+      "null"
+    ],
+    "title": "Routing Tier Defaults",
+    "x-category": "Effort",
+    "x-description": "",
+    "x-provenance": "dynamicKeyPattern:effort",
+    "x-dynamic-key-hint": "effort.routing_tier_defaults.<light|standard|heavy>",
+    "patternProperties": {
+      "^effort\\.routing_tier_defaults\\.(light|standard|heavy)$": {
+        "type": "string",
+        "title": "Routing Tier Defaults Entry",
+        "x-category": "Effort",
+        "x-description": "See effort.routing_tier_defaults — effort.routing_tier_defaults.<light|standard|heavy>",
+        "x-provenance": "dynamicKeyPattern:effort"
+      }
+    }
+  },
+  "exa_search": {
+    "type": "boolean",
+    "default": false,
+    "title": "Exa Search",
+    "x-category": "General",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "executor.stall_detect_interval_minutes": {
+    "type": "string",
+    "title": "Stall Detect Interval Minutes",
+    "x-category": "Workflow",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "executor.stall_threshold_minutes": {
+    "type": "string",
+    "title": "Stall Threshold Minutes",
+    "x-category": "Workflow",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "fast_mode.agent_overrides": {
+    "type": [
+      "object",
+      "null"
+    ],
+    "title": "Agent Overrides",
+    "x-category": "Effort",
+    "x-description": "",
+    "x-provenance": "dynamicKeyPattern:fast_mode",
+    "x-dynamic-key-hint": "fast_mode.agent_overrides.<agent-id>",
+    "patternProperties": {
+      "^fast_mode\\.agent_overrides\\.[a-zA-Z0-9_-]+$": {
+        "type": "boolean",
+        "title": "Agent Overrides Entry",
+        "x-category": "Effort",
+        "x-description": "See fast_mode.agent_overrides — fast_mode.agent_overrides.<agent-id>",
+        "x-provenance": "dynamicKeyPattern:fast_mode"
+      }
+    }
+  },
+  "fast_mode.enabled": {
+    "type": "boolean",
+    "default": false,
+    "title": "Enabled",
+    "x-category": "Effort",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "fast_mode.routing_tier_defaults": {
+    "type": [
+      "object",
+      "null"
+    ],
+    "title": "Routing Tier Defaults",
+    "x-category": "Effort",
+    "x-description": "",
+    "x-provenance": "dynamicKeyPattern:fast_mode",
+    "x-dynamic-key-hint": "fast_mode.routing_tier_defaults.<light|standard|heavy>",
+    "patternProperties": {
+      "^fast_mode\\.routing_tier_defaults\\.(light|standard|heavy)$": {
+        "type": "boolean",
+        "title": "Routing Tier Defaults Entry",
+        "x-category": "Effort",
+        "x-description": "See fast_mode.routing_tier_defaults — fast_mode.routing_tier_defaults.<light|standard|heavy>",
+        "x-provenance": "dynamicKeyPattern:fast_mode"
+      }
+    }
+  },
+  "features": {
+    "type": [
+      "object",
+      "null"
+    ],
+    "title": "Features",
+    "x-category": "General",
+    "x-description": "",
+    "x-provenance": "dynamicKeyPattern:features",
+    "x-dynamic-key-hint": "features.<feature_name>",
+    "patternProperties": {
+      "^features\\.[a-zA-Z0-9_]+$": {
+        "type": "boolean",
+        "title": "Features Entry",
+        "x-category": "General",
+        "x-description": "See features — features.<feature_name>",
+        "x-provenance": "dynamicKeyPattern:features"
+      }
+    }
+  },
+  "features.global_learnings": {
+    "type": "boolean",
+    "default": false,
+    "title": "Global Learnings",
+    "x-category": "Workflow",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "features.thinking_partner": {
+    "type": "boolean",
+    "default": true,
+    "title": "Thinking Partner",
+    "x-category": "Workflow",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "firecrawl": {
+    "type": "boolean",
+    "default": false,
+    "title": "Firecrawl",
+    "x-category": "General",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "gates.confirm_breakdown": {
+    "type": "boolean",
+    "default": true,
+    "title": "Confirm Breakdown",
+    "x-category": "Gates",
+    "x-description": "",
+    "x-provenance": "fixture-observed"
+  },
+  "gates.confirm_phases": {
+    "type": "boolean",
+    "default": true,
+    "title": "Confirm Phases",
+    "x-category": "Gates",
+    "x-description": "",
+    "x-provenance": "fixture-observed"
+  },
+  "gates.confirm_plan": {
+    "type": "boolean",
+    "default": true,
+    "title": "Confirm Plan",
+    "x-category": "Gates",
+    "x-description": "",
+    "x-provenance": "fixture-observed"
+  },
+  "gates.confirm_project": {
+    "type": "boolean",
+    "default": true,
+    "title": "Confirm Project",
+    "x-category": "Gates",
+    "x-description": "",
+    "x-provenance": "fixture-observed"
+  },
+  "gates.confirm_roadmap": {
+    "type": "boolean",
+    "default": true,
+    "title": "Confirm Roadmap",
+    "x-category": "Gates",
+    "x-description": "",
+    "x-provenance": "fixture-observed"
+  },
+  "gates.confirm_transition": {
+    "type": "boolean",
+    "default": true,
+    "title": "Confirm Transition",
+    "x-category": "Gates",
+    "x-description": "",
+    "x-provenance": "fixture-observed"
+  },
+  "gates.execute_next_plan": {
+    "type": "boolean",
+    "default": true,
+    "title": "Execute Next Plan",
+    "x-category": "Gates",
+    "x-description": "",
+    "x-provenance": "fixture-observed"
+  },
+  "gates.issues_review": {
+    "type": "boolean",
+    "default": true,
+    "title": "Issues Review",
+    "x-category": "Gates",
+    "x-description": "",
+    "x-provenance": "fixture-observed"
+  },
+  "git.base_branch": {
+    "type": "string",
+    "default": null,
+    "title": "Base Branch",
+    "x-category": "Git",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "git.branching_strategy": {
+    "type": "string",
+    "default": "none",
+    "title": "Branching Strategy",
+    "x-category": "Git",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "git.create_tag": {
+    "type": "boolean",
+    "default": true,
+    "title": "Create Tag",
+    "x-category": "Git",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "git.milestone_branch_template": {
+    "type": "string",
+    "default": "gsd/{milestone}-{slug}",
+    "title": "Milestone Branch Template",
+    "x-category": "Git",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "git.phase_branch_template": {
+    "type": "string",
+    "default": "gsd/phase-{phase}-{slug}",
+    "title": "Phase Branch Template",
+    "x-category": "Git",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "git.quick_branch_template": {
+    "type": [
+      "string",
+      "null"
+    ],
+    "default": null,
+    "title": "Quick Branch Template",
+    "x-category": "Git",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "granularities": {
+    "type": [
+      "object",
+      "null"
+    ],
+    "title": "Granularities",
+    "x-category": "General",
+    "x-description": "",
+    "x-provenance": "dynamicKeyPattern:granularities",
+    "x-dynamic-key-hint": "granularities.<planning|discuss|research|execution|verification|completion>",
+    "patternProperties": {
+      "^granularities\\.(planning|discuss|research|execution|verification|completion)$": {
+        "type": "string",
+        "title": "Granularities Entry",
+        "x-category": "General",
+        "x-description": "See granularities — granularities.<planning|discuss|research|execution|verification|completion>",
+        "x-provenance": "dynamicKeyPattern:granularities"
+      }
+    }
+  },
+  "granularity": {
+    "type": "string",
+    "default": "fine",
+    "title": "Granularity",
+    "x-category": "Workflow",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "graphify.auto_update": {
+    "type": "boolean",
+    "default": false,
+    "title": "Auto Update",
+    "x-category": "Workflow",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "graphify.build_timeout": {
+    "type": "number",
+    "default": 300,
+    "title": "Build Timeout",
+    "x-category": "Workflow",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "graphify.enabled": {
+    "type": "boolean",
+    "default": false,
+    "title": "Enabled",
+    "x-category": "Workflow",
+    "x-description": "Enable the graphify knowledge-graph command + skill.",
+    "x-provenance": "capability-registry"
+  },
+  "hooks.context_warnings": {
+    "type": "boolean",
+    "default": true,
+    "title": "Context Warnings",
+    "x-category": "Workflow",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "hooks.workflow_guard": {
+    "type": "boolean",
+    "default": false,
+    "title": "Workflow Guard",
+    "x-category": "Workflow",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "intel.enabled": {
+    "type": "boolean",
+    "default": false,
+    "title": "Enabled",
+    "x-category": "Workflow",
+    "x-description": "Enable the intel code-intelligence command.",
+    "x-provenance": "capability-registry"
+  },
+  "learnings.max_inject": {
+    "type": "number",
+    "default": 10,
+    "title": "Max Inject",
+    "x-category": "Workflow",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "manager.flags.discuss": {
+    "type": "string",
+    "title": "Discuss",
+    "x-category": "Workflow",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "manager.flags.execute": {
+    "type": "string",
+    "title": "Execute",
+    "x-category": "Workflow",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "manager.flags.plan": {
+    "type": "string",
+    "title": "Plan",
+    "x-category": "Workflow",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "mempalace.auto_capture_hooks": {
+    "type": "boolean",
+    "default": false,
+    "title": "Auto Capture Hooks",
+    "x-category": "Workflow",
+    "x-description": "Reserved / not yet implemented: will install MemPalace's native stop/precompact Claude Code hooks for passive mid-session capture (the capability's hooks array is currently empty).",
+    "x-provenance": "capability-registry"
+  },
+  "mempalace.capture_artifacts": {
+    "type": "boolean",
+    "default": true,
+    "title": "Capture Artifacts",
+    "x-category": "Workflow",
+    "x-description": "File CONTEXT/PLAN/SUMMARY and learnings into the palace at phase boundaries.",
+    "x-provenance": "capability-registry"
+  },
+  "mempalace.cross_project_tunnels": {
+    "type": "boolean",
+    "default": false,
+    "title": "Cross Project Tunnels",
+    "x-category": "Workflow",
+    "x-description": "Propose/create cross-wing tunnels at ship:post.",
+    "x-provenance": "capability-registry"
+  },
+  "mempalace.diary_journal": {
+    "type": "boolean",
+    "default": true,
+    "title": "Diary Journal",
+    "x-category": "Workflow",
+    "x-description": "Write a per-agent diary entry at ship:post.",
+    "x-provenance": "capability-registry"
+  },
+  "mempalace.enabled": {
+    "type": "boolean",
+    "default": false,
+    "title": "Enabled",
+    "x-category": "Workflow",
+    "x-description": "Master toggle for the MemPalace memory capability.",
+    "x-provenance": "capability-registry"
+  },
+  "mempalace.memory_mode": {
+    "type": "string",
+    "default": "augment",
+    "title": "Memory Mode",
+    "x-category": "Workflow",
+    "x-description": "How MemPalace relates to GSD native memory. Only 'augment' (additive) is implemented today; 'kg_backend' and 'replace' are forward-declared (routing seam not yet built) and currently behave as 'augment'.",
+    "x-provenance": "capability-registry",
+    "enum": [
+      "augment",
+      "kg_backend",
+      "replace"
+    ],
+    "x-options": {
+      "augment": {
+        "x-description": ""
+      },
+      "kg_backend": {
+        "x-description": ""
+      },
+      "replace": {
+        "x-description": ""
+      }
+    }
+  },
+  "mempalace.mirror_kg": {
+    "type": "boolean",
+    "default": true,
+    "title": "Mirror Kg",
+    "x-category": "Workflow",
+    "x-description": "Mirror decisions/learnings into MemPalace's temporal knowledge graph.",
+    "x-provenance": "capability-registry"
+  },
+  "mempalace.recall_on_discuss": {
+    "type": "boolean",
+    "default": true,
+    "title": "Recall On Discuss",
+    "x-category": "Workflow",
+    "x-description": "Inject wake-up + search recall at discuss:pre.",
+    "x-provenance": "capability-registry"
+  },
+  "mempalace.recall_on_plan": {
+    "type": "boolean",
+    "default": true,
+    "title": "Recall On Plan",
+    "x-category": "Workflow",
+    "x-description": "Produce MEMORY-RECALL.md at plan:pre.",
+    "x-provenance": "capability-registry"
+  },
+  "mempalace.wing": {
+    "type": "string",
+    "default": "",
+    "title": "Wing",
+    "x-category": "Workflow",
+    "x-description": "Palace wing name; empty derives from project_code / project dir.",
+    "x-provenance": "capability-registry"
+  },
+  "mode": {
+    "type": "string",
+    "default": "interactive",
+    "title": "Mode",
+    "x-category": "Workflow",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "model_overrides": {
+    "type": [
+      "object",
+      "null"
+    ],
+    "title": "Model Overrides",
+    "x-category": "Model & Routing",
+    "x-description": "",
+    "x-provenance": "dynamicKeyPattern:model_overrides",
+    "x-dynamic-key-hint": "model_overrides.<agent-id>",
+    "patternProperties": {
+      "^model_overrides\\.[a-zA-Z0-9_-]+$": {
+        "type": "string",
+        "title": "Model Overrides Entry",
+        "x-category": "Model & Routing",
+        "x-description": "See model_overrides — model_overrides.<agent-id>",
+        "x-provenance": "dynamicKeyPattern:model_overrides"
+      }
+    }
+  },
+  "model_policy.budget": {
+    "type": [
+      "string",
+      "null"
+    ],
+    "default": null,
+    "title": "Budget",
+    "x-category": "Model & Routing",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "model_policy.high": {
+    "type": [
+      "string",
+      "null"
+    ],
+    "default": null,
+    "title": "High",
+    "x-category": "Model & Routing",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "model_policy.low": {
+    "type": [
+      "string",
+      "null"
+    ],
+    "default": null,
+    "title": "Low",
+    "x-category": "Model & Routing",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "model_policy.medium": {
+    "type": [
+      "string",
+      "null"
+    ],
+    "default": null,
+    "title": "Medium",
+    "x-category": "Model & Routing",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "model_policy.provider": {
+    "type": [
+      "string",
+      "null"
+    ],
+    "default": null,
+    "title": "Provider",
+    "x-category": "Model & Routing",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "model_policy.runtime_tiers": {
+    "type": [
+      "object",
+      "null"
+    ],
+    "title": "Runtime Tiers",
+    "x-category": "Model & Routing",
+    "x-description": "",
+    "x-provenance": "dynamicKeyPattern:model_policy",
+    "x-dynamic-key-hint": "model_policy.runtime_tiers.<runtime>.<opus|sonnet|haiku>",
+    "patternProperties": {
+      "^model_policy\\.runtime_tiers\\.[a-zA-Z0-9_-]+\\.(opus|sonnet|haiku)$": {
+        "type": "string",
+        "title": "Runtime Tiers Entry",
+        "x-category": "Model & Routing",
+        "x-description": "See model_policy.runtime_tiers — model_policy.runtime_tiers.<runtime>.<opus|sonnet|haiku>",
+        "x-provenance": "dynamicKeyPattern:model_policy"
+      }
+    }
+  },
+  "model_profile": {
+    "type": "string",
+    "default": "balanced",
+    "title": "Model Profile",
+    "x-category": "Model & Routing",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "model_profile_overrides": {
+    "type": [
+      "object",
+      "null"
+    ],
+    "title": "Model Profile Overrides",
+    "x-category": "Model & Routing",
+    "x-description": "",
+    "x-provenance": "dynamicKeyPattern:model_profile_overrides",
+    "x-dynamic-key-hint": "model_profile_overrides.<runtime>.<opus|sonnet|haiku>",
+    "patternProperties": {
+      "^model_profile_overrides\\.[a-zA-Z0-9_-]+\\.(opus|sonnet|haiku)$": {
+        "type": "string",
+        "title": "Model Profile Overrides Entry",
+        "x-category": "Model & Routing",
+        "x-description": "See model_profile_overrides — model_profile_overrides.<runtime>.<opus|sonnet|haiku>",
+        "x-provenance": "dynamicKeyPattern:model_profile_overrides"
+      }
+    }
+  },
+  "models": {
+    "type": [
+      "object",
+      "null"
+    ],
+    "title": "Models",
+    "x-category": "Model & Routing",
+    "x-description": "",
+    "x-provenance": "dynamicKeyPattern:models",
+    "x-dynamic-key-hint": "models.<planning|discuss|research|execution|verification|completion>",
+    "patternProperties": {
+      "^models\\.(planning|discuss|research|execution|verification|completion)$": {
+        "type": "string",
+        "title": "Models Entry",
+        "x-category": "Model & Routing",
+        "x-description": "See models — models.<planning|discuss|research|execution|verification|completion>",
+        "x-provenance": "dynamicKeyPattern:models"
+      }
+    }
+  },
+  "parallelization": {
+    "type": "boolean",
+    "default": true,
+    "title": "Parallelization",
+    "x-category": "Workflow",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "phase_id_convention": {
+    "type": [
+      "string",
+      "null"
+    ],
+    "default": null,
+    "title": "Phase Id Convention",
+    "x-category": "General",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "phase_naming": {
+    "type": "string",
+    "default": "sequential",
+    "title": "Phase Naming",
+    "x-category": "General",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "plan_review.source_grounding": {
+    "type": "boolean",
+    "default": true,
+    "title": "Source Grounding",
+    "x-category": "Review",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "plan_review.source_grounding_authority": {
+    "type": "string",
+    "default": "grep",
+    "title": "Source Grounding Authority",
+    "x-category": "Review",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "planning.commit_docs": {
+    "type": "boolean",
+    "default": true,
+    "title": "Commit Docs",
+    "x-category": "Planning",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "planning.search_gitignored": {
+    "type": "boolean",
+    "default": false,
+    "title": "Search Gitignored",
+    "x-category": "Planning",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "planning.sub_repos": {
+    "type": "array",
+    "default": [],
+    "title": "Sub Repos",
+    "x-category": "Planning",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "profile-pipeline.enabled": {
+    "type": "boolean",
+    "default": false,
+    "title": "Enabled",
+    "x-category": "Workflow",
+    "x-description": "Enable the developer profiling pipeline commands (scan-sessions, extract-messages, profile-sample, write-profile, etc.).",
+    "x-provenance": "capability-registry"
+  },
+  "project_code": {
+    "type": [
+      "string",
+      "null"
+    ],
+    "default": null,
+    "title": "Project Code",
+    "x-category": "General",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "resolve_model_ids": {
+    "type": "boolean",
+    "default": false,
+    "title": "Resolve Model Ids",
+    "x-category": "Model & Routing",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "response_language": {
+    "type": [
+      "string",
+      "null"
+    ],
+    "default": null,
+    "title": "Response Language",
+    "x-category": "General",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "review.default_reviewers": {
+    "type": [
+      "string",
+      "null"
+    ],
+    "default": null,
+    "title": "Default Reviewers",
+    "x-category": "Review",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "review.llama_cpp_host": {
+    "type": "string",
+    "title": "Llama Cpp Host",
+    "x-category": "Review",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "review.lm_studio_host": {
+    "type": "string",
+    "title": "Lm Studio Host",
+    "x-category": "Review",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "review.max_prompt_tokens": {
+    "type": "string",
+    "title": "Max Prompt Tokens",
+    "x-category": "Review",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "review.max_prompt_tokens_per_reviewer": {
+    "type": [
+      "object",
+      "null"
+    ],
+    "title": "Max Prompt Tokens Per Reviewer",
+    "x-category": "Review",
+    "x-description": "",
+    "x-provenance": "dynamicKeyPattern:review",
+    "x-dynamic-key-hint": "review.max_prompt_tokens_per_reviewer.<reviewer-slug>",
+    "patternProperties": {
+      "^review\\.max_prompt_tokens_per_reviewer\\.[a-zA-Z0-9_-]+$": {
+        "type": "number",
+        "title": "Max Prompt Tokens Per Reviewer Entry",
+        "x-category": "Review",
+        "x-description": "See review.max_prompt_tokens_per_reviewer — review.max_prompt_tokens_per_reviewer.<reviewer-slug>",
+        "x-provenance": "dynamicKeyPattern:review"
+      }
+    }
+  },
+  "review.models": {
+    "type": [
+      "object",
+      "null"
+    ],
+    "title": "Models",
+    "x-category": "Review",
+    "x-description": "",
+    "x-provenance": "dynamicKeyPattern:review",
+    "x-dynamic-key-hint": "review.models.<cli-name>",
+    "patternProperties": {
+      "^review\\.models\\.[a-zA-Z0-9_-]+$": {
+        "type": "string",
+        "title": "Models Entry",
+        "x-category": "Review",
+        "x-description": "See review.models — review.models.<cli-name>",
+        "x-provenance": "dynamicKeyPattern:review"
+      }
+    }
+  },
+  "review.ollama_host": {
+    "type": "string",
+    "title": "Ollama Host",
+    "x-category": "Review",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "runtime": {
+    "type": "string",
+    "title": "Runtime",
+    "x-category": "General",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "safety.always_confirm_destructive": {
+    "type": "boolean",
+    "default": true,
+    "title": "Always Confirm Destructive",
+    "x-category": "Safety",
+    "x-description": "",
+    "x-provenance": "fixture-observed"
+  },
+  "safety.always_confirm_external_services": {
+    "type": "boolean",
+    "default": true,
+    "title": "Always Confirm External Services",
+    "x-category": "Safety",
+    "x-description": "",
+    "x-provenance": "fixture-observed"
+  },
+  "search_gitignored": {
+    "type": "boolean",
+    "default": false,
+    "title": "Search Gitignored",
+    "x-category": "General",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "security.injection_blocking": {
+    "type": "boolean",
+    "default": false,
+    "title": "Injection Blocking",
+    "x-category": "Security",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "ship.pr_body_sections": {
+    "type": "array",
+    "default": [],
+    "title": "Pr Body Sections",
+    "x-category": "Ship",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "statusline.context_position": {
+    "type": "string",
+    "default": "end",
+    "title": "Context Position",
+    "x-category": "Workflow",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "statusline.show_last_command": {
+    "type": "boolean",
+    "default": true,
+    "title": "Show Last Command",
+    "x-category": "Workflow",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "workflow.ai_integration_phase": {
+    "type": "boolean",
+    "default": true,
+    "title": "Ai Integration Phase",
+    "x-category": "Workflow",
+    "x-description": "Prompt for an AI-SPEC design contract before planning phases that involve AI systems.",
+    "x-provenance": "capability-registry"
+  },
+  "workflow.auto_advance": {
+    "type": "boolean",
+    "default": false,
+    "title": "Auto Advance",
+    "x-category": "Workflow",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "workflow.auto_prune_state": {
+    "type": "boolean",
+    "default": false,
+    "title": "Auto Prune State",
+    "x-category": "Workflow",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "workflow.build_command": {
+    "type": [
+      "string",
+      "null"
+    ],
+    "default": null,
+    "title": "Build Command",
+    "x-category": "Workflow",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "workflow.code_review": {
+    "type": "boolean",
+    "default": true,
+    "title": "Code Review",
+    "x-category": "Workflow",
+    "x-description": "Enable code-review participation in post-execution review flows.",
+    "x-provenance": "capability-registry"
+  },
+  "workflow.code_review_command": {
+    "type": [
+      "string",
+      "null"
+    ],
+    "default": null,
+    "title": "Code Review Command",
+    "x-category": "Workflow",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "workflow.code_review_depth": {
+    "type": "string",
+    "default": "standard",
+    "title": "Code Review Depth",
+    "x-category": "Workflow",
+    "x-description": "Default depth for code review when no --depth override is supplied.",
+    "x-provenance": "capability-registry",
+    "enum": [
+      "quick",
+      "standard",
+      "deep"
+    ],
+    "x-options": {
+      "quick": {
+        "x-description": ""
+      },
+      "standard": {
+        "x-description": ""
+      },
+      "deep": {
+        "x-description": ""
+      }
+    }
+  },
+  "workflow.context_coverage_gate": {
+    "type": "boolean",
+    "default": true,
+    "title": "Context Coverage Gate",
+    "x-category": "Workflow",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "workflow.context_guard_mode": {
+    "type": "string",
+    "default": "warn",
+    "title": "Context Guard Mode",
+    "x-category": "Workflow",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "workflow.cross_ai_command": {
+    "type": [
+      "string",
+      "null"
+    ],
+    "default": null,
+    "title": "Cross Ai Command",
+    "x-category": "Workflow",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "workflow.cross_ai_execution": {
+    "type": "boolean",
+    "default": false,
+    "title": "Cross Ai Execution",
+    "x-category": "Workflow",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "workflow.cross_ai_timeout": {
+    "type": "number",
+    "default": 300,
+    "title": "Cross Ai Timeout",
+    "x-category": "Workflow",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "workflow.discuss_mode": {
+    "type": "string",
+    "default": "discuss",
+    "title": "Discuss Mode",
+    "x-category": "Workflow",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "workflow.drift_action": {
+    "type": "string",
+    "default": "warn",
+    "title": "Drift Action",
+    "x-category": "Workflow",
+    "x-description": "Action taken by the codebase drift gate when the threshold is exceeded: warn (advisory message) or auto-remap (spawn gsd-codebase-mapper agent to refresh STRUCTURE.md).",
+    "x-provenance": "capability-registry",
+    "enum": [
+      "warn",
+      "auto-remap"
+    ],
+    "x-options": {
+      "warn": {
+        "x-description": ""
+      },
+      "auto-remap": {
+        "x-description": ""
+      }
+    }
+  },
+  "workflow.drift_threshold": {
+    "type": "number",
+    "default": 3,
+    "title": "Drift Threshold",
+    "x-category": "Workflow",
+    "x-description": "Minimum number of new structural elements (directories, barrel exports, migrations, routes) before the codebase drift gate triggers a warn or auto-remap action.",
+    "x-provenance": "capability-registry"
+  },
+  "workflow.human_verify_mode": {
+    "type": "string",
+    "default": "end-of-phase",
+    "title": "Human Verify Mode",
+    "x-category": "Workflow",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "workflow.inline_plan_threshold": {
+    "type": "string",
+    "title": "Inline Plan Threshold",
+    "x-category": "Workflow",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "workflow.max_discuss_passes": {
+    "type": "number",
+    "default": 3,
+    "title": "Max Discuss Passes",
+    "x-category": "Workflow",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "workflow.mvp_mode": {
+    "type": "string",
+    "title": "Mvp Mode",
+    "x-category": "Workflow",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "workflow.node_repair": {
+    "type": "boolean",
+    "default": true,
+    "title": "Node Repair",
+    "x-category": "Workflow",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "workflow.node_repair_budget": {
+    "type": "number",
+    "default": 2,
+    "title": "Node Repair Budget",
+    "x-category": "Workflow",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "workflow.nyquist_validation": {
+    "type": "boolean",
+    "default": true,
+    "title": "Nyquist Validation",
+    "x-category": "Workflow",
+    "x-description": "Enable Nyquist validation coverage auditing.",
+    "x-provenance": "capability-registry"
+  },
+  "workflow.pattern_mapper": {
+    "type": "boolean",
+    "default": true,
+    "title": "Pattern Mapper",
+    "x-category": "Workflow",
+    "x-description": "Run the pattern mapper before planning when context or research is available.",
+    "x-provenance": "capability-registry"
+  },
+  "workflow.plan_bounce": {
+    "type": "boolean",
+    "default": false,
+    "title": "Plan Bounce",
+    "x-category": "Workflow",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "workflow.plan_bounce_passes": {
+    "type": "number",
+    "default": 2,
+    "title": "Plan Bounce Passes",
+    "x-category": "Workflow",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "workflow.plan_bounce_script": {
+    "type": [
+      "string",
+      "null"
+    ],
+    "default": null,
+    "title": "Plan Bounce Script",
+    "x-category": "Workflow",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "workflow.plan_check": {
+    "type": "boolean",
+    "default": true,
+    "title": "Plan Check",
+    "x-category": "Workflow",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "workflow.plan_chunked": {
+    "type": "boolean",
+    "default": false,
+    "title": "Plan Chunked",
+    "x-category": "Workflow",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "workflow.plan_drift_precheck": {
+    "type": "boolean",
+    "default": true,
+    "title": "Plan Drift Precheck",
+    "x-category": "Workflow",
+    "x-description": "Enable the non-blocking codebase drift pre-check at plan:pre, before /gsd:plan-phase spawns the planner. When enabled, a stale STRUCTURE.md (structural additions exceeding drift_threshold) is surfaced up front as a warn-only advisory pointing to /gsd:map-codebase; it never blocks planning and never spawns the mapper agent. Separate from schema_drift_gate so autonomous/CI runs can silence the plan-time advisory while keeping the execute:wave:post gates enabled.",
+    "x-provenance": "capability-registry"
+  },
+  "workflow.plan_review_convergence": {
+    "type": "boolean",
+    "default": false,
+    "title": "Plan Review Convergence",
+    "x-category": "Workflow",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "workflow.post_planning_gaps": {
+    "type": "boolean",
+    "default": true,
+    "title": "Post Planning Gaps",
+    "x-category": "Workflow",
+    "x-description": "Run the post-planning gap analysis report after plans are generated.",
+    "x-provenance": "capability-registry"
+  },
+  "workflow.research": {
+    "type": "boolean",
+    "default": true,
+    "title": "Research",
+    "x-category": "Workflow",
+    "x-description": "Run phase research before planning when research artifacts are missing or explicitly refreshed.",
+    "x-provenance": "capability-registry"
+  },
+  "workflow.research_before_questions": {
+    "type": "boolean",
+    "default": false,
+    "title": "Research Before Questions",
+    "x-category": "Workflow",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "workflow.schema_drift_gate": {
+    "type": "boolean",
+    "default": true,
+    "title": "Schema Drift Gate",
+    "x-category": "Workflow",
+    "x-description": "Enable the drift gates at execute:wave:post. When enabled, the schema drift gate blocks verification if schema-relevant files changed during execution but no database push command was executed; the codebase drift gate (non-blocking) warns when structural additions exceed the drift_threshold.",
+    "x-provenance": "capability-registry"
+  },
+  "workflow.schema_push_detection": {
+    "type": "boolean",
+    "default": true,
+    "title": "Schema Push Detection",
+    "x-category": "Workflow",
+    "x-description": "Enable ORM schema push detection during planning. When schema-relevant files are detected in the phase scope, a [BLOCKING] push task is injected into the plan.",
+    "x-provenance": "capability-registry"
+  },
+  "workflow.security_asvs_level": {
+    "type": "number",
+    "default": 1,
+    "title": "Security Asvs Level",
+    "x-category": "Security",
+    "x-description": "OWASP ASVS level used by security review guidance.",
+    "x-provenance": "capability-registry"
+  },
+  "workflow.security_block_on": {
+    "type": "string",
+    "default": "high",
+    "title": "Security Block On",
+    "x-category": "Security",
+    "x-description": "Minimum open threat severity that blocks advancement.",
+    "x-provenance": "capability-registry",
+    "enum": [
+      "critical",
+      "high",
+      "medium",
+      "low",
+      "none"
+    ],
+    "x-options": {
+      "critical": {
+        "x-description": ""
+      },
+      "high": {
+        "x-description": ""
+      },
+      "medium": {
+        "x-description": ""
+      },
+      "low": {
+        "x-description": ""
+      },
+      "none": {
+        "x-description": ""
+      }
+    }
+  },
+  "workflow.security_enforcement": {
+    "type": "boolean",
+    "default": true,
+    "title": "Security Enforcement",
+    "x-category": "Security",
+    "x-description": "Enable security threat-mitigation verification before phase advancement.",
+    "x-provenance": "capability-registry"
+  },
+  "workflow.skip_discuss": {
+    "type": "boolean",
+    "default": false,
+    "title": "Skip Discuss",
+    "x-category": "Workflow",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "workflow.subagent_timeout": {
+    "type": "number",
+    "default": 300000,
+    "title": "Subagent Timeout",
+    "x-category": "Workflow",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "workflow.tdd_mode": {
+    "type": "boolean",
+    "default": false,
+    "title": "Tdd Mode",
+    "x-category": "Workflow",
+    "x-description": "Enable TDD mode: planner annotates eligible tasks type:tdd and executor enforces RED/GREEN/REFACTOR gate sequence.",
+    "x-provenance": "capability-registry"
+  },
+  "workflow.test_command": {
+    "type": [
+      "string",
+      "null"
+    ],
+    "default": null,
+    "title": "Test Command",
+    "x-category": "Workflow",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "workflow.text_mode": {
+    "type": "boolean",
+    "default": false,
+    "title": "Text Mode",
+    "x-category": "Workflow",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "workflow.ui_phase": {
+    "type": "boolean",
+    "default": true,
+    "title": "Ui Phase",
+    "x-category": "Workflow",
+    "x-description": "Enable the UI design-contract gate during planning.",
+    "x-provenance": "capability-registry"
+  },
+  "workflow.ui_review": {
+    "type": "boolean",
+    "default": true,
+    "title": "Ui Review",
+    "x-category": "Workflow",
+    "x-description": "Enable the retrospective UI audit.",
+    "x-provenance": "capability-registry"
+  },
+  "workflow.ui_safety_gate": {
+    "type": "boolean",
+    "default": true,
+    "title": "Ui Safety Gate",
+    "x-category": "Workflow",
+    "x-description": "Block execution on unmet UI-SPEC contracts.",
+    "x-provenance": "capability-registry"
+  },
+  "workflow.use_worktrees": {
+    "type": "boolean",
+    "default": true,
+    "title": "Use Worktrees",
+    "x-category": "Workflow",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "workflow.verifier": {
+    "type": "boolean",
+    "default": true,
+    "title": "Verifier",
+    "x-category": "Workflow",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "workflow.worktree_skip_hooks": {
+    "type": "string",
+    "title": "Worktree Skip Hooks",
+    "x-category": "Workflow",
+    "x-description": "",
+    "x-provenance": "manifest"
+  }
+}
