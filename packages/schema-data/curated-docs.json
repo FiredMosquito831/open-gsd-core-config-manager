@@ -204,7 +204,25 @@
     "x-description": "Coarse per-phase-type model tier map (planning, discuss, research, execution, verification, completion) for tuning without learning the full agent taxonomy."
   },
   "parallelization": {
-    "x-description": "Enable parallel wave execution across independent plans within a phase."
+    "x-description": "Enable parallel wave execution across independent plans within a phase. Accepts a plain boolean or an object with an \"enabled\" field plus the sub-keys below."
+  },
+  "parallelization.enabled": {
+    "x-description": "Master toggle for parallel wave execution when parallelization is set as an object."
+  },
+  "parallelization.plan_level": {
+    "x-description": "Allow independent plans within the same wave to execute in parallel."
+  },
+  "parallelization.task_level": {
+    "x-description": "Allow independent tasks within the same plan to execute in parallel."
+  },
+  "parallelization.skip_checkpoints": {
+    "x-description": "Skip interactive checkpoints for plans running in parallel, so a paused checkpoint in one plan doesn't block sibling plans."
+  },
+  "parallelization.max_concurrent_agents": {
+    "x-description": "Maximum number of executor agents allowed to run concurrently across all parallel plans."
+  },
+  "parallelization.min_plans_for_parallel": {
+    "x-description": "Minimum number of eligible plans in a wave before GSD switches from sequential to parallel execution."
   },
   "phase_id_convention": {
     "x-category": "Workflow",

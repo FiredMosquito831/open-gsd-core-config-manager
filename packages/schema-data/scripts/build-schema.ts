@@ -339,7 +339,7 @@ for (const pattern of manifest.dynamicKeyPatterns) {
 // actively consumed at runtime across all three real fixtures, but declared
 // in none of the three schema sources (RESEARCH.md § Critical Finding, USER
 // DECISION). Modeled from the observed shape (all boolean leaves).
-const FIXTURE_OBSERVED_KEYS = [
+const FIXTURE_OBSERVED_BOOLEAN_KEYS = [
   'gates.confirm_project',
   'gates.confirm_phases',
   'gates.confirm_roadmap',
@@ -352,7 +352,7 @@ const FIXTURE_OBSERVED_KEYS = [
   'safety.always_confirm_external_services',
 ];
 
-for (const key of FIXTURE_OBSERVED_KEYS) {
+for (const key of FIXTURE_OBSERVED_BOOLEAN_KEYS) {
   const observedDefault = inferDefault(key);
   addEntry(key, {
     type: 'boolean',
@@ -362,6 +362,45 @@ for (const key of FIXTURE_OBSERVED_KEYS) {
     'x-description': '', // filled by curated-docs.json overlay (Task 2)
     'x-provenance': 'fixture-observed',
   });
+}
+
+// Fixture-observed: parallelization.* (6 leaves) — this project's own real
+// fixture (test/fixtures/project-config.json, and the other two real
+// fixtures) expand `parallelization` into a nested object with 6 sub-keys.
+// None of the four reconciled sources declare this expanded shape (only the
+// bare top-level `parallelization: boolean|object` is documented — see
+// planning-config.md § Field Interactions #4). Discovered empirically while
+// authoring the Task 3 completeness test (deviation Rule 2 — same treatment
+// as gates.*/safety.*: modeled from the observed, consistent real-fixture
+// shape and tagged fixture-observed).
+const FIXTURE_OBSERVED_TYPED_KEYS: Record<string, string> = {
+  'parallelization.enabled': 'boolean',
+  'parallelization.plan_level': 'boolean',
+  'parallelization.task_level': 'boolean',
+  'parallelization.skip_checkpoints': 'boolean',
+  'parallelization.max_concurrent_agents': 'number',
+  'parallelization.min_plans_for_parallel': 'number',
+};
+
+for (const [key, type] of Object.entries(FIXTURE_OBSERVED_TYPED_KEYS)) {
+  addEntry(key, {
+    type,
+    default: inferDefault(key),
+    title: deriveTitle(key),
+    'x-category': deriveCategory(key),
+    'x-description': '', // filled by curated-docs.json overlay (Task 2)
+    'x-provenance': 'fixture-observed',
+  });
+}
+
+// `parallelization` itself accepts both a bare boolean and an object form
+// (docs: "loadConfig() normalizes either form to a boolean" — polymorphic).
+// The validKeys-derived entry above inferred a plain "boolean" from
+// CONFIG_DEFAULTS' sample value; widen it now that the object form's own
+// sub-keys are known too.
+{
+  const existing = entries.get('parallelization');
+  if (existing) existing.type = ['boolean', 'object'];
 }
 
 // ---------------------------------------------------------------------------
