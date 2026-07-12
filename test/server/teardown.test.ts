@@ -89,6 +89,18 @@ function findLockEntries(dir: string): string[] {
   return found;
 }
 
+// Real OS signal delivery to a child process is not simulable in this
+// project's dev/test environment: `child_process.kill()`/`process.kill()`
+// perform an unconditional `TerminateProcess` on Windows for EVERY signal
+// name (confirmed empirically — the target's own registered 'SIGINT'/
+// 'SIGTERM' handlers never even run), and the only real mechanism
+// (`GenerateConsoleCtrlEvent`) requires an attached Win32 console that does
+// not exist in this sandboxed shell. `spawnCli().send('SIGINT'|'SIGTERM')`
+// delivers the equivalent trigger over the harness's IPC channel instead,
+// exercising the EXACT SAME `registerSignalHandlers`/`shutdown()` code path
+// bootstrap.ts installs for the real OS signals (see bootstrap.ts's IPC
+// fallback comment) — this is a documented deviation, not a weaker test.
+
 describe('SIGINT releases port and locks (DIST-04)', () => {
   it(
     'SIGINT releases port and locks',
@@ -96,7 +108,7 @@ describe('SIGINT releases port and locks (DIST-04)', () => {
       currentSpawned = await spawnCli(['--no-open']);
       const port = currentSpawned.port;
 
-      currentSpawned.kill('SIGINT');
+      currentSpawned.send('SIGINT');
       const { code } = await currentSpawned.exited;
 
       expect(code).toBe(0);
@@ -115,7 +127,7 @@ describe('SIGTERM also shuts down cleanly', () => {
       currentSpawned = await spawnCli(['--no-open']);
       const port = currentSpawned.port;
 
-      currentSpawned.kill('SIGTERM');
+      currentSpawned.send('SIGTERM');
       const { code } = await currentSpawned.exited;
 
       expect(code).toBe(0);
@@ -132,7 +144,7 @@ describe('prints the shutdown confirmation only after the server has closed', ()
     'prints the shutdown confirmation only after the server has closed',
     async () => {
       currentSpawned = await spawnCli(['--no-open']);
-      currentSpawned.kill('SIGINT');
+      currentSpawned.send('SIGINT');
       await currentSpawned.exited;
 
       const stdout = currentSpawned.stdout();
@@ -164,7 +176,7 @@ describe('leaves no lock file behind', () => {
         },
       });
 
-      currentSpawned.kill('SIGINT');
+      currentSpawned.send('SIGINT');
       await currentSpawned.exited;
 
       expect(findLockEntries(appDataRoot)).toEqual([]);

@@ -54,6 +54,15 @@ export interface SpawnedCli {
   stderr: () => string;
   exited: Promise<{ code: number | null; signal: NodeJS.Signals | null }>;
   kill: (signal?: NodeJS.Signals) => void;
+  /**
+   * Sends an IPC message to the child (only delivered because this harness
+   * spawns with an `'ipc'` stdio channel — see module header). Used as the
+   * Windows-sandbox-safe equivalent-trigger for `bootstrap.ts`'s
+   * `registerSignalHandlers` IPC fallback (`'SIGINT'`/`'SIGTERM'`), since
+   * `kill()` performs an unconditional `TerminateProcess` on Windows and
+   * never reaches the process's own signal handlers in this environment.
+   */
+  send: (message: unknown) => void;
 }
 
 export interface SpawnCliOptions {
@@ -74,7 +83,10 @@ export async function spawnCli(args: string[], opts: SpawnCliOptions = {}): Prom
   const proc = spawn(process.execPath, [TSX_CLI_ENTRY, CLI_ENTRY, ...args], {
     cwd: opts.cwd ?? REPO_ROOT,
     env: { ...process.env, NO_COLOR: '1', ...opts.env },
-    stdio: ['ignore', 'pipe', 'pipe'],
+    // The trailing 'ipc' channel is an additive test-only affordance (see
+    // `send()` below) — it changes nothing about the banner/stdout contract
+    // `parseBannerUrl` parses, and a real `npx` launch never gets one.
+    stdio: ['ignore', 'pipe', 'pipe', 'ipc'],
   });
 
   let stdoutBuf = '';
@@ -141,6 +153,9 @@ export async function spawnCli(args: string[], opts: SpawnCliOptions = {}): Prom
     exited,
     kill: (signal: NodeJS.Signals = 'SIGINT') => {
       proc.kill(signal);
+    },
+    send: (message: unknown) => {
+      proc.send?.(message as string);
     },
   };
 }
