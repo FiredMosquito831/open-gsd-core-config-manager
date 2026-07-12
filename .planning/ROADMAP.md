@@ -14,7 +14,7 @@ This roadmap delivers a local-first, npx-launched GSD config editor in backend-f
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Schema Foundation & Data-Layer Safety** - Bundled canonical schema plus safe, layered, corruption-proof config read/write with zero data loss (completed 2026-07-12)
-- [ ] **Phase 2: Local Loopback Server, CLI & Security Hardening** - Single-command `npx` launch, secured local server, and automatic save snapshots
+- [x] **Phase 2: Local Loopback Server, CLI & Security Hardening** - Single-command `npx` launch, secured local server, and automatic save snapshots (completed 2026-07-12)
 - [ ] **Phase 3: Generic Schema-Driven UI Shell** - Every config chapter rendered with plain-language docs, tracked-file sidebar, search, and inline validation
 - [ ] **Phase 4: Pool Editors & Model Profile Specialization** - Guided editors for array/map pools and GSD model profiles, with effective-value/precedence display
 - [ ] **Phase 5: Version History UI** - Browse, diff, and one-click revert of past config snapshots
@@ -69,7 +69,7 @@ Plans:
   4. The tool is installable as a single public npm package with the built UI bundled inside it.
   5. Every successful save automatically creates a version snapshot stored outside the tracked project directory, with no extra user action required.
 
-**Plans**: 6/7 plans executed
+**Plans**: 7/7 plans complete
 Plans:
 **Wave 1**
 
@@ -91,7 +91,7 @@ Plans:
 
 **Wave 5** *(blocked on Wave 4)*
 
-- [ ] 02-07-PLAN.md — Packaging: tsup bundle, bin/files/prepublishOnly, tarball assertions, extracted-tarball smoke run, manual Windows Ctrl-C gate (DIST-03, DIST-04) [wave 5]
+- [x] 02-07-PLAN.md — Packaging: tsup bundle, bin/files/prepublishOnly, tarball assertions, extracted-tarball smoke run, manual Windows Ctrl-C gate (DIST-03, DIST-04) [wave 5]
 
 ### Phase 3: Generic Schema-Driven UI Shell
 
@@ -162,7 +162,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Schema Foundation & Data-Layer Safety | 7/7 | Complete    | 2026-07-12 |
-| 2. Local Loopback Server, CLI & Security Hardening | 6/7 | In Progress|  |
+| 2. Local Loopback Server, CLI & Security Hardening | 7/7 | Complete   | 2026-07-12 |
 | 3. Generic Schema-Driven UI Shell | 0/TBD | Not started | - |
 | 4. Pool Editors & Model Profile Specialization | 0/TBD | Not started | - |
 | 5. Version History UI | 0/TBD | Not started | - |

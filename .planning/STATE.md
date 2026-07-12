@@ -4,17 +4,17 @@ milestone: v1.0
 milestone_name: milestone
 current_phase: 02
 current_phase_name: local-loopback-server-cli-security-hardening
-status: executing
-stopped_at: Completed 02-05-PLAN.md
-last_updated: "2026-07-12T21:41:01.240Z"
+status: verifying
+stopped_at: Completed 02-07-PLAN.md
+last_updated: "2026-07-12T21:59:45.560Z"
 last_activity: 2026-07-12
 last_activity_desc: Phase 02 execution started
 progress:
   total_phases: 6
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 14
-  completed_plans: 13
-  percent: 17
+  completed_plans: 14
+  percent: 33
 ---
 
 # Project State
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-07-11)
 
 Phase: 02 (local-loopback-server-cli-security-hardening) — EXECUTING
 Plan: 7 of 7
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-07-12 — Phase 02 execution started
 
 Progress: [░░░░░░░░░░] 0%
@@ -68,6 +68,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 02 P04 | 20min | 3 tasks | 9 files |
 | Phase 02 P05 | 20min | 3 tasks | 8 files |
 | Phase 02 P06 | 20min | 3 tasks | 7 files |
+| Phase 02 P07 | 25min | 4 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -102,6 +103,11 @@ Recent decisions affecting current work:
 - [Phase ?]: [Phase 02-05]: BuildAppOptions gained registry?/snapshotRoot?/warn? as additive optional fields; the registry is exposed on the returned FastifyInstance via app.decorate('configRegistry', registry) rather than changing buildApp's return type
 - [Phase ?]: [Phase 02-06]: Split cli.ts into a require-shim + dynamically-imported cli-main.ts to avoid a Node/tsx module-format-ambiguity error interacting with config-io's frozen import-equals require() syntax
 - [Phase ?]: [Phase 02-06]: registerSignalHandlers() gained an additive IPC 'SIGINT'/'SIGTERM' message fallback (inert for real npx launches) since Windows child_process.kill() unconditionally hard-terminates regardless of signal name in this sandboxed shell with no attached console
+- [Phase ?]: [Phase 02-07]: tsup needs splitting:false — cli.ts's dynamic import('./cli-main.js') (02-06's require-shim ordering trick) is otherwise emitted as a separate hashed chunk, breaking the single-dist/cli.js contract
+- [Phase ?]: [Phase 02-07]: No noExternal in tsup.config.ts — no npm workspaces and no @gsd-config-manager/* package names exist; packages/** are relative imports esbuild inlines automatically (02-RESEARCH.md Pitfall 4 is moot here)
+- [Phase ?]: [Phase 02-07]: Build order is a safety invariant — build:cli (tsup, cleans all of dist/) MUST run before build:client (cleans only dist/client); reversing them ships a blank page to every npx user
+- [Phase ?]: [Phase 02-07]: Rule-1 fix — bootstrap.ts's defaultClientRoot() used from-source __dirname math (3 levels up), which misresolves once tsup inlines it into dist/cli.js (__dirname is then dist/, dist/client a direct sibling); invisible to every from-source test, caught only by the extracted-tarball smoke run
+- [Phase ?]: [Phase 02-07]: DIST-04 real-Ctrl-C ground truth closed by human checkpoint sign-off, retiring the outstanding human-verification item 02-06's IPC-fallback deviation left open
 
 ### Pending Todos
 
@@ -123,6 +129,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-07-12T21:40:32.212Z
-Stopped at: Completed 02-05-PLAN.md
+Last session: 2026-07-12T21:59:45.543Z
+Stopped at: Completed 02-07-PLAN.md
 Resume file: None

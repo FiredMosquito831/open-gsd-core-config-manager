@@ -202,3 +202,15 @@ None for the tool to run. **To actually publish**, the user must run `npm publis
 ---
 *Phase: 02-local-loopback-server-cli-security-hardening*
 *Completed: 2026-07-13*
+
+## Self-Check: PASSED
+
+- FOUND: tsup.config.ts
+- FOUND: test/packaging/tarball-contents.test.ts
+- FOUND: package.json (private removed, bin/files/build/prepublishOnly present)
+- FOUND: packages/cli/src/bootstrap.ts
+- FOUND: .planning/phases/02-local-loopback-server-cli-security-hardening/02-07-SUMMARY.md
+- FOUND commit: 00dc781
+- FOUND commit: bce7a27
+- FOUND commit: 8d218c8
+- FOUND commit: f7bc29d
