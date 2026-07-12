@@ -5,7 +5,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { ValidationResult } from '../../packages/config-io/src/types.js';
 import { saveWithSnapshot } from '../../packages/server/src/snapshot-store/save-with-snapshot.js';
-import { readIndex, snapshotDirFor } from '../../packages/server/src/snapshot-store/index.js';
+import { readIndex } from '../../packages/server/src/snapshot-store/index.js';
+import { snapshotDirFor } from '../../packages/server/src/snapshot-store/paths.js';
 
 /**
  * SAVE-04 (D-10/D-11/D-12) — saveWithSnapshot orchestration tests.
