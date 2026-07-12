@@ -12,7 +12,8 @@
     "test:unit": "vitest run test/config-io --reporter=dot",
     "test:server": "vitest run test/server --reporter=dot",
     "typecheck": "tsc --noEmit",
-    "build:schema": "tsx packages/schema-data/scripts/build-schema.ts"
+    "build:schema": "tsx packages/schema-data/scripts/build-schema.ts",
+    "build:client": "node scripts/build-client.mjs"
   },
   "dependencies": {
     "@fastify/cors": "11.3.0",
