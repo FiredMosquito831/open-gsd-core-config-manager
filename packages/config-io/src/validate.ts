@@ -62,7 +62,21 @@ export function createValidator(schema: object): (data: unknown) => ValidationRe
   // the inline fixture schema in validate.test.ts never exercised a union
   // type, so this gap was invisible until Plan 07). A standard, valid JSON
   // Schema shape, not a strict-mode workaround for anything unsafe.
-  const ajv = new Ajv2020({ allErrors: true, strict: true, allowUnionTypes: true });
+  //
+  // `allowMatchingProperties: true` is required for the same real-schema
+  // reason: some dynamic-map containers (e.g. `features`) declare BOTH a
+  // few known, specifically-typed named children (`features.thinking_partner`)
+  // AND a catch-all `patternProperties` regex for arbitrary future siblings
+  // (`features.<feature_name>`) — a named key legitimately matching its own
+  // container's dynamic pattern too. This is valid, intentional JSON Schema
+  // (both schemas apply per spec); Ajv's strict mode merely flags the
+  // overlap as a possible authoring mistake by default.
+  const ajv = new Ajv2020({
+    allErrors: true,
+    strict: true,
+    allowUnionTypes: true,
+    allowMatchingProperties: true,
+  });
   addFormats(ajv);
   for (const keyword of VENDOR_KEYWORDS) {
     // Metadata-only: no validate/compile fn → always passes, just silences
