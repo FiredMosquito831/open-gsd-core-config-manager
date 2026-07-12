@@ -5,15 +5,15 @@ milestone_name: milestone
 current_phase: 01
 current_phase_name: Schema Foundation & Data-Layer Safety
 status: executing
-stopped_at: Completed 01-05-PLAN.md
-last_updated: "2026-07-12T11:24:00.489Z"
+stopped_at: Completed 01-06-PLAN.md
+last_updated: "2026-07-12T11:35:43.923Z"
 last_activity: 2026-07-12
 last_activity_desc: Phase 01 execution started
 progress:
   total_phases: 6
   completed_phases: 0
   total_plans: 7
-  completed_plans: 5
+  completed_plans: 6
   percent: 0
 ---
 
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-07-11)
 ## Current Position
 
 Phase: 01 (Schema Foundation & Data-Layer Safety) — EXECUTING
-Plan: 6 of 7
+Plan: 7 of 7
 Status: Ready to execute
 Last activity: 2026-07-12 — Phase 01 execution started
 
@@ -60,6 +60,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 01 P03 | 10min | 2 tasks | 4 files |
 | Phase 01 P04 | 12min | 2 tasks | 4 files |
 | Phase 01-schema-foundation-data-layer-safety P05 | 10min | 2 tasks | 4 files |
+| Phase 01 P06 | 9min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -78,6 +79,8 @@ Recent decisions affecting current work:
 - [Phase 01-04]: Non-ENOENT read errors in readGlobalDefaults are rethrown unmodified; only JSON.parse failures are wrapped with a path-only error message (T-01-InfoDisc-D mitigation)
 - [Phase ?]: [Phase 01-05]: canonicalDefaultsFromSchema stays literal (only declared defaults); load.ts fills missing-default known keys with a null fallback so resolveLeaf never throws against realistic real-world fixtures
 - [Phase ?]: [Phase 01-05]: unknown-key walk stops at the first node with zero known schema descendants and records the whole subtree as ONE unknown entry, matching the expected top-level fabricated-key path rather than exploding into per-leaf entries
+- [Phase ?]: [Phase 01-06]: write-file-atomic ships no .d.ts and no @types package — added a narrowly-typed ambient declaration (write-file-atomic.d.ts) rather than a blanket any-typed escape hatch
+- [Phase ?]: [Phase 01-06]: kill-mid-save.mjs uses a stdout marker handshake so the randomized kill delay is timed from 'about to write' rather than child-process spawn, since node --import tsx startup overhead otherwise swallows the whole kill window
 
 ### Pending Todos
 
@@ -99,6 +102,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-07-12T11:24:00.473Z
-Stopped at: Completed 01-05-PLAN.md
+Last session: 2026-07-12T11:35:43.906Z
+Stopped at: Completed 01-06-PLAN.md
 Resume file: None
