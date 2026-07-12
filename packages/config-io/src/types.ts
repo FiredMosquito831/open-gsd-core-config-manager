@@ -95,7 +95,14 @@ export interface ValidationResult {
  * and 05 (schema-driven UI rendering).
  */
 export interface SchemaEntry {
-  type: string;
+  /**
+   * A single JSON Schema type name, or a union array (e.g. `["object",
+   * "null"]` for a nullable dynamic-map container) — widened from a bare
+   * `string` in Plan 07 (Rule 1 — bug fix) once schema-convert.ts's
+   * `buildAjvSchema` needed to compile the real bundled schema through Ajv
+   * and several real entries carry a union `type` array.
+   */
+  type: string | string[];
   enum?: unknown[];
   default?: unknown;
   title: string;

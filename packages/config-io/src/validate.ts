@@ -53,7 +53,16 @@ const VENDOR_KEYWORDS = [
  * *schema* can throw, and only at compile time (see Pitfall 4).
  */
 export function createValidator(schema: object): (data: unknown) => ValidationResult {
-  const ajv = new Ajv2020({ allErrors: true, strict: true });
+  // `allowUnionTypes: true` is required for the real bundled schema (Plan 02's
+  // bundled-schema.json, converted to an Ajv-compilable tree by
+  // schema-convert.ts's `buildAjvSchema`): many nullable-container entries
+  // declare `type: ["object", "null"]`, and Ajv's strict mode rejects union
+  // `type` arrays unless this option is set (01-07: discovered when the
+  // round-trip-identity gate first compiled the real schema end-to-end —
+  // the inline fixture schema in validate.test.ts never exercised a union
+  // type, so this gap was invisible until Plan 07). A standard, valid JSON
+  // Schema shape, not a strict-mode workaround for anything unsafe.
+  const ajv = new Ajv2020({ allErrors: true, strict: true, allowUnionTypes: true });
   addFormats(ajv);
   for (const keyword of VENDOR_KEYWORDS) {
     // Metadata-only: no validate/compile fn → always passes, just silences
