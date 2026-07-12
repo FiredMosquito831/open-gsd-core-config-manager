@@ -62,7 +62,7 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Save Safety & Version History
 
-- [ ] **SAVE-01**: Every save validates the config against the schema before writing, blocking invalid writes with clear errors
+- [x] **SAVE-01**: Every save validates the config against the schema before writing, blocking invalid writes with clear errors
 - [ ] **SAVE-02**: Saves write atomically (temp file + fsync + rename) with Windows lock/permission retry, so a crash never corrupts the file
 - [x] **SAVE-03**: Saving preserves the full original parsed document, including unknown/future keys, comments-tolerant formatting, and key order where feasible (patch-in-place, never rebuilt from form state)
 - [ ] **SAVE-04**: Every save creates a version snapshot stored outside the tracked project directory
@@ -104,7 +104,7 @@ Which phases cover which requirements. Populated during roadmap creation.
 |-------------|-------|--------|
 | SCHEMA-01 | Phase 1 | Complete |
 | DISC-06 | Phase 1 | Pending |
-| SAVE-01 | Phase 1 | Pending |
+| SAVE-01 | Phase 1 | Complete |
 | SAVE-02 | Phase 1 | Pending |
 | SAVE-03 | Phase 1 | Complete |
 | DIST-01 | Phase 2 | Pending |

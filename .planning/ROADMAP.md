@@ -35,7 +35,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   4. Killing the write process mid-save never leaves config.json truncated or corrupted on Windows — the file is always fully the old content or fully the new content, verified by repeated kill-mid-save testing.
   5. Loading a project config resolves effective values by merging canonical schema defaults with the global `~/.gsd/defaults.json` layer and the project's `config.json`, with each value traceable to the layer that supplied it.
 
-**Plans**: 2/7 plans executed
+**Plans**: 3/7 plans executed
 Plans:
 **Wave 1**
 
@@ -44,7 +44,7 @@ Plans:
 **Wave 2** *(blocked on Wave 1 completion)*
 
 - [x] 01-02-PLAN.md — Bundled canonical schema via 4-source reconciliation + one-line docs + completeness gate (SCHEMA-01) [wave 2]
-- [ ] 01-03-PLAN.md — Ajv 2020-12 validator (open additionalProperties) + prototype-pollution-safe safeSet (SAVE-01) [wave 2]
+- [x] 01-03-PLAN.md — Ajv 2020-12 validator (open additionalProperties) + prototype-pollution-safe safeSet (SAVE-01) [wave 2]
 - [ ] 01-04-PLAN.md — Global-defaults discovery (DISC-06) + layered merge with provenance (SAVE-03) [wave 2]
 
 **Wave 3** *(blocked on Wave 2 completion)*
@@ -139,7 +139,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Schema Foundation & Data-Layer Safety | 2/7 | In Progress|  |
+| 1. Schema Foundation & Data-Layer Safety | 3/7 | In Progress|  |
 | 2. Local Loopback Server, CLI & Security Hardening | 0/TBD | Not started | - |
 | 3. Generic Schema-Driven UI Shell | 0/TBD | Not started | - |
 | 4. Pool Editors & Model Profile Specialization | 0/TBD | Not started | - |
