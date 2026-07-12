@@ -53,6 +53,31 @@ function idFor(resolvedPath: string): string {
   return createHash('sha256').update(resolvedPath).digest('hex').slice(0, 32);
 }
 
+/**
+ * WR-02: `track()` validates a path's regular-file-ness only at track time.
+ * Nothing re-checks that afterward — if the path is later replaced by a
+ * directory (or otherwise stops being a regular file) between track time
+ * and a subsequent GET/PUT, the route would previously let the resulting
+ * uncaught fs error (EISDIR etc.) fall through to the generic error
+ * handler (CR-01). This re-check lets the route return the SAME static
+ * "Unknown tracked config id" 404 instead, without ever re-interpolating
+ * the path (T-02-25).
+ *
+ * Returns `true` when the path does not exist yet — a not-yet-created
+ * config is a legitimate state (the "create new config" PUT flow depends
+ * on it) — or when it exists and is a regular file. Returns `false` only
+ * when something exists at the path that is NOT a regular file.
+ */
+export function isRegularFileOrMissing(resolvedPath: string): boolean {
+  let stat;
+  try {
+    stat = statSync(resolvedPath);
+  } catch {
+    return true;
+  }
+  return stat.isFile();
+}
+
 function nameFor(resolvedPath: string): string {
   return `${basename(dirname(resolvedPath))}/${basename(resolvedPath)}`;
 }

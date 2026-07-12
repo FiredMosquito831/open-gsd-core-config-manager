@@ -22,7 +22,7 @@ import type { FastifyPluginAsync } from 'fastify';
 import { load } from '../../../config-io/src/index.js';
 import { getBundledSchema, getValidator } from '../schema.js';
 import { saveWithSnapshot } from '../snapshot-store/save-with-snapshot.js';
-import { RegistryError, type ConfigRegistry } from '../registry.js';
+import { RegistryError, isRegularFileOrMissing, type ConfigRegistry } from '../registry.js';
 import type { ApiErr } from '../api-types.js';
 
 export interface ConfigRoutesOptions {
@@ -73,6 +73,12 @@ export const configRoutes: FastifyPluginAsync<ConfigRoutesOptions> = async (app,
     if (!tracked) {
       return reply.code(404).send(errBody('Unknown tracked config id'));
     }
+    // WR-02: the path may have been replaced by a directory (or other
+    // non-regular file) since track() last validated it — re-check rather
+    // than let the resulting fs error fall through to the generic handler.
+    if (!isRegularFileOrMissing(tracked.path)) {
+      return reply.code(404).send(errBody('Unknown tracked config id'));
+    }
 
     try {
       const data = await load(tracked.path, { schema: getBundledSchema() });
@@ -93,6 +99,12 @@ export const configRoutes: FastifyPluginAsync<ConfigRoutesOptions> = async (app,
     async (req, reply) => {
       const tracked = registry.resolve(req.params.id);
       if (!tracked) {
+        return reply.code(404).send(errBody('Unknown tracked config id'));
+      }
+      // WR-02: same re-check as GET. A not-yet-existing path is still a
+      // valid PUT target (the "create new config" flow) — only reject when
+      // something non-regular now sits at the path.
+      if (!isRegularFileOrMissing(tracked.path)) {
         return reply.code(404).send(errBody('Unknown tracked config id'));
       }
 

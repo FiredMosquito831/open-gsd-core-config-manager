@@ -248,6 +248,24 @@ describe('GET /api/configs/:id — a non-ENOENT read failure never leaks the abs
   });
 });
 
+describe('GET /api/configs/:id — a tracked path replaced by a directory returns the same 404 (WR-02)', () => {
+  it('a tracked path replaced by a directory returns the same 404', async () => {
+    const id = await trackConfig();
+    // Simulate the tracked path stopping being a regular file between
+    // track() and this request — swap it for a directory.
+    const { rmSync, mkdirSync } = await import('node:fs');
+    rmSync(configPath, { force: true });
+    mkdirSync(configPath);
+
+    const res = await app.inject({ method: 'GET', url: `/api/configs/${id}`, headers: authHeaders() });
+    expect(res.statusCode).toBe(404);
+    const body = res.json() as { ok: boolean; errors: Array<{ message: string }> };
+    expect(body.ok).toBe(false);
+    expect(res.body).not.toContain(configPath);
+    expect(res.body).not.toContain(projectDir);
+  });
+});
+
 describe('PUT /api/configs/:id — never accepts a filesystem path on the save route', () => {
   it('never accepts a filesystem path on the save route', async () => {
     const id = await trackConfig();
