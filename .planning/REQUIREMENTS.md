@@ -36,7 +36,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [ ] **DISC-03**: User can scan a chosen folder to discover `.planning/config.json` files and add them to the sidebar (respecting `node_modules`/`.git` boundaries)
 - [ ] **DISC-04**: User can create a brand-new config file initialized from defaults
 - [ ] **DISC-05**: Clicking a config in the sidebar loads its data into the editor for viewing and modifying
-- [ ] **DISC-06**: The tool locates and loads the applicable `defaults.json` (global `~/.gsd/defaults.json`) alongside a project config
+- [x] **DISC-06**: The tool locates and loads the applicable `defaults.json` (global `~/.gsd/defaults.json`) alongside a project config
 
 ### Editing UI
 
@@ -103,7 +103,7 @@ Which phases cover which requirements. Populated during roadmap creation.
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | SCHEMA-01 | Phase 1 | Complete |
-| DISC-06 | Phase 1 | Pending |
+| DISC-06 | Phase 1 | Complete |
 | SAVE-01 | Phase 1 | Complete |
 | SAVE-02 | Phase 1 | Pending |
 | SAVE-03 | Phase 1 | Complete |
