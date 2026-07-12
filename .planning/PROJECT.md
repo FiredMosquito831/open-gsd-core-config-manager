@@ -12,11 +12,11 @@ A user can open any GSD `config.json`, understand exactly what every setting and
 
 ### Validated
 
-(None yet — ship to validate)
+- [x] Saving is corruption-safe: schema validation before write, atomic write (temp file + rename). — *Validated in Phase 1: Schema Foundation & Data-Layer Safety (SAVE-01, SAVE-02, SAVE-03)*
+- [x] User can install and launch the tool with a single command (`npx <package>`) with no separate server setup — a local loopback helper serves the UI and performs file I/O. — *Validated in Phase 2: Local Loopback Server, CLI & Security Hardening (DIST-01, DIST-02, DIST-03, DIST-04). The server binds 127.0.0.1 only and is guarded by a Host allowlist, an Origin check, and a per-launch token — loopback binding alone is not treated as a trust boundary (SEC-01, SEC-02).*
 
 ### Active
 
-- [ ] User can install and launch the tool with a single command (`npx <package>`) with no separate server setup — a local loopback helper serves the UI and performs file I/O.
 - [ ] UI presents all GSD config keys organized into category tabs ("chapters") derived from the canonical gsd-core config structure.
 - [ ] Every field shows a full plain-language explanation of what it does; every option/enum value shows what that specific choice means and its implications — written for beginners.
 - [ ] The tool bundles a curated canonical schema (keys, types, options, descriptions, defaults) derived from gsd-core docs + `defaults.json`, and can also refresh/reconcile it against the live open-gsd/gsd-core repository to construct an up-to-date canonical config.
@@ -27,8 +27,7 @@ A user can open any GSD `config.json`, understand exactly what every setting and
 - [ ] Left sidebar lists all tracked config files; clicking one loads its data into the editor for viewing/modifying.
 - [ ] User can create a brand-new config file from defaults.
 - [ ] Array-valued keys are edited as "pools": user can add, configure, reorder, and remove individual entries through guided controls rather than raw JSON.
-- [ ] Saving is corruption-safe: schema validation before write, atomic write (temp file + rename).
-- [ ] Every save is snapshotted into a browsable version history per config, with diff view and one-click revert.
+- [ ] Every save is snapshotted into a browsable version history per config, with diff view and one-click revert. — *Partially delivered: the snapshot mechanism itself (SAVE-04) landed in Phase 2 — every successful save writes a timestamped snapshot into the OS app-data directory, outside the tracked project. The browse/diff/revert UI on top of it is Phase 5.*
 - [ ] User can view, edit, and create custom GSD model profiles per gsd-core docs, including per-agent/role overrides.
 - [ ] UI is visually rich, polished, and user-friendly (clear typography, category navigation, inline help).
 
@@ -84,4 +83,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-07-11 after initialization*
+*Last updated: 2026-07-13 after Phase 2 (Local Loopback Server, CLI & Security Hardening) completed*
