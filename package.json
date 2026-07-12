@@ -10,18 +10,26 @@
   "scripts": {
     "test": "vitest run",
     "test:unit": "vitest run test/config-io --reporter=dot",
+    "test:server": "vitest run test/server --reporter=dot",
     "typecheck": "tsc --noEmit",
     "build:schema": "tsx packages/schema-data/scripts/build-schema.ts"
   },
   "dependencies": {
+    "@fastify/cors": "11.3.0",
+    "@fastify/static": "10.1.0",
     "ajv": "8.20.0",
     "ajv-formats": "3.0.1",
+    "commander": "15.0.0",
+    "env-paths": "4.0.0",
+    "fastify": "5.10.0",
+    "open": "11.0.0",
     "proper-lockfile": "4.1.2",
     "write-file-atomic": "7.0.1"
   },
   "devDependencies": {
     "@types/node": "26.1.1",
     "@types/proper-lockfile": "4.1.4",
+    "tsup": "8.5.1",
     "tsx": "4.23.0",
     "typescript": "5.9.3",
     "vitest": "4.1.10"
