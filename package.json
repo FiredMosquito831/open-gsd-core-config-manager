@@ -1,9 +1,15 @@
 {
   "name": "gsd-config-manager",
-  "version": "0.0.0",
-  "private": true,
+  "version": "0.1.0",
   "type": "module",
   "description": "Zero-config-friendly desktop-grade tool for viewing, understanding, and safely editing GSD (open-gsd/gsd-core) configuration files.",
+  "bin": {
+    "gsd-config-manager": "./dist/cli.js"
+  },
+  "files": [
+    "dist/cli.js",
+    "dist/client/**"
+  ],
   "engines": {
     "node": ">=20.19"
   },
@@ -13,7 +19,10 @@
     "test:server": "vitest run test/server --reporter=dot",
     "typecheck": "tsc --noEmit",
     "build:schema": "tsx packages/schema-data/scripts/build-schema.ts",
-    "build:client": "node scripts/build-client.mjs"
+    "build:cli": "tsup",
+    "build:client": "node scripts/build-client.mjs",
+    "build": "npm run build:cli && npm run build:client",
+    "prepublishOnly": "npm run build"
   },
   "dependencies": {
     "@fastify/cors": "11.3.0",
