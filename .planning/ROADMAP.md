@@ -69,7 +69,7 @@ Plans:
   4. The tool is installable as a single public npm package with the built UI bundled inside it.
   5. Every successful save automatically creates a version snapshot stored outside the tracked project directory, with no extra user action required.
 
-**Plans**: 1/7 plans executed
+**Plans**: 2/7 plans executed
 Plans:
 **Wave 1**
 
@@ -77,7 +77,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1)*
 
-- [ ] 02-02-PLAN.md — Snapshot store (app-data, path-hashed, seq/timestamp/hash index) + saveWithSnapshot composing Phase 1's frozen saveConfig (SAVE-04) [wave 2]
+- [x] 02-02-PLAN.md — Snapshot store (app-data, path-hashed, seq/timestamp/hash index) + saveWithSnapshot composing Phase 1's frozen saveConfig (SAVE-04) [wave 2]
 - [ ] 02-03-PLAN.md — Placeholder client page (D-05 token flow) + the frozen dist/client build contract (DIST-03) [wave 2]
 
 **Wave 3** *(blocked on Wave 2)*
@@ -162,7 +162,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Schema Foundation & Data-Layer Safety | 7/7 | Complete    | 2026-07-12 |
-| 2. Local Loopback Server, CLI & Security Hardening | 1/7 | In Progress|  |
+| 2. Local Loopback Server, CLI & Security Hardening | 2/7 | In Progress|  |
 | 3. Generic Schema-Driven UI Shell | 0/TBD | Not started | - |
 | 4. Pool Editors & Model Profile Specialization | 0/TBD | Not started | - |
 | 5. Version History UI | 0/TBD | Not started | - |

@@ -65,7 +65,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **SAVE-01**: Every save validates the config against the schema before writing, blocking invalid writes with clear errors
 - [x] **SAVE-02**: Saves write atomically (temp file + fsync + rename) with Windows lock/permission retry, so a crash never corrupts the file
 - [x] **SAVE-03**: Saving preserves the full original parsed document, including unknown/future keys, comments-tolerant formatting, and key order where feasible (patch-in-place, never rebuilt from form state)
-- [ ] **SAVE-04**: Every save creates a version snapshot stored outside the tracked project directory
+- [x] **SAVE-04**: Every save creates a version snapshot stored outside the tracked project directory
 - [ ] **SAVE-05**: User can browse a per-config snapshot history and view a structural diff between any snapshot and the current file
 - [ ] **SAVE-06**: User can revert to a previous snapshot with one click, routed through the same validate→atomic-write→snapshot pipeline
 
@@ -113,7 +113,7 @@ Which phases cover which requirements. Populated during roadmap creation.
 | DIST-04 | Phase 2 | Pending |
 | SEC-01 | Phase 2 | Pending |
 | SEC-02 | Phase 2 | Pending |
-| SAVE-04 | Phase 2 | Pending |
+| SAVE-04 | Phase 2 | Complete |
 | SCHEMA-02 | Phase 3 | Pending |
 | SCHEMA-03 | Phase 3 | Pending |
 | SCHEMA-04 | Phase 3 | Pending |
