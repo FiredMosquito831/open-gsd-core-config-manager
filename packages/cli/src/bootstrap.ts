@@ -33,6 +33,7 @@
  * in-process tests can call `bootstrap()` repeatedly without installing a
  * process-wide handler per test.
  */
+import { existsSync } from 'node:fs';
 import type { AddressInfo } from 'node:net';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -44,8 +45,29 @@ import { createOutput, type OutputPort } from './output.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-/** `dist/client`, resolved relative to the running module (packages/cli/src -> repo root). */
+/**
+ * `dist/client`, resolved relative to the running module. This must handle
+ * TWO different on-disk layouts, not one:
+ *   - From source (tsx, tests): this file lives at `packages/cli/src/`, three
+ *     directories below the repo root, which is where `dist/client` lives.
+ *   - Bundled (tsup's `dist/cli.js`, the published artifact): this module's
+ *     code is inlined directly into `dist/cli.js`, so `__dirname` at runtime
+ *     is `dist/` itself — `dist/client` is a DIRECT SIBLING, not three
+ *     levels up. Reusing the from-source math here would walk three levels
+ *     above the package root and silently miss the shipped client bundle
+ *     (caught by 02-07-PLAN.md Task 3's extracted-tarball smoke run, which
+ *     runs the built `dist/cli.js` from a clean extraction outside the repo
+ *     — a check the in-repo test suite can never exercise since `__dirname`
+ *     there is always the source-layout path).
+ * Try the bundled (sibling) layout first and fall back to the from-source
+ * layout only if it doesn't resolve, rather than branching on how the
+ * process was launched.
+ */
 function defaultClientRoot(): string {
+  const bundledCandidate = join(__dirname, 'client');
+  if (existsSync(join(bundledCandidate, 'index.html'))) {
+    return bundledCandidate;
+  }
   return join(__dirname, '..', '..', '..', 'dist', 'client');
 }
 
