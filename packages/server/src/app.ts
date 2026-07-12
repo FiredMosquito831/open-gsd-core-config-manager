@@ -27,7 +27,7 @@
  * `buildApp()` never calls `listen()` — the CLI (Plan 06) owns the socket
  * lifecycle.
  */
-import Fastify, { type FastifyInstance } from 'fastify';
+import Fastify, { type FastifyError, type FastifyInstance } from 'fastify';
 import fastifyCors from '@fastify/cors';
 import type { LaunchContext } from './context.js';
 import { registerHostGuard } from './plugins/host-guard.js';
@@ -64,6 +64,24 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
   const app = Fastify({ logger: opts.logger ?? false });
   const registry = opts.registry ?? createRegistry();
   app.decorate('configRegistry', registry);
+  const warn = opts.warn ?? console.warn;
+
+  // Project-wide error handler (CR-01 fix): every guard above sends its own
+  // `reply.code(403).send(...)` directly rather than throwing, so this
+  // handler never sees — and never overrides — the guards' 403 envelopes.
+  // It only ever catches a genuinely UNEXPECTED thrown error (e.g. a
+  // non-ENOENT filesystem error or a JSON-parse failure from `load()`,
+  // which embeds the absolute config path in `err.message` — see
+  // config-io/src/load.ts). The real error is logged server-side only; the
+  // client always gets a fixed, static, path-free message (T-02-19/T-02-25
+  // Information Disclosure guard).
+  app.setErrorHandler((err: FastifyError, req, reply) => {
+    if (err.validation) {
+      return reply.code(400).send({ ok: false, errors: [{ message: 'Invalid request body' }] });
+    }
+    warn(`Unhandled error on ${req.method} ${req.url}: ${err.message}`);
+    return reply.code(500).send({ ok: false, errors: [{ message: 'Internal error' }] });
+  });
 
   // 1. Root-scope Host allowlist — covers every route, including static.
   registerHostGuard(app, opts.ctx);

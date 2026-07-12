@@ -230,6 +230,24 @@ describe('PUT /api/configs/:id — returns 422 with field errors when the saved 
   });
 });
 
+describe('GET /api/configs/:id — a non-ENOENT read failure never leaks the absolute path (CR-01)', () => {
+  it('a non-ENOENT read failure never leaks the absolute path', async () => {
+    const id = await trackConfig();
+    // Corrupt the tracked file so load()'s JSON.parse fails — config-io's
+    // load.ts embeds the absolute path in that thrown error's message.
+    writeFileSync(configPath, '{ not valid json', 'utf8');
+
+    const res = await app.inject({ method: 'GET', url: `/api/configs/${id}`, headers: authHeaders() });
+    expect(res.statusCode).toBe(500);
+    const body = res.json() as { ok: boolean; errors: Array<{ message: string }> };
+    expect(body.ok).toBe(false);
+    expect(body.errors.length).toBeGreaterThan(0);
+    // No absolute path anywhere in the response body.
+    expect(res.body).not.toContain(configPath);
+    expect(res.body).not.toContain(projectDir);
+  });
+});
+
 describe('PUT /api/configs/:id — never accepts a filesystem path on the save route', () => {
   it('never accepts a filesystem path on the save route', async () => {
     const id = await trackConfig();
