@@ -156,6 +156,22 @@ describe('saveWithSnapshot — validation failure blocks the write and records n
   });
 });
 
+describe('saveWithSnapshot — a failed first-ever save leaves NO stray stub file behind (CR-02)', () => {
+  it('a failed first-ever save leaves NO stray stub file behind', async () => {
+    expect(existsSync(configPath)).toBe(false);
+
+    const result = await saveWithSnapshot(configPath, { a: 'bad' }, alwaysInvalid, { root: appDataRoot });
+
+    expect(result.ok).toBe(false);
+    // The pre-touch stub this call created must be rolled back — the
+    // filesystem must be left exactly as it was found (no file at all).
+    expect(existsSync(configPath)).toBe(false);
+
+    const dir = snapshotDirFor(configPath, appDataRoot);
+    expect(existsSync(dir)).toBe(false);
+  });
+});
+
 function writeFile(path: string, content: string): void {
   writeFileSync(path, content, 'utf8');
 }

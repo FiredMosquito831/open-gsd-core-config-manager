@@ -44,7 +44,7 @@
  * regardless, and `saveConfig`'s own validate -> atomic-write pipeline
  * still runs unmodified against the real target path.
  */
-import { readFile, writeFile } from 'node:fs/promises';
+import { readFile, unlink, writeFile } from 'node:fs/promises';
 import { saveConfig, ValidationError } from '../../../config-io/src/index.js';
 import type { ValidationResult } from '../../../config-io/src/types.js';
 import { recordSnapshot } from './index.js';
@@ -79,6 +79,11 @@ export async function saveWithSnapshot(
   // 1. Read current on-disk content (for the pre-write snapshot). D-11:
   //    ENOENT means this is a brand-new file — nothing to snapshot.
   let priorContent: string | null;
+  // CR-02 fix: tracks whether THIS call created the pre-touch stub, so a
+  // subsequent saveConfig failure can roll it back and leave the
+  // filesystem exactly as it was found — never unlinking a pre-existing
+  // user file.
+  let stubCreated = false;
   try {
     priorContent = await readFile(configPath, 'utf8');
   } catch (err) {
@@ -88,9 +93,14 @@ export async function saveWithSnapshot(
       // file to already exist — pre-touch an empty stub so the frozen
       // pipeline can lock a brand-new path. Safe: priorContent is already
       // captured as null above, so the snapshot skip (D-11) is unaffected.
-      await writeFile(configPath, '', { flag: 'wx' }).catch((touchErr) => {
-        if ((touchErr as NodeJS.ErrnoException).code !== 'EEXIST') throw touchErr;
-      });
+      await writeFile(configPath, '', { flag: 'wx' }).then(
+        () => {
+          stubCreated = true;
+        },
+        (touchErr) => {
+          if ((touchErr as NodeJS.ErrnoException).code !== 'EEXIST') throw touchErr;
+        },
+      );
     } else {
       throw err;
     }
@@ -99,10 +109,16 @@ export async function saveWithSnapshot(
   // 2. Call the frozen saveConfig UNMODIFIED. A validation failure is a
   //    soft failure surfaced to the caller; any other error is a genuine
   //    write failure and must propagate (the user must know their save did
-  //    not happen).
+  //    not happen). CR-02: if THIS call created the pre-touch stub above
+  //    and the save did not succeed, unlink it so a brand-new path's
+  //    failed first save leaves no file behind — matching the pre-existing
+  //    file behavior of "on-disk file guaranteed byte-unchanged".
   try {
     await saveConfig(configPath, nextConfig, validate);
   } catch (err) {
+    if (stubCreated) {
+      await unlink(configPath).catch(() => undefined);
+    }
     if (err instanceof ValidationError) {
       return { ok: false, errors: err.errors };
     }
