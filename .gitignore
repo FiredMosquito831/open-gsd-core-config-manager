@@ -1,0 +1,14 @@
+node_modules/
+dist/
+*.tmp
+*.log
+
+# OS cruft
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor
+.vscode/*
+!.vscode/extensions.json
+.idea/

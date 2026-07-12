@@ -1,0 +1,29 @@
+{
+  "name": "gsd-config-manager",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Zero-config-friendly desktop-grade tool for viewing, understanding, and safely editing GSD (open-gsd/gsd-core) configuration files.",
+  "engines": {
+    "node": ">=20.19"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "test:unit": "vitest run test/config-io --reporter=dot",
+    "typecheck": "tsc --noEmit",
+    "build:schema": "tsx packages/schema-data/scripts/build-schema.ts"
+  },
+  "dependencies": {
+    "ajv": "8.20.0",
+    "ajv-formats": "3.0.1",
+    "proper-lockfile": "4.1.2",
+    "write-file-atomic": "7.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "26.1.1",
+    "@types/proper-lockfile": "4.1.4",
+    "tsx": "4.23.0",
+    "typescript": "5.9.3",
+    "vitest": "4.1.10"
+  }
+}
