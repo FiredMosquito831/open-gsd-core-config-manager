@@ -247,8 +247,17 @@ describe('extracted-tarball smoke run (DIST-01, DIST-03, DIST-04)', () => {
         headers: { 'x-gsd-token': token },
       });
       expect(healthRes.status).toBe(200);
-      const healthBody = (await healthRes.json()) as { ok: boolean };
+      const healthBody = (await healthRes.json()) as { ok: boolean; version?: string };
       expect(healthBody.ok).toBe(true);
+      // WR-01 regression guard: readPackageVersion()'s old __dirname-walk
+      // landmine only breaks in the BUNDLED artifact (this exact extracted,
+      // outside-the-repo run) — it always "worked" from source, which is why
+      // this assertion has to live in the extracted-tarball smoke run and
+      // not merely in an in-repo unit test. Must match the real
+      // package.json's version, never the "walk failed, fell back" sentinel.
+      const rootPkg = JSON.parse(readFileSync(join(REPO_ROOT, 'package.json'), 'utf8')) as { version: string };
+      expect(healthBody.version).toBe(rootPkg.version);
+      expect(healthBody.version).not.toBe('0.0.0');
 
       // 8. SIGINT-equivalent (see the spawn comment above) -- assert clean
       // exit and the ordered shutdown copy.

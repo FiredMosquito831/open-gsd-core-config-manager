@@ -4,26 +4,20 @@
  * no other dependencies — `web/index.html`'s bootstrap script calls exactly
  * this route. Never returns the launch token, never echoes any request
  * header.
+ *
+ * WR-01 fix: the version is imported as a JSON MODULE (`with { type:
+ * 'json' }`), the exact bundle-safe pattern `schema.ts` already uses for
+ * the bundled schema — esbuild/tsup inlines the value directly into
+ * `dist/cli.js` at build time, so there is no runtime `import.meta.url`/
+ * `__dirname` walk at all (the landmine `bootstrap.ts#defaultClientRoot()`
+ * documents: that walk resolves correctly only under the from-source
+ * layout and lands outside the installed package once bundled, silently
+ * falling back to `0.0.0` on every real `npx` install).
  */
-import { readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import type { FastifyInstance } from 'fastify';
+import pkg from '../../../../package.json' with { type: 'json' };
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-
-/** Best-effort read of the root package.json's version; never throws. */
-function readPackageVersion(): string {
-  try {
-    const pkgPath = join(__dirname, '..', '..', '..', '..', 'package.json');
-    const pkg = JSON.parse(readFileSync(pkgPath, 'utf8')) as { version?: string };
-    return pkg.version ?? '0.0.0';
-  } catch {
-    return '0.0.0';
-  }
-}
-
-const VERSION = readPackageVersion();
+const VERSION = (pkg as { version?: string }).version ?? '0.0.0';
 
 export async function healthRoutes(app: FastifyInstance): Promise<void> {
   app.get('/health', async () => ({
