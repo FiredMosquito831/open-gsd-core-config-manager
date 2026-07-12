@@ -149,3 +149,15 @@ describe('SPA fallback — unknown non-API route (T-02-22 regression guard)', ()
     expect(res.body).toContain(FIXTURE_MARKER);
   });
 });
+
+describe('token guard — rejects missing token on the mutation route (SEC-02, literal requirement)', () => {
+  it('rejects missing token', async () => {
+    const res = await app.inject({
+      method: 'PUT',
+      url: '/api/configs/00000000000000000000000000000000',
+      headers: { host: HOST },
+      payload: { config: { a: 1 } },
+    });
+    expectForbiddenShape(res);
+  });
+});
