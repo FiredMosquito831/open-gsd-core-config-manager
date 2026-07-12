@@ -36,15 +36,34 @@ import { registerTokenGuard } from './plugins/token-guard.js';
 import { buildCorsOptions } from './plugins/cors.js';
 import { registerStatic } from './static/serve.js';
 import { healthRoutes } from './routes/health.js';
+import { configRoutes } from './routes/configs.js';
+import { createRegistry, type ConfigRegistry } from './registry.js';
+
+// Exposes the tracked-config registry on the built FastifyInstance (Plan 05)
+// so the CLI (Plan 06) can reach the same registry instance `buildApp`
+// constructed, without changing `buildApp`'s return type.
+declare module 'fastify' {
+  interface FastifyInstance {
+    configRegistry: ConfigRegistry;
+  }
+}
 
 export interface BuildAppOptions {
   ctx: LaunchContext;
   clientRoot: string;
   logger?: boolean | object;
+  /** Pre-existing registry to reuse (defaults to a fresh `createRegistry()`). */
+  registry?: ConfigRegistry;
+  /** Injected app-data root for `saveWithSnapshot` (test seam — see snapshot-store/paths.ts). */
+  snapshotRoot?: string;
+  /** Sink for saveWithSnapshot's D-12 non-fatal snapshot-failure warning (defaults to console.warn). */
+  warn?: (message: string) => void;
 }
 
 export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> {
   const app = Fastify({ logger: opts.logger ?? false });
+  const registry = opts.registry ?? createRegistry();
+  app.decorate('configRegistry', registry);
 
   // 1. Root-scope Host allowlist — covers every route, including static.
   registerHostGuard(app, opts.ctx);
@@ -59,6 +78,7 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
       registerOriginGuard(api, opts.ctx);
       registerTokenGuard(api, opts.ctx);
       await api.register(healthRoutes);
+      await api.register(configRoutes, { registry, snapshotRoot: opts.snapshotRoot, warn: opts.warn });
     },
     { prefix: '/api' },
   );
