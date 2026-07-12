@@ -69,7 +69,7 @@ describe('buildEffectiveTree', () => {
       value: 'deep',
       from: 'global',
     });
-    expect(tree.mode).toEqual({ path: 'mode', value: 'batch', from: 'canonical' });
+    expect(tree.mode).toEqual({ path: 'mode', value: 'interactive', from: 'global' });
   });
 });
 
