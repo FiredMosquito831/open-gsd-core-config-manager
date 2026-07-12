@@ -16,8 +16,8 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Security (loopback trust model)
 
-- [ ] **SEC-01**: The local helper binds only to 127.0.0.1 and rejects requests whose Host header is not in an explicit allowlist (DNS-rebinding protection)
-- [ ] **SEC-02**: Mutating (write) requests require a per-launch random token embedded in the opened URL; requests without it are rejected
+- [x] **SEC-01**: The local helper binds only to 127.0.0.1 and rejects requests whose Host header is not in an explicit allowlist (DNS-rebinding protection)
+- [x] **SEC-02**: Mutating (write) requests require a per-launch random token embedded in the opened URL; requests without it are rejected
 - [ ] **SEC-03**: Integration/API-key config fields are masked in the UI by default and never logged
 
 ### Schema & Documentation
@@ -111,8 +111,8 @@ Which phases cover which requirements. Populated during roadmap creation.
 | DIST-02 | Phase 2 | Pending |
 | DIST-03 | Phase 2 | Complete |
 | DIST-04 | Phase 2 | Pending |
-| SEC-01 | Phase 2 | Pending |
-| SEC-02 | Phase 2 | Pending |
+| SEC-01 | Phase 2 | Complete |
+| SEC-02 | Phase 2 | Complete |
 | SAVE-04 | Phase 2 | Complete |
 | SCHEMA-02 | Phase 3 | Pending |
 | SCHEMA-03 | Phase 3 | Pending |

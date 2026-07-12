@@ -6,14 +6,14 @@ current_phase: 02
 current_phase_name: local-loopback-server-cli-security-hardening
 status: executing
 stopped_at: Completed 02-01-PLAN.md
-last_updated: "2026-07-12T20:52:53.658Z"
+last_updated: "2026-07-12T21:01:54.474Z"
 last_activity: 2026-07-12
 last_activity_desc: Phase 02 execution started
 progress:
   total_phases: 6
   completed_phases: 1
   total_plans: 14
-  completed_plans: 10
+  completed_plans: 11
   percent: 17
 ---
 
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-07-11)
 ## Current Position
 
 Phase: 02 (local-loopback-server-cli-security-hardening) — EXECUTING
-Plan: 4 of 7
+Plan: 5 of 7
 Status: Ready to execute
 Last activity: 2026-07-12 — Phase 02 execution started
 
@@ -65,6 +65,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 02 P01 | 12min | 3 tasks | 4 files |
 | Phase 02 P02 | 15min | 3 tasks | 4 files |
 | Phase 02 P03 | 8min | 2 tasks | 3 files |
+| Phase 02 P04 | 20min | 3 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -92,6 +93,8 @@ Recent decisions affecting current work:
 - [Phase 02]: proper-lockfile's lock() defaults to realpath:true and cannot lock a nonexistent file — saveWithSnapshot pre-touches an empty stub file (after capturing priorContent as null) so brand-new config saves succeed through the frozen saveConfig pipeline
 - [Phase ?]: [Phase 02-03]: Placeholder client page kept fully dependency-free (no Vite/React) per 02-CONTEXT.md discretion note
 - [Phase ?]: [Phase 02-03]: scripts/build-client.mjs cleans only dist/client (never dist/) so a later tsup step that cleans dist/ cannot race-delete dist/cli.js
+- [Phase 02]: [Phase 02-04]: Implemented the plan's <cors_correction> deviation exactly as specified -- @fastify/cors alone cannot produce a server-side 403 for a mismatched Origin (it only omits a response header, invisible to fastify.inject()); a separate origin-guard.ts onRequest hook returns the real 403
+- [Phase 02]: [Phase 02-04]: LaunchContext is mutable by design, read at request time rather than captured at hook-registration time, because the ephemeral port (and allowedHosts/corsOrigin derived from it) is only known after listen() resolves; every guard fails closed against an unsealed context
 
 ### Pending Todos
 
@@ -113,6 +116,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-07-12T20:52:30.816Z
+Last session: 2026-07-12T21:01:30.584Z
 Stopped at: Completed 02-01-PLAN.md
 Resume file: None

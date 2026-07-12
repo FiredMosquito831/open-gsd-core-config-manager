@@ -69,7 +69,7 @@ Plans:
   4. The tool is installable as a single public npm package with the built UI bundled inside it.
   5. Every successful save automatically creates a version snapshot stored outside the tracked project directory, with no extra user action required.
 
-**Plans**: 3/7 plans executed
+**Plans**: 4/7 plans executed
 Plans:
 **Wave 1**
 
@@ -82,7 +82,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2)*
 
-- [ ] 02-04-PLAN.md — Fastify security shell: root Host allowlist, /api-scoped Origin guard + CORS lock + x-gsd-token guard, unguarded static serving (SEC-01, SEC-02) [wave 3]
+- [x] 02-04-PLAN.md — Fastify security shell: root Host allowlist, /api-scoped Origin guard + CORS lock + x-gsd-token guard, unguarded static serving (SEC-01, SEC-02) [wave 3]
 
 **Wave 4** *(blocked on Wave 3)*
 
@@ -162,7 +162,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Schema Foundation & Data-Layer Safety | 7/7 | Complete    | 2026-07-12 |
-| 2. Local Loopback Server, CLI & Security Hardening | 3/7 | In Progress|  |
+| 2. Local Loopback Server, CLI & Security Hardening | 4/7 | In Progress|  |
 | 3. Generic Schema-Driven UI Shell | 0/TBD | Not started | - |
 | 4. Pool Editors & Model Profile Specialization | 0/TBD | Not started | - |
 | 5. Version History UI | 0/TBD | Not started | - |
