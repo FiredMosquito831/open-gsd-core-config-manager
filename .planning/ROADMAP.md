@@ -69,7 +69,29 @@ Plans:
   4. The tool is installable as a single public npm package with the built UI bundled inside it.
   5. Every successful save automatically creates a version snapshot stored outside the tracked project directory, with no extra user action required.
 
-**Plans**: TBD
+**Plans**: 7 plans
+Plans:
+**Wave 1**
+
+- [ ] 02-01-PLAN.md — Dependencies (exact pins) behind a package-legitimacy human gate + the shared spawnCli test harness [wave 1]
+
+**Wave 2** *(blocked on Wave 1)*
+
+- [ ] 02-02-PLAN.md — Snapshot store (app-data, path-hashed, seq/timestamp/hash index) + saveWithSnapshot composing Phase 1's frozen saveConfig (SAVE-04) [wave 2]
+- [ ] 02-03-PLAN.md — Placeholder client page (D-05 token flow) + the frozen dist/client build contract (DIST-03) [wave 2]
+
+**Wave 3** *(blocked on Wave 2)*
+
+- [ ] 02-04-PLAN.md — Fastify security shell: root Host allowlist, /api-scoped Origin guard + CORS lock + x-gsd-token guard, unguarded static serving (SEC-01, SEC-02) [wave 3]
+
+**Wave 4** *(blocked on Wave 3)*
+
+- [ ] 02-05-PLAN.md — Config REST API: id-keyed tracked registry (path-traversal boundary), load/save routes, frozen 02-API-CONTRACT.md (SAVE-04, SEC-02) [wave 4]
+- [ ] 02-06-PLAN.md — CLI launcher: Commander flags, UI-SPEC output contract, ephemeral loopback bind, browser open, awaited SIGINT teardown (DIST-01, DIST-02, DIST-04) [wave 4]
+
+**Wave 5** *(blocked on Wave 4)*
+
+- [ ] 02-07-PLAN.md — Packaging: tsup bundle, bin/files/prepublishOnly, tarball assertions, extracted-tarball smoke run, manual Windows Ctrl-C gate (DIST-03, DIST-04) [wave 5]
 
 ### Phase 3: Generic Schema-Driven UI Shell
 
@@ -140,7 +162,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Schema Foundation & Data-Layer Safety | 7/7 | Complete    | 2026-07-12 |
-| 2. Local Loopback Server, CLI & Security Hardening | 0/TBD | Not started | - |
+| 2. Local Loopback Server, CLI & Security Hardening | 0/7 | Planned | - |
 | 3. Generic Schema-Driven UI Shell | 0/TBD | Not started | - |
 | 4. Pool Editors & Model Profile Specialization | 0/TBD | Not started | - |
 | 5. Version History UI | 0/TBD | Not started | - |
