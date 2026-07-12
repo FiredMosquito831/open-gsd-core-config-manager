@@ -64,7 +64,7 @@ Requirements for initial release. Each maps to roadmap phases.
 
 - [ ] **SAVE-01**: Every save validates the config against the schema before writing, blocking invalid writes with clear errors
 - [ ] **SAVE-02**: Saves write atomically (temp file + fsync + rename) with Windows lock/permission retry, so a crash never corrupts the file
-- [ ] **SAVE-03**: Saving preserves the full original parsed document, including unknown/future keys, comments-tolerant formatting, and key order where feasible (patch-in-place, never rebuilt from form state)
+- [x] **SAVE-03**: Saving preserves the full original parsed document, including unknown/future keys, comments-tolerant formatting, and key order where feasible (patch-in-place, never rebuilt from form state)
 - [ ] **SAVE-04**: Every save creates a version snapshot stored outside the tracked project directory
 - [ ] **SAVE-05**: User can browse a per-config snapshot history and view a structural diff between any snapshot and the current file
 - [ ] **SAVE-06**: User can revert to a previous snapshot with one click, routed through the same validate→atomic-write→snapshot pipeline
@@ -106,7 +106,7 @@ Which phases cover which requirements. Populated during roadmap creation.
 | DISC-06 | Phase 1 | Pending |
 | SAVE-01 | Phase 1 | Pending |
 | SAVE-02 | Phase 1 | Pending |
-| SAVE-03 | Phase 1 | Pending |
+| SAVE-03 | Phase 1 | Complete |
 | DIST-01 | Phase 2 | Pending |
 | DIST-02 | Phase 2 | Pending |
 | DIST-03 | Phase 2 | Pending |
@@ -142,6 +142,7 @@ Which phases cover which requirements. Populated during roadmap creation.
 | SCHEMA-05 | Phase 6 | Pending |
 
 **Coverage:**
+
 - v1 requirements: 38 total (corrected from a stale "34" count in the initial requirements draft — the enumerated list above has always contained 38 items)
 - Mapped to phases: 38/38
 - Unmapped: 0 ✓
