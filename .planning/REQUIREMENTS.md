@@ -22,7 +22,7 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Schema & Documentation
 
-- [ ] **SCHEMA-01**: The tool bundles a curated canonical schema (keys, types, options, defaults) covering every gsd-core config chapter
+- [x] **SCHEMA-01**: The tool bundles a curated canonical schema (keys, types, options, defaults) covering every gsd-core config chapter
 - [ ] **SCHEMA-02**: Every config field displays a plain-language explanation of what it does, written for beginners
 - [ ] **SCHEMA-03**: Every enum/option value displays a plain-language explanation of what that specific choice means and its implications
 - [ ] **SCHEMA-04**: The schema-driven renderer covers all config chapters with no key omitted; adding a new bundled key requires no per-key hand-coding
@@ -102,7 +102,7 @@ Which phases cover which requirements. Populated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SCHEMA-01 | Phase 1 | Pending |
+| SCHEMA-01 | Phase 1 | Complete |
 | DISC-06 | Phase 1 | Pending |
 | SAVE-01 | Phase 1 | Pending |
 | SAVE-02 | Phase 1 | Pending |
