@@ -5,15 +5,15 @@ milestone_name: milestone
 current_phase: 02
 current_phase_name: local-loopback-server-cli-security-hardening
 status: executing
-stopped_at: Completed 02-01-PLAN.md
-last_updated: "2026-07-12T21:01:54.474Z"
+stopped_at: Completed 02-05-PLAN.md
+last_updated: "2026-07-12T21:13:25.480Z"
 last_activity: 2026-07-12
 last_activity_desc: Phase 02 execution started
 progress:
   total_phases: 6
   completed_phases: 1
   total_plans: 14
-  completed_plans: 11
+  completed_plans: 12
   percent: 17
 ---
 
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-07-11)
 ## Current Position
 
 Phase: 02 (local-loopback-server-cli-security-hardening) — EXECUTING
-Plan: 5 of 7
+Plan: 6 of 7
 Status: Ready to execute
 Last activity: 2026-07-12 — Phase 02 execution started
 
@@ -66,6 +66,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 02 P02 | 15min | 3 tasks | 4 files |
 | Phase 02 P03 | 8min | 2 tasks | 3 files |
 | Phase 02 P04 | 20min | 3 tasks | 9 files |
+| Phase 02 P05 | 20min | 3 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -95,6 +96,9 @@ Recent decisions affecting current work:
 - [Phase ?]: [Phase 02-03]: scripts/build-client.mjs cleans only dist/client (never dist/) so a later tsup step that cleans dist/ cannot race-delete dist/cli.js
 - [Phase 02]: [Phase 02-04]: Implemented the plan's <cors_correction> deviation exactly as specified -- @fastify/cors alone cannot produce a server-side 403 for a mismatched Origin (it only omits a response header, invisible to fastify.inject()); a separate origin-guard.ts onRequest hook returns the real 403
 - [Phase 02]: [Phase 02-04]: LaunchContext is mutable by design, read at request time rather than captured at hook-registration time, because the ephemeral port (and allowedHosts/corsOrigin derived from it) is only known after listen() resolves; every guard fails closed against an unsealed context
+- [Phase ?]: [Phase 02-05]: registry.ts's opaque id is sha256(resolve(path)).hex.slice(0,32), matching the snapshot store's own hashing scheme so an id and its snapshot dir are correlatable in Phase 5
+- [Phase ?]: [Phase 02-05]: schema.ts imports bundled-schema.json as a JSON module (with { type: 'json' }) so the server never relies on config-io/load.ts's import.meta.url-relative default path, closing the T-02-26 packaging landmine before Plan 07's bundling
+- [Phase ?]: [Phase 02-05]: BuildAppOptions gained registry?/snapshotRoot?/warn? as additive optional fields; the registry is exposed on the returned FastifyInstance via app.decorate('configRegistry', registry) rather than changing buildApp's return type
 
 ### Pending Todos
 
@@ -116,6 +120,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-07-12T21:01:30.584Z
-Stopped at: Completed 02-01-PLAN.md
+Last session: 2026-07-12T21:13:25.462Z
+Stopped at: Completed 02-05-PLAN.md
 Resume file: None
