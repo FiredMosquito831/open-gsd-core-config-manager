@@ -69,9 +69,14 @@
 
   var statusEl = document.getElementById("status");
 
-  function setStatus(html, cls) {
+  function setStatus(text, cls) {
     statusEl.className = cls || "";
-    statusEl.innerHTML = html;
+    // WR-03 fix: textContent, never innerHTML -- `text` may include a
+    // server-supplied value (today only /api/health's version string, but
+    // this is exactly the pattern that becomes an XSS vector the moment a
+    // future phase reuses this bootstrap page for a less-trusted
+    // server-echoed field).
+    statusEl.textContent = text;
   }
 
   if (!token) {
