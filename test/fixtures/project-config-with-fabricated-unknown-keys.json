@@ -1,0 +1,200 @@
+{
+  "mode": "interactive",
+  "granularity": "fine",
+  "model_profile": "balanced",
+  "effort": {
+    "default": "medium",
+    "routing_tier_defaults": {
+      "light": "low",
+      "standard": "low",
+      "heavy": "medium"
+    },
+    "agent_overrides": {
+      "gsd-planner": "medium",
+      "gsd-roadmapper": "medium",
+      "gsd-executor": "low",
+      "gsd-verifier": "medium",
+      "gsd-security-auditor": "medium",
+      "gsd-plan-checker": "medium",
+      "gsd-code-reviewer": "medium",
+      "gsd-code-fixer": "medium",
+      "gsd-debugger": "medium",
+      "gsd-debug-session-manager": "medium",
+      "gsd-assumptions-analyzer": "medium",
+      "gsd-eval-auditor": "medium",
+      "gsd-eval-planner": "medium",
+      "gsd-framework-selector": "medium",
+      "gsd-integration-checker": "medium",
+      "gsd-nyquist-auditor": "medium",
+      "gsd-ai-researcher": "medium",
+      "gsd-advisor-researcher": "medium",
+      "gsd-domain-researcher": "medium",
+      "gsd-research-synthesizer": "medium",
+      "gsd-user-profiler": "medium",
+      "gsd-ui-checker": "medium",
+      "gsd-ui-auditor": "medium",
+      "gsd-doc-verifier": "medium",
+      "gsd-phase-researcher": "low",
+      "gsd-project-researcher": "low",
+      "gsd-ui-researcher": "low",
+      "gsd-pattern-mapper": "low",
+      "gsd-doc-writer": "low",
+      "gsd-doc-classifier": "low",
+      "gsd-doc-synthesizer": "low",
+      "gsd-mempalace-curator": "low",
+      "gsd-intel-updater": "low",
+      "gsd-codebase-mapper": "low"
+    }
+  },
+  "model_profile_overrides": {},
+  "model_policy": {
+    "provider": null,
+    "budget": null,
+    "high": null,
+    "medium": null,
+    "low": null,
+    "runtime_tiers": {}
+  },
+  "granularities": {},
+  "dynamic_routing": null,
+  "project_code": null,
+  "phase_naming": "sequential",
+  "response_language": null,
+  "context": null,
+  "claude_md_path": "./.claude/CLAUDE.md",
+  "commit_docs": true,
+  "planning": {
+    "commit_docs": true,
+    "search_gitignored": false,
+    "sub_repos": []
+  },
+  "brave_search": false,
+  "firecrawl": false,
+  "exa_search": true,
+  "search_gitignored": false,
+  "git": {
+    "branching_strategy": "none",
+    "base_branch": "main",
+    "create_tag": true,
+    "phase_branch_template": "gsd/phase-{phase}-{slug}",
+    "milestone_branch_template": "gsd/{milestone}-{slug}",
+    "quick_branch_template": null
+  },
+  "workflow": {
+    "research": true,
+    "plan_check": true,
+    "verifier": true,
+    "auto_advance": true,
+    "nyquist_validation": true,
+    "ui_phase": true,
+    "ui_safety_gate": true,
+    "ui_review": true,
+    "node_repair": true,
+    "node_repair_budget": 2,
+    "research_before_questions": true,
+    "discuss_mode": "discuss",
+    "max_discuss_passes": 3,
+    "skip_discuss": false,
+    "human_verify_mode": "end-of-phase",
+    "tdd_mode": false,
+    "text_mode": false,
+    "use_worktrees": true,
+    "code_review": true,
+    "code_review_depth": "deep",
+    "code_review_command": null,
+    "pattern_mapper": true,
+    "plan_bounce": false,
+    "plan_bounce_script": null,
+    "plan_bounce_passes": 2,
+    "plan_chunked": false,
+    "post_planning_gaps": true,
+    "plan_review_convergence": false,
+    "plan_drift_precheck": true,
+    "cross_ai_execution": false,
+    "cross_ai_command": null,
+    "cross_ai_timeout": 300,
+    "ai_integration_phase": true,
+    "auto_prune_state": false,
+    "security_enforcement": true,
+    "security_asvs_level": 3,
+    "security_block_on": "medium",
+    "build_command": null,
+    "test_command": null,
+    "_auto_chain_active": false,
+    "x_test_unknown_toggle": false
+  },
+  "code_quality": {
+    "fallow": {
+      "enabled": false,
+      "scope": "phase",
+      "profile": "standard",
+      "mcp": false
+    }
+  },
+  "ship": {
+    "pr_body_sections": []
+  },
+  "hooks": {
+    "context_warnings": true,
+    "workflow_guard": true
+  },
+  "statusline": {
+    "context_position": "end",
+    "show_last_command": true
+  },
+  "review": {
+    "default_reviewers": null,
+    "models": {}
+  },
+  "parallelization": {
+    "enabled": true,
+    "plan_level": true,
+    "task_level": true,
+    "skip_checkpoints": true,
+    "max_concurrent_agents": 10,
+    "min_plans_for_parallel": 2
+  },
+  "gates": {
+    "confirm_project": true,
+    "confirm_phases": true,
+    "confirm_roadmap": true,
+    "confirm_breakdown": true,
+    "confirm_plan": true,
+    "execute_next_plan": true,
+    "issues_review": true,
+    "confirm_transition": true
+  },
+  "safety": {
+    "always_confirm_destructive": true,
+    "always_confirm_external_services": true
+  },
+  "security": {
+    "injection_blocking": false
+  },
+  "agent_skills": {},
+  "agent_skills_security": {
+    "trusted_global_roots": []
+  },
+  "features": {
+    "thinking_partner": true,
+    "global_learnings": false
+  },
+  "learnings": {
+    "max_inject": 10
+  },
+  "intel": {
+    "enabled": true
+  },
+  "graphify": {
+    "enabled": false,
+    "auto_update": false,
+    "build_timeout": 300
+  },
+  "plan_review": {
+    "source_grounding": true,
+    "source_grounding_authority": "grep"
+  },
+  "x_gsdcm_test_future_key": {
+    "nested": true
+  }
+}
