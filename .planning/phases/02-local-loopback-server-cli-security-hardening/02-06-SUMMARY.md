@@ -210,3 +210,17 @@ None - no external service configuration required.
 ---
 *Phase: 02-local-loopback-server-cli-security-hardening*
 *Completed: 2026-07-13*
+
+## Self-Check: PASSED
+
+- FOUND: packages/cli/src/output.ts
+- FOUND: packages/cli/src/bootstrap.ts
+- FOUND: packages/cli/src/cli.ts
+- FOUND: packages/cli/src/cli-main.ts
+- FOUND: test/server/cli-launch.test.ts
+- FOUND: test/server/teardown.test.ts
+- FOUND: .planning/phases/02-local-loopback-server-cli-security-hardening/02-06-SUMMARY.md
+- FOUND commit: fab66a6
+- FOUND commit: 403762e
+- FOUND commit: 8ae3562
+- FOUND commit: 0a222fe

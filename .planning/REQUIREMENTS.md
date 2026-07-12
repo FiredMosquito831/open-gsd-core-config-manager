@@ -10,9 +10,9 @@ Requirements for initial release. Each maps to roadmap phases.
 ### Launch & Distribution
 
 - [x] **DIST-01**: User can launch the tool with a single command (`npx <package>`) with no separate server setup
-- [ ] **DIST-02**: The tool starts a local loopback (127.0.0.1) helper and automatically opens the UI in the user's browser
+- [x] **DIST-02**: The tool starts a local loopback (127.0.0.1) helper and automatically opens the UI in the user's browser
 - [x] **DIST-03**: The tool is installable/shareable as a public npm package with the built UI bundled inside it
-- [ ] **DIST-04**: User can stop the tool cleanly (Ctrl-C) and the local helper shuts down without leaving orphaned processes or lock files
+- [x] **DIST-04**: User can stop the tool cleanly (Ctrl-C) and the local helper shuts down without leaving orphaned processes or lock files
 
 ### Security (loopback trust model)
 
@@ -108,9 +108,9 @@ Which phases cover which requirements. Populated during roadmap creation.
 | SAVE-02 | Phase 1 | Complete |
 | SAVE-03 | Phase 1 | Complete |
 | DIST-01 | Phase 2 | Complete |
-| DIST-02 | Phase 2 | Pending |
+| DIST-02 | Phase 2 | Complete |
 | DIST-03 | Phase 2 | Complete |
-| DIST-04 | Phase 2 | Pending |
+| DIST-04 | Phase 2 | Complete |
 | SEC-01 | Phase 2 | Complete |
 | SEC-02 | Phase 2 | Complete |
 | SAVE-04 | Phase 2 | Complete |
