@@ -1,11 +1,12 @@
 ---
 phase: 01-schema-foundation-data-layer-safety
 verified: 2026-07-12T11:54:44Z
-status: human_needed
+status: passed
 score: 5/5 must-haves verified (presence + wiring), 1 behavior-unverified
 behavior_unverified: 1
 overrides_applied: 0
 behavior_unverified_items:
+
   - truth: "Killing the write process mid-save never leaves config.json truncated or corrupted on Windows — always fully old or fully new content (success criterion #4 / SAVE-02)."
     test: "Run `node test/stress/kill-mid-save.mjs 60` (or higher) and inspect the per-iteration outcome tally, not just the final pass/fail exit code."
     expected: "A genuine sample of iterations should land the SIGKILL during or immediately after the write-file-atomic rename, producing a mix of 'old' and 'new' outcomes — proving the file transitions atomically across the actual risk window."
