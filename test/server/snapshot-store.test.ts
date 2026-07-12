@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { ValidationResult } from '../../packages/config-io/src/types.js';
 import { saveWithSnapshot } from '../../packages/server/src/snapshot-store/save-with-snapshot.js';
-import { readIndex } from '../../packages/server/src/snapshot-store/index.js';
+import { readIndex, recordSnapshot } from '../../packages/server/src/snapshot-store/index.js';
 import { snapshotDirFor } from '../../packages/server/src/snapshot-store/paths.js';
 
 /**
@@ -153,6 +153,71 @@ describe('saveWithSnapshot — validation failure blocks the write and records n
 
     const dir = snapshotDirFor(configPath, appDataRoot);
     expect(existsSync(dir)).toBe(false);
+  });
+});
+
+describe('saveWithSnapshot — two concurrent saves to the same config both land in the index (CR-03)', () => {
+  it('two concurrent saves to the same config both land in the index', async () => {
+    writeFile(configPath, '{"a":0}');
+
+    // Fire both saves concurrently (no await between them) — before the
+    // CR-03 fix, both would read the same priorContent and/or race
+    // recordSnapshot's seq computation, silently dropping one entry.
+    const [resultA, resultB] = await Promise.all([
+      saveWithSnapshot(configPath, { a: 1 }, alwaysValid, { root: appDataRoot }),
+      saveWithSnapshot(configPath, { a: 2 }, alwaysValid, { root: appDataRoot }),
+    ]);
+
+    expect(resultA.ok).toBe(true);
+    expect(resultB.ok).toBe(true);
+
+    const dir = snapshotDirFor(configPath, appDataRoot);
+    const index = await readIndex(dir);
+
+    // Both concurrent saves must have recorded a snapshot — neither lost.
+    expect(index.entries).toHaveLength(2);
+    const seqs = index.entries.map((e) => e.seq).sort((x, y) => x - y);
+    expect(seqs).toEqual([1, 2]);
+    // Distinct snapshot files, no clobbering.
+    expect(index.entries[0].file).not.toBe(index.entries[1].file);
+  });
+});
+
+describe('saveWithSnapshot — concurrent saves never lose a distinct historical state to the read-before-lock race (CR-03, deterministic)', () => {
+  it('concurrent saves never lose a distinct historical state to the read-before-lock race', async () => {
+    // The unsynchronized read ("read prior content") happens BEFORE
+    // saveConfig's proper-lockfile lock is even requested, so without the
+    // CR-03 per-path serialization, both concurrent calls' `readFile`
+    // resolve before either has written — both capture the SAME original
+    // content. Whichever save's write actually lands second then records a
+    // snapshot of that STALE original content instead of the OTHER call's
+    // just-committed value, silently erasing that intermediate state from
+    // history. This assertion is order-independent: across both recorded
+    // snapshots plus the final on-disk content, all three distinct states
+    // (original + both writes) must be represented exactly once — a
+    // duplicate anywhere means one distinct state was never captured.
+    writeFile(configPath, '{"a":0}');
+
+    const [resultA, resultB] = await Promise.all([
+      saveWithSnapshot(configPath, { a: 1 }, alwaysValid, { root: appDataRoot }),
+      saveWithSnapshot(configPath, { a: 2 }, alwaysValid, { root: appDataRoot }),
+    ]);
+
+    expect(resultA.ok).toBe(true);
+    expect(resultB.ok).toBe(true);
+
+    const dir = snapshotDirFor(configPath, appDataRoot);
+    const index = await readIndex(dir);
+    expect(index.entries).toHaveLength(2);
+
+    const snapshotContents = index.entries.map((e) => readFileSync(join(dir, e.file), 'utf8'));
+    const finalOnDisk = readFileSync(configPath, 'utf8');
+    const allStates = new Set([...snapshotContents, finalOnDisk]);
+
+    // {"a":0} (original), plus whichever of {"a":1}/{"a":2} committed first
+    // (captured as a snapshot), plus whichever committed last (the final
+    // on-disk content) — three distinct states, no duplicate/lost entry.
+    expect(allStates.size).toBe(3);
   });
 });
 

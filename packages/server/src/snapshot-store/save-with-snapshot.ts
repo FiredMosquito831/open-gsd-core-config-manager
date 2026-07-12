@@ -43,11 +43,58 @@
  * already been captured as `null` — so D-11's "nothing to snapshot" holds
  * regardless, and `saveConfig`'s own validate -> atomic-write pipeline
  * still runs unmodified against the real target path.
+ *
+ * CR-03 fix (concurrent-save race, scoped entirely to this file):
+ * `proper-lockfile`'s advisory lock (inside `saveConfig`) only ever covers
+ * the write itself — it does NOT span this wrapper's own
+ * read-prior-content -> saveConfig -> recordSnapshot sequence, and
+ * `recordSnapshot`'s own `index.json` read-modify-write (snapshot-store's
+ * `index.ts`) has no lock of its own. Two concurrent `saveWithSnapshot`
+ * calls for the SAME resolved config path can otherwise both read the same
+ * `priorContent` before either writes, or race `recordSnapshot`'s `seq`
+ * computation, silently dropping a version-history entry. `withPathLock`
+ * below is an in-process async mutex keyed by the resolved config path
+ * (never a cross-process lock — that is `proper-lockfile`'s job, already
+ * covering the write itself) that serializes this entire orchestration
+ * per path, so two overlapping saves to the same config always run this
+ * whole sequence one after another rather than interleaved.
  */
 import { readFile, unlink, writeFile } from 'node:fs/promises';
+import { resolve as resolvePath } from 'node:path';
 import { saveConfig, ValidationError } from '../../../config-io/src/index.js';
 import type { ValidationResult } from '../../../config-io/src/types.js';
 import { recordSnapshot } from './index.js';
+
+/**
+ * Per-resolved-path in-process async mutex (CR-03). Keyed by
+ * `resolve(configPath)` so path-string variance (relative vs. absolute,
+ * trailing separators) collapses onto the same lock, mirroring
+ * `paths.ts#snapshotDirFor`'s own resolve-before-hash discipline.
+ *
+ * `prior.then(fn, fn)` runs `fn` only after the PRIOR queued call for this
+ * key has settled — whether it resolved OR rejected — so one failed save
+ * never wedges the queue for the next one. `chained` is a
+ * never-rejecting view of that same settlement used purely to advance the
+ * queue; `run` (the real, possibly-rejecting result) is what the caller
+ * actually awaits. The map entry is deleted once this call is the last one
+ * queued for its key, so the map never grows unbounded across the
+ * process's lifetime.
+ */
+const pathLocks = new Map<string, Promise<unknown>>();
+
+function withPathLock<T>(key: string, fn: () => Promise<T>): Promise<T> {
+  const prior = pathLocks.get(key) ?? Promise.resolve();
+  const run = prior.then(fn, fn);
+  const chained = run.then(
+    () => undefined,
+    () => undefined,
+  );
+  pathLocks.set(key, chained);
+  void chained.finally(() => {
+    if (pathLocks.get(key) === chained) pathLocks.delete(key);
+  });
+  return run;
+}
 
 /** The frozen server-layer save-result envelope (D-10). */
 export type SaveResult =
@@ -72,6 +119,18 @@ export async function saveWithSnapshot(
   nextConfig: object,
   validate: (data: unknown) => ValidationResult,
   deps: SaveDeps = {},
+): Promise<SaveResult> {
+  // CR-03: serialize the ENTIRE read-prior -> save -> record-snapshot
+  // sequence per resolved config path — see module header + withPathLock
+  // doc comment above.
+  return withPathLock(resolvePath(configPath), () => saveWithSnapshotUnlocked(configPath, nextConfig, validate, deps));
+}
+
+async function saveWithSnapshotUnlocked(
+  configPath: string,
+  nextConfig: object,
+  validate: (data: unknown) => ValidationResult,
+  deps: SaveDeps,
 ): Promise<SaveResult> {
   const record = deps.record ?? recordSnapshot;
   const warn = deps.warn ?? console.warn;
