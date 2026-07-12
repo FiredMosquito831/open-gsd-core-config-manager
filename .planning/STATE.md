@@ -4,17 +4,17 @@ milestone: v1.0
 milestone_name: milestone
 current_phase: 01
 current_phase_name: Schema Foundation & Data-Layer Safety
-status: executing
-stopped_at: Completed 01-06-PLAN.md
-last_updated: "2026-07-12T11:35:43.923Z"
+status: verifying
+stopped_at: Completed 01-07-PLAN.md (Phase 01 complete)
+last_updated: "2026-07-12T11:48:18.450Z"
 last_activity: 2026-07-12
 last_activity_desc: Phase 01 execution started
 progress:
   total_phases: 6
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 7
-  completed_plans: 6
-  percent: 0
+  completed_plans: 7
+  percent: 17
 ---
 
 # Project State
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-07-11)
 
 Phase: 01 (Schema Foundation & Data-Layer Safety) — EXECUTING
 Plan: 7 of 7
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-07-12 — Phase 01 execution started
 
 Progress: [░░░░░░░░░░] 0%
@@ -61,6 +61,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 01 P04 | 12min | 2 tasks | 4 files |
 | Phase 01-schema-foundation-data-layer-safety P05 | 10min | 2 tasks | 4 files |
 | Phase 01 P06 | 9min | 2 tasks | 4 files |
+| Phase 01-schema-foundation-data-layer-safety P07 | 22min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -81,6 +82,8 @@ Recent decisions affecting current work:
 - [Phase ?]: [Phase 01-05]: unknown-key walk stops at the first node with zero known schema descendants and records the whole subtree as ONE unknown entry, matching the expected top-level fabricated-key path rather than exploding into per-leaf entries
 - [Phase ?]: [Phase 01-06]: write-file-atomic ships no .d.ts and no @types package — added a narrowly-typed ambient declaration (write-file-atomic.d.ts) rather than a blanket any-typed escape hatch
 - [Phase ?]: [Phase 01-06]: kill-mid-save.mjs uses a stdout marker handshake so the randomized kill delay is timed from 'about to write' rather than child-process spawn, since node --import tsx startup overhead otherwise swallows the whole kill window
+- [Phase ?]: [Phase 01-07]: bundled-schema.json is a flat dot-path metadata map, not an Ajv-compilable JSON Schema -- added schema-convert.ts's buildAjvSchema() to bridge it into a nested schema tree for createValidator()
+- [Phase ?]: [Phase 01-07]: added allowUnionTypes/allowMatchingProperties to Ajv2020 constructor options and widened SchemaEntry.type to string|string[] -- required for the real bundled schema to compile under Ajv strict mode
 
 ### Pending Todos
 
@@ -102,6 +105,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-07-12T11:35:43.906Z
-Stopped at: Completed 01-06-PLAN.md
+Last session: 2026-07-12T11:48:18.424Z
+Stopped at: Completed 01-07-PLAN.md (Phase 01 complete)
 Resume file: None

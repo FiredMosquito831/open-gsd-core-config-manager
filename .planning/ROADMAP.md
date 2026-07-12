@@ -13,7 +13,7 @@ This roadmap delivers a local-first, npx-launched GSD config editor in backend-f
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Schema Foundation & Data-Layer Safety** - Bundled canonical schema plus safe, layered, corruption-proof config read/write with zero data loss
+- [x] **Phase 1: Schema Foundation & Data-Layer Safety** - Bundled canonical schema plus safe, layered, corruption-proof config read/write with zero data loss (completed 2026-07-12)
 - [ ] **Phase 2: Local Loopback Server, CLI & Security Hardening** - Single-command `npx` launch, secured local server, and automatic save snapshots
 - [ ] **Phase 3: Generic Schema-Driven UI Shell** - Every config chapter rendered with plain-language docs, tracked-file sidebar, search, and inline validation
 - [ ] **Phase 4: Pool Editors & Model Profile Specialization** - Guided editors for array/map pools and GSD model profiles, with effective-value/precedence display
@@ -35,7 +35,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   4. Killing the write process mid-save never leaves config.json truncated or corrupted on Windows — the file is always fully the old content or fully the new content, verified by repeated kill-mid-save testing.
   5. Loading a project config resolves effective values by merging canonical schema defaults with the global `~/.gsd/defaults.json` layer and the project's `config.json`, with each value traceable to the layer that supplied it.
 
-**Plans**: 6/7 plans executed
+**Plans**: 7/7 plans complete
 Plans:
 **Wave 1**
 
@@ -54,7 +54,7 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 01-07-PLAN.md — Round-trip identity gate (100% fidelity) + frozen config-io public API barrel (SAVE-03) [wave 4]
+- [x] 01-07-PLAN.md — Round-trip identity gate (100% fidelity) + frozen config-io public API barrel (SAVE-03) [wave 4]
 
 ### Phase 2: Local Loopback Server, CLI & Security Hardening
 
@@ -139,7 +139,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Schema Foundation & Data-Layer Safety | 6/7 | In Progress|  |
+| 1. Schema Foundation & Data-Layer Safety | 7/7 | Complete   | 2026-07-12 |
 | 2. Local Loopback Server, CLI & Security Hardening | 0/TBD | Not started | - |
 | 3. Generic Schema-Driven UI Shell | 0/TBD | Not started | - |
 | 4. Pool Editors & Model Profile Specialization | 0/TBD | Not started | - |
