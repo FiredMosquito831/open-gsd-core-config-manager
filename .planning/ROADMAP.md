@@ -69,11 +69,11 @@ Plans:
   4. The tool is installable as a single public npm package with the built UI bundled inside it.
   5. Every successful save automatically creates a version snapshot stored outside the tracked project directory, with no extra user action required.
 
-**Plans**: 7 plans
+**Plans**: 1/7 plans executed
 Plans:
 **Wave 1**
 
-- [ ] 02-01-PLAN.md — Dependencies (exact pins) behind a package-legitimacy human gate + the shared spawnCli test harness [wave 1]
+- [x] 02-01-PLAN.md — Dependencies (exact pins) behind a package-legitimacy human gate + the shared spawnCli test harness [wave 1]
 
 **Wave 2** *(blocked on Wave 1)*
 
@@ -162,7 +162,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Schema Foundation & Data-Layer Safety | 7/7 | Complete    | 2026-07-12 |
-| 2. Local Loopback Server, CLI & Security Hardening | 0/7 | Planned | - |
+| 2. Local Loopback Server, CLI & Security Hardening | 1/7 | In Progress|  |
 | 3. Generic Schema-Driven UI Shell | 0/TBD | Not started | - |
 | 4. Pool Editors & Model Profile Specialization | 0/TBD | Not started | - |
 | 5. Version History UI | 0/TBD | Not started | - |

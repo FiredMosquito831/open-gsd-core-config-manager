@@ -2,18 +2,18 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_phase: 2
-current_phase_name: Local Loopback Server, CLI & Security Hardening
+current_phase: 02
+current_phase_name: local-loopback-server-cli-security-hardening
 status: executing
-stopped_at: Phase 2 UI-SPEC approved
-last_updated: "2026-07-12T20:13:15.821Z"
+stopped_at: Completed 02-01-PLAN.md
+last_updated: "2026-07-12T20:39:24.487Z"
 last_activity: 2026-07-12
-last_activity_desc: Phase 01 complete, transitioned to Phase 2
+last_activity_desc: Phase 02 execution started
 progress:
   total_phases: 6
   completed_phases: 1
-  total_plans: 7
-  completed_plans: 7
+  total_plans: 14
+  completed_plans: 8
   percent: 17
 ---
 
@@ -24,14 +24,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-11)
 
 **Core value:** A user can open any GSD `config.json`, understand exactly what every setting and option means, and change it correctly and safely — without ever reading the gsd-core source or docs.
-**Current focus:** Phase 01 — Schema Foundation & Data-Layer Safety
+**Current focus:** Phase 02 — local-loopback-server-cli-security-hardening
 
 ## Current Position
 
-Phase: 2 — Local Loopback Server, CLI & Security Hardening
-Plan: Not started
+Phase: 02 (local-loopback-server-cli-security-hardening) — EXECUTING
+Plan: 2 of 7
 Status: Ready to execute
-Last activity: 2026-07-12 — Phase 01 complete, transitioned to Phase 2
+Last activity: 2026-07-12 — Phase 02 execution started
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -62,6 +62,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 01-schema-foundation-data-layer-safety P05 | 10min | 2 tasks | 4 files |
 | Phase 01 P06 | 9min | 2 tasks | 4 files |
 | Phase 01-schema-foundation-data-layer-safety P07 | 22min | 2 tasks | 5 files |
+| Phase 02 P01 | 12min | 3 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -84,6 +85,8 @@ Recent decisions affecting current work:
 - [Phase ?]: [Phase 01-06]: kill-mid-save.mjs uses a stdout marker handshake so the randomized kill delay is timed from 'about to write' rather than child-process spawn, since node --import tsx startup overhead otherwise swallows the whole kill window
 - [Phase ?]: [Phase 01-07]: bundled-schema.json is a flat dot-path metadata map, not an Ajv-compilable JSON Schema -- added schema-convert.ts's buildAjvSchema() to bridge it into a nested schema tree for createValidator()
 - [Phase ?]: [Phase 01-07]: added allowUnionTypes/allowMatchingProperties to Ajv2020 constructor options and widened SchemaEntry.type to string|string[] -- required for the real bundled schema to compile under Ajv strict mode
+- [Phase 02]: [Phase 02-01]: Human legitimacy checkpoint for fastify/@fastify/static/@fastify/cors approved before install ran
+- [Phase 02]: [Phase 02-01]: spawnCli() resolves tsx's ESM CLI entry via process.execPath (no shell:true) for Windows-safe spawning
 
 ### Pending Todos
 
@@ -105,6 +108,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-07-12T17:48:28.303Z
-Stopped at: Phase 2 UI-SPEC approved
-Resume file: .planning/phases/02-local-loopback-server-cli-security-hardening/02-UI-SPEC.md
+Last session: 2026-07-12T20:39:24.473Z
+Stopped at: Completed 02-01-PLAN.md
+Resume file: None
