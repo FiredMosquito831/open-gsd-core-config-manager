@@ -106,7 +106,15 @@ Plans:
   4. Fields the user hasn't overridden show a "using default" indicator with a one-click reset-to-default control; edits show inline validation errors as the user types, driven by the same schema used server-side.
   5. User can search/filter settings by key or description across all chapters, and any key present in a loaded file but not recognized by the schema is visibly surfaced rather than hidden or dropped.
 
-**Plans**: TBD
+**Plans**: 1/6 plans executed
+
+- [x] 03-01-PLAN.md
+- [ ] 03-02-PLAN.md
+- [ ] 03-03-PLAN.md
+- [ ] 03-04-PLAN.md
+- [ ] 03-05-PLAN.md
+- [ ] 03-06-PLAN.md
+
 **UI hint**: yes
 
 ### Phase 4: Pool Editors & Model Profile Specialization
@@ -163,7 +171,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 |-------|----------------|--------|-----------|
 | 1. Schema Foundation & Data-Layer Safety | 7/7 | Complete    | 2026-07-12 |
 | 2. Local Loopback Server, CLI & Security Hardening | 7/7 | Complete    | 2026-07-12 |
-| 3. Generic Schema-Driven UI Shell | 0/TBD | Not started | - |
+| 3. Generic Schema-Driven UI Shell | 1/6 | In Progress|  |
 | 4. Pool Editors & Model Profile Specialization | 0/TBD | Not started | - |
 | 5. Version History UI | 0/TBD | Not started | - |
 | 6. Live Schema Reconcile Against gsd-core | 0/TBD | Not started | - |
