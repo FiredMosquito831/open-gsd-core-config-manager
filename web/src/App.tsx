@@ -1,16 +1,32 @@
+import { AppShell } from './components/AppShell';
+import { EmptyState } from './components/common/EmptyState';
+import { useUiStore } from './state/uiStore';
+
 type AppProps = { connected: boolean };
 
 export function App({ connected }: AppProps) {
+  const { leftPaneOpen, middlePaneOpen, toggleLeftPane, toggleMiddlePane } = useUiStore();
+
   return (
-    <main className="app-shell">
-      <p className="eyebrow">Local configuration workspace</p>
-      <h1>GSD Config Manager</h1>
-      <p className="tagline">Understand and safely manage GSD configuration files.</p>
-      <p className={connected ? 'status status--ready' : 'status status--warning'} role="status">
-        {connected
-          ? 'Ready to connect to the local helper.'
-          : 'No launch token found. Open the URL printed by the CLI to connect.'}
-      </p>
-    </main>
+    <AppShell
+      leftOpen={leftPaneOpen}
+      middleOpen={middlePaneOpen}
+      onToggleLeft={toggleLeftPane}
+      onToggleMiddle={toggleMiddlePane}
+      sidebar={<div className="gsd-placeholder">Tracked configs sidebar</div>}
+      chapterNav={<div className="gsd-placeholder">Chapter navigation</div>}
+      editor={
+        connected ? (
+          <EmptyState
+            title="Select a configuration"
+            description="Choose a tracked config from the sidebar to begin editing."
+          />
+        ) : (
+          <div className="gsd-connection-warning" role="alert">
+            No launch token found. Open the URL printed by the CLI to connect.
+          </div>
+        )
+      }
+    />
   );
 }

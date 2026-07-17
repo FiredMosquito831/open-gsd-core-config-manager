@@ -21,7 +21,10 @@ describe('launch token bootstrap', () => {
     const token = consumeLaunchToken();
     renderWeb(<App connected={token !== null} />);
 
-    expect(screen.getByRole('heading', { name: 'GSD Config Manager' })).toBeTruthy();
+    expect(screen.getByText('Select a configuration')).toBeTruthy();
+    expect(screen.getByLabelText('Tracked configurations')).toBeTruthy();
+    expect(screen.getByLabelText('Chapters')).toBeTruthy();
+    expect(screen.getByLabelText('Editor')).toBeTruthy();
     expect(window.location.search).toBe('');
     expect(getLaunchToken()).toBe('one-time-token');
     expect(localStorageSet).not.toHaveBeenCalled();
