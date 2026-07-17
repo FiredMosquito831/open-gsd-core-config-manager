@@ -6,6 +6,7 @@ import { getEffectiveLeaf } from '../../schema/effective';
 import type { LoadResult } from '../../../../packages/config-io/src/types';
 import { FieldCard } from '../fields/FieldCard';
 import { SpecializedHandoffCard } from '../fields/SpecializedHandoffCard';
+import { UnknownChapter } from '../unknown/UnknownChapter';
 
 interface ChapterViewProps {
   loadResult: LoadResult;
@@ -22,6 +23,10 @@ export function ChapterView({ loadResult, schema, control, onFieldChange, onRese
 
   if (!activeChapter) {
     return <div className="gsd-placeholder">Select a chapter</div>;
+  }
+
+  if (activeChapter === 'Unrecognized') {
+    return <UnknownChapter entries={loadResult.unknown} />;
   }
 
   return (

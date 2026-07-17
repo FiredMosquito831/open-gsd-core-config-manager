@@ -183,6 +183,7 @@ describe('unknown key chapter', () => {
   it('shows read-only unknown keys in an Unrecognized chapter with safe value text', async () => {
     await renderWithActiveConfig();
 
+    await waitFor(() => screen.getByRole('tab', { name: 'Unrecognized' }));
     fireEvent.click(screen.getByRole('tab', { name: 'Unrecognized' }));
 
     await waitFor(() => screen.getByTestId('unknown-workflow.x_future_toggle'));
@@ -191,7 +192,7 @@ describe('unknown key chapter', () => {
     expect(screen.getByText('string')).toBeTruthy();
     expect(screen.getByText('<img src=x onerror=alert(1)>')).toBeTruthy();
     expect(screen.queryByRole('img')).toBeNull();
-    expect(screen.getByText(/schema cannot document or guide this key/i)).toBeTruthy();
+    expect(screen.getAllByText(/schema cannot document or guide this key/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/read-only in phase 3/i)).toBeTruthy();
     expect(screen.queryByRole('textbox', { name: /workflow.x_future_toggle/i })).toBeNull();
   });
