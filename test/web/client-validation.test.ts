@@ -19,14 +19,6 @@ const schema: Record<string, SchemaEntry> = {
     'x-description': 'Count',
     'x-provenance': 'config-defaults',
   },
-  email: {
-    type: 'string',
-    format: 'email',
-    title: 'Email',
-    'x-category': 'Core',
-    'x-description': 'Email',
-    'x-provenance': 'config-defaults',
-  },
 };
 
 describe('createClientValidator', () => {
@@ -44,11 +36,11 @@ describe('createClientValidator', () => {
     expect(result.errors.some((e) => e.path === '/mode')).toBe(true);
   });
 
-  it('reports format violations', () => {
+  it('reports invalid integer values', () => {
     const validate = createClientValidator(schema);
-    const result = validate({ mode: 'interactive', email: 'not-an-email' });
+    const result = validate({ mode: 'interactive', count: 3.5 });
     expect(result.valid).toBe(false);
-    expect(result.errors.some((e) => e.path === '/email')).toBe(true);
+    expect(result.errors.some((e) => e.path === '/count')).toBe(true);
   });
 
   it('allows unknown additional keys', () => {

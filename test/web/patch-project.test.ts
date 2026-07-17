@@ -61,7 +61,7 @@ describe('buildProjectSaveCandidate', () => {
       [],
     );
     expect(candidate.x_gsdcm_test_future_key).toEqual({ nested: true });
-    expect(candidate.x_test_unknown_toggle).toBe(false);
+    expect(candidate.workflow).toMatchObject({ x_test_unknown_toggle: false });
   });
 
   it('removes reset paths without mutating the original raw.project', () => {
