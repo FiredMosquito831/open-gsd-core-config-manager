@@ -1,6 +1,7 @@
 import { AppShell } from './components/AppShell';
-import { ConfigEditor } from './components/ConfigEditor';
+import { ConfigEditor } from './components/editor/ConfigEditor';
 import { TrackedConfigSidebar } from './components/sidebar/TrackedConfigSidebar';
+import { ChapterNav } from './components/chapters/ChapterNav';
 import { useUiStore } from './state/uiStore';
 
 type AppProps = { connected: boolean };
@@ -15,7 +16,7 @@ export function App({ connected }: AppProps) {
       onToggleLeft={toggleLeftPane}
       onToggleMiddle={toggleMiddlePane}
       sidebar={<TrackedConfigSidebar />}
-      chapterNav={<div className="gsd-placeholder">Chapter navigation</div>}
+      chapterNav={<ChapterNav />}
       editor={
         connected ? (
           <ConfigEditor />

@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, screen, fireEvent, waitFor } from '@testing-library/react';
 import { renderWeb } from './render-helpers';
 import { App } from '../../web/src/App';
+import type { SchemaEntry } from '../../packages/config-io/src/types.js';
 
 vi.mock('../../web/src/api/workspace.js', async () => {
   const actual = await vi.importActual('../../web/src/api/workspace.js') as object;
@@ -15,6 +16,16 @@ vi.mock('../../web/src/api/workspace.js', async () => {
     scanWorkspace: vi.fn(),
     previewCreateConfig: vi.fn(),
     createConfig: vi.fn(),
+  };
+});
+
+const emptySchema: Record<string, SchemaEntry> = {};
+
+vi.mock('../../web/src/api/schema.js', async () => {
+  const actual = await vi.importActual('../../web/src/api/schema.js') as object;
+  return {
+    ...actual,
+    getSchema: vi.fn(() => Promise.resolve({})),
   };
 });
 
@@ -51,6 +62,7 @@ describe('sidebar', () => {
   it('sets active config and loads data when clicking a ready config', async () => {
     const { listWorkspaceConfigs } = await import('../../web/src/api/workspace.js');
     const { loadConfig } = await import('../../web/src/api/configs.js');
+    const { getSchema } = await import('../../web/src/api/schema.js');
     vi.mocked(listWorkspaceConfigs).mockResolvedValue([
       { id: '1', path: '/alpha/.planning/config.json', name: 'alpha/config.json', status: 'ok' },
     ]);
@@ -60,13 +72,14 @@ describe('sidebar', () => {
       unknown: [],
       meta: { globalDefaultsPath: '/home/user/.gsd/defaults.json', globalDefaultsFound: true },
     });
+    vi.mocked(getSchema).mockResolvedValue(emptySchema);
 
     renderWeb(<App connected />);
 
     await waitFor(() => screen.getByText('alpha/config.json'));
     fireEvent.click(screen.getByText('alpha/config.json'));
 
-    await waitFor(() => screen.getByText('Ready to edit'));
+    await waitFor(() => screen.getByText('Config editor'));
     expect(loadConfig).toHaveBeenCalledWith('1');
   });
 
