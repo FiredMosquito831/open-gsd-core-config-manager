@@ -6,6 +6,7 @@ interface ScalarFieldControlProps {
   id: string;
   label: string;
   onChange: (value: unknown) => void;
+  onBlur?: () => void;
   disabled?: boolean;
 }
 
@@ -15,6 +16,7 @@ export function ScalarFieldControl({
   id,
   label,
   onChange,
+  onBlur,
   disabled,
 }: ScalarFieldControlProps) {
   const types = Array.isArray(type) ? type : [type];
@@ -28,6 +30,7 @@ export function ScalarFieldControl({
           checked={Boolean(value)}
           onChange={(e: ChangeEvent<HTMLInputElement>) => onChange(e.target.checked)}
           disabled={disabled}
+          onBlur={onBlur}
         />
         <span>Enabled</span>
       </label>
@@ -46,6 +49,7 @@ export function ScalarFieldControl({
           onChange(Number.isNaN(parsed) ? e.target.value : parsed);
         }}
         disabled={disabled}
+          onBlur={onBlur}
         className="gsd-field-card__input"
         aria-label={label}
       />
@@ -63,6 +67,7 @@ export function ScalarFieldControl({
           onChange(Number.isNaN(parsed) ? e.target.value : parsed);
         }}
         disabled={disabled}
+          onBlur={onBlur}
         className="gsd-field-card__input"
         aria-label={label}
       />
@@ -76,6 +81,7 @@ export function ScalarFieldControl({
       value={typeof value === 'string' ? value : ''}
       onChange={(e: ChangeEvent<HTMLInputElement>) => onChange(e.target.value)}
       disabled={disabled}
+          onBlur={onBlur}
       className="gsd-field-card__input"
       aria-label={label}
     />

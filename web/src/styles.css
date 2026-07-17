@@ -815,7 +815,21 @@ body {
   background: var(--gsd-success-bg);
 }
 
+.gsd-field-card__error {
+  color: var(--gsd-danger);
+  font-size: 0.875rem;
+  background: var(--gsd-danger-bg);
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--gsd-radius-sm);
+}
+
 .gsd-content-gap {
+  font-size: 0.875rem;
+  background: var(--gsd-danger-bg);
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--gsd-radius-sm);
+}
+
   color: var(--gsd-warning);
 }
 

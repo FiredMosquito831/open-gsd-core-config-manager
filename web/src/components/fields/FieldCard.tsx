@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useController, type Control } from 'react-hook-form';
 import type { IndexedField } from '../../schema/indexSchema';
 import type { EffectiveLeaf } from '../../../../packages/config-io/src/types';
 import { provenanceLabel } from '../../schema/effective';
@@ -8,18 +9,29 @@ import { EnumCombobox } from './EnumCombobox';
 interface FieldCardProps {
   field: IndexedField;
   leaf: EffectiveLeaf | null;
-  value: unknown;
-  onChange: (value: unknown) => void;
-  onReset: () => void;
+  control: Control<Record<string, unknown>>;
+  onFieldChange: (path: string, value: unknown) => void;
+  onResetField: (path: string) => void;
 }
 
-export function FieldCard({ field, leaf, value, onChange, onReset }: FieldCardProps) {
+export function FieldCard({ field, leaf, control, onFieldChange, onResetField }: FieldCardProps) {
   const [expanded, setExpanded] = useState(false);
   const id = `field-${field.path}`;
   const provenance = leaf?.from;
   const effectiveValue = leaf?.value;
-  const displayValue = value !== undefined ? value : effectiveValue;
   const canReset = provenance === 'project';
+
+  const { field: controllerField, fieldState } = useController({
+    name: field.path,
+    control,
+  });
+
+  const displayValue = controllerField.value !== undefined ? controllerField.value : effectiveValue;
+
+  const handleReset = () => {
+    controllerField.onChange(undefined);
+    onResetField(field.path);
+  };
 
   const describedOptions = Object.keys(field.optionMeanings);
   const hasContentGap =
@@ -55,7 +67,11 @@ export function FieldCard({ field, leaf, value, onChange, onReset }: FieldCardPr
             value={displayValue}
             options={field.enumValues}
             meanings={field.optionMeanings}
-            onChange={onChange}
+            onChange={(value) => {
+              controllerField.onChange(value);
+              onFieldChange(field.path, value);
+            }}
+            onBlur={controllerField.onBlur}
           />
         ) : (
           <ScalarFieldControl
@@ -63,17 +79,27 @@ export function FieldCard({ field, leaf, value, onChange, onReset }: FieldCardPr
             label={field.title}
             value={displayValue}
             type={field.entry.type}
-            onChange={onChange}
+            onChange={(value) => {
+              controllerField.onChange(value);
+              onFieldChange(field.path, value);
+            }}
+            onBlur={controllerField.onBlur}
           />
         )}
       </div>
+
+      {fieldState.error && fieldState.isTouched && (
+        <div className="gsd-field-card__error" role="alert">
+          {fieldState.error.message}
+        </div>
+      )}
 
       <div className="gsd-field-card__actions">
         {canReset && (
           <button
             type="button"
             className="gsd-button gsd-button--ghost gsd-button--sm"
-            onClick={onReset}
+            onClick={handleReset}
           >
             Reset project override
           </button>

@@ -7,6 +7,7 @@ interface EnumComboboxProps {
   id: string;
   label: string;
   onChange: (value: unknown) => void;
+  onBlur?: () => void;
   disabled?: boolean;
 }
 
@@ -17,6 +18,7 @@ export function EnumCombobox({
   id,
   label,
   onChange,
+  onBlur,
   disabled,
 }: EnumComboboxProps) {
   return (
@@ -25,6 +27,7 @@ export function EnumCombobox({
       value={typeof value === 'string' || typeof value === 'number' ? String(value) : ''}
       onChange={(e: ChangeEvent<HTMLSelectElement>) => onChange(e.target.value)}
       disabled={disabled}
+      onBlur={onBlur}
       className="gsd-field-card__select"
       aria-label={label}
     >

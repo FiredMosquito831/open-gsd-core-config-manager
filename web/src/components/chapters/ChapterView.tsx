@@ -1,3 +1,4 @@
+import type { Control } from 'react-hook-form';
 import { indexSchema } from '../../schema/indexSchema';
 import type { SchemaEntry } from '../../../../packages/config-io/src/types';
 import { useUiStore } from '../../state/uiStore';
@@ -9,9 +10,12 @@ import { SpecializedHandoffCard } from '../fields/SpecializedHandoffCard';
 interface ChapterViewProps {
   loadResult: LoadResult;
   schema: Record<string, SchemaEntry>;
+  control: Control<Record<string, unknown>>;
+  onFieldChange: (path: string, value: unknown) => void;
+  onResetField: (path: string) => void;
 }
 
-export function ChapterView({ loadResult, schema }: ChapterViewProps) {
+export function ChapterView({ loadResult, schema, control, onFieldChange, onResetField }: ChapterViewProps) {
   const { activeChapter } = useUiStore();
   const index = indexSchema(schema);
   const fields = activeChapter ? index.fieldsByCategory.get(activeChapter) ?? [] : [];
@@ -34,9 +38,9 @@ export function ChapterView({ loadResult, schema }: ChapterViewProps) {
               key={field.path}
               field={field}
               leaf={leaf}
-              value={leaf?.value}
-              onChange={() => {}}
-              onReset={() => {}}
+              control={control}
+              onFieldChange={onFieldChange}
+              onResetField={onResetField}
             />
           );
         })}
