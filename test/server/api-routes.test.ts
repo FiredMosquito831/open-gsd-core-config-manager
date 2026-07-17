@@ -56,7 +56,7 @@ beforeEach(async () => {
   configPath = join(projectDir, 'config.json');
   writeFileSync(configPath, FIXTURE_RAW, 'utf8');
 
-  app = await buildApp({ ctx: makeContext(), clientRoot, snapshotRoot: appDataRoot });
+  app = await buildApp({ ctx: makeContext(), clientRoot, snapshotRoot: appDataRoot, workspaceRoot: appDataRoot });
 });
 
 afterEach(async () => {
@@ -282,5 +282,23 @@ describe('PUT /api/configs/:id — never accepts a filesystem path on the save r
     });
     expect(res.statusCode).toBe(200);
     expect(existsSync(sentinelPath)).toBe(false);
+  });
+});
+
+describe('Phase 3 regression — workspace store presence does not change frozen /api/configs contract', () => {
+  it('GET /api/configs still lists only the registry entries and returns the same shape', async () => {
+    const id = await trackConfig();
+
+    const res = await app.inject({ method: 'GET', url: '/api/configs', headers: authHeaders() });
+    expect(res.statusCode).toBe(200);
+    const body = res.json() as {
+      ok: boolean;
+      configs: Array<{ id: string; path: string; name: string }>;
+    };
+    expect(body.ok).toBe(true);
+    expect(body.configs).toHaveLength(1);
+    expect(body.configs[0].id).toBe(id);
+    expect(body.configs[0].path).toBe(configPath);
+    expect(typeof body.configs[0].name).toBe('string');
   });
 });
