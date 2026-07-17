@@ -68,6 +68,7 @@ function resetStore() {
     leftPaneOpen: true,
     middlePaneOpen: true,
     searchQuery: '',
+    searchOpen: false,
     highlightTarget: null,
   });
 }
@@ -156,7 +157,7 @@ describe('global search', () => {
       target: { value: 'strict' },
     });
 
-    await waitFor(() => screen.getByText(/No settings match/i));
+    await waitFor(() => expect(screen.getAllByText(/No settings match/i).length).toBeGreaterThan(0));
     expect(screen.queryByText('review.strategy')).toBeNull();
   });
 
@@ -171,7 +172,7 @@ describe('global search', () => {
     fireEvent.click(screen.getByRole('button', { name: /open workflow.tdd_mode/i }));
 
     await waitFor(() => screen.getByTestId('field-workflow.tdd_mode'));
-    expect(screen.getByRole('searchbox', { name: /search settings/i })).toHaveValue('workflow.tdd_mode');
+    expect((screen.getByRole('searchbox', { name: /search settings/i }) as HTMLInputElement).value).toBe('workflow.tdd_mode');
     expect(screen.getByTestId('field-workflow.tdd_mode').className).toContain('gsd-field-card--highlighted');
     expect(document.activeElement).toBe(screen.getByTestId('field-workflow.tdd_mode'));
   });

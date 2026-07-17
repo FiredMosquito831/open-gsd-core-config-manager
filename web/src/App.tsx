@@ -7,7 +7,14 @@ import { useUiStore } from './state/uiStore';
 type AppProps = { connected: boolean };
 
 export function App({ connected }: AppProps) {
-  const { leftPaneOpen, middlePaneOpen, toggleLeftPane, toggleMiddlePane } = useUiStore();
+  const {
+    leftPaneOpen,
+    middlePaneOpen,
+    searchQuery,
+    setSearchQuery,
+    toggleLeftPane,
+    toggleMiddlePane,
+  } = useUiStore();
 
   return (
     <AppShell
@@ -15,6 +22,8 @@ export function App({ connected }: AppProps) {
       middleOpen={middlePaneOpen}
       onToggleLeft={toggleLeftPane}
       onToggleMiddle={toggleMiddlePane}
+      searchQuery={searchQuery}
+      onSearchQueryChange={setSearchQuery}
       sidebar={<TrackedConfigSidebar />}
       chapterNav={<ChapterNav />}
       editor={

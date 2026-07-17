@@ -11,6 +11,7 @@ import { indexSchema } from '../../schema/indexSchema';
 import { useUiStore } from '../../state/uiStore';
 import { EmptyState } from '../common/EmptyState';
 import { ChapterView } from '../chapters/ChapterView';
+import { SearchView } from '../search/SearchView';
 import { SaveBar } from './SaveBar';
 import { ValidationSummary, type ValidationSummaryError } from './ValidationSummary';
 import type { LoadResult, SchemaEntry } from '../../../../packages/config-io/src/types';
@@ -47,7 +48,7 @@ function normalizeServerErrors(error: unknown): ValidationSummaryError[] {
 }
 
 export function ConfigEditor() {
-  const { activeConfigId } = useUiStore();
+  const { activeConfigId, searchQuery, searchOpen, setActiveChapter, setHighlightTarget, setSearchOpen } = useUiStore();
   const queryClient = useQueryClient();
   const [changes, setChanges] = useState<Record<string, unknown>>({});
   const [resets, setResets] = useState<Set<string>>(() => new Set());
@@ -146,32 +147,45 @@ export function ConfigEditor() {
           )}
         </div>
         <ValidationSummary errors={serverErrors} kind="server" />
-        <ChapterView
-          loadResult={loadResult}
-          schema={schema}
-          control={form.control}
-          onFieldChange={(path, value) => {
-            setServerErrors([]);
-            setSnapshotId(undefined);
-            setResets((prev) => {
-              const next = new Set(prev);
-              next.delete(path);
-              return next;
-            });
-            setChanges((prev) => ({ ...prev, [path]: value }));
-          }}
-          onResetField={(path) => {
-            setServerErrors([]);
-            setSnapshotId(undefined);
-            setChanges((prev) => {
-              const next = { ...prev };
-              delete next[path];
-              return next;
-            });
-            setResets((prev) => new Set(prev).add(path));
-            form.setValue(path, undefined, { shouldDirty: true, shouldTouch: true, shouldValidate: true });
-          }}
-        />
+        {searchOpen && searchQuery.trim() ? (
+          <SearchView
+            loadResult={loadResult}
+            schema={schema}
+            query={searchQuery}
+            onOpenResult={(chapter, path) => {
+              setActiveChapter(chapter);
+              setHighlightTarget(path);
+              setSearchOpen(false);
+            }}
+          />
+        ) : (
+          <ChapterView
+            loadResult={loadResult}
+            schema={schema}
+            control={form.control}
+            onFieldChange={(path, value) => {
+              setServerErrors([]);
+              setSnapshotId(undefined);
+              setResets((prev) => {
+                const next = new Set(prev);
+                next.delete(path);
+                return next;
+              });
+              setChanges((prev) => ({ ...prev, [path]: value }));
+            }}
+            onResetField={(path) => {
+              setServerErrors([]);
+              setSnapshotId(undefined);
+              setChanges((prev) => {
+                const next = { ...prev };
+                delete next[path];
+                return next;
+              });
+              setResets((prev) => new Set(prev).add(path));
+              form.setValue(path, undefined, { shouldDirty: true, shouldTouch: true, shouldValidate: true });
+            }}
+          />
+        )}
         <SaveBar
           dirty={isDirty}
           disabled={!isDirty || hasClientErrors}

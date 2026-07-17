@@ -15,6 +15,10 @@ export interface AppShellProps {
   onToggleLeft: () => void;
   /** Toggle the middle pane open/closed. */
   onToggleMiddle: () => void;
+  /** Global settings search query. */
+  searchQuery: string;
+  /** Update the global settings search query. */
+  onSearchQueryChange: (query: string) => void;
 }
 
 function SidebarIcon({ className }: { className?: string }) {
@@ -42,6 +46,8 @@ export function AppShell({
   middleOpen,
   onToggleLeft,
   onToggleMiddle,
+  searchQuery,
+  onSearchQueryChange,
 }: AppShellProps) {
   return (
     <div className="gsd-app-shell" data-left-open={leftOpen} data-middle-open={middleOpen}>
@@ -85,7 +91,22 @@ export function AppShell({
       </nav>
 
       <main className="gsd-app-shell__main" aria-label="Editor">
-        <div className="gsd-app-shell__pane-content">{editor}</div>
+        <div className="gsd-app-shell__pane-content">
+          <div className="gsd-global-search" role="search">
+            <label className="gsd-global-search__label" htmlFor="gsd-global-search-input">
+              Search settings
+            </label>
+            <input
+              id="gsd-global-search-input"
+              className="gsd-global-search__input"
+              type="search"
+              value={searchQuery}
+              onChange={(event) => onSearchQueryChange(event.target.value)}
+              placeholder="Search by key, title, explanation, or option meaning"
+            />
+          </div>
+          {editor}
+        </div>
       </main>
     </div>
   );

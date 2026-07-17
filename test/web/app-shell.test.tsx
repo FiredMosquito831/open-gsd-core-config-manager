@@ -22,6 +22,8 @@ describe('AppShell', () => {
         middleOpen={true}
         onToggleLeft={vi.fn()}
         onToggleMiddle={vi.fn()}
+        searchQuery=""
+        onSearchQueryChange={vi.fn()}
       />,
     );
 
@@ -45,6 +47,8 @@ describe('AppShell', () => {
         middleOpen={true}
         onToggleLeft={onToggleLeft}
         onToggleMiddle={onToggleMiddle}
+        searchQuery=""
+        onSearchQueryChange={vi.fn()}
       />,
     );
 

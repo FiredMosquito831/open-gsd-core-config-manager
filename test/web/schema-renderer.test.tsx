@@ -39,6 +39,7 @@ afterEach(() => {
     leftPaneOpen: true,
     middlePaneOpen: true,
     searchQuery: '',
+    searchOpen: false,
     highlightTarget: null,
   });
   window.history.replaceState({}, '', '/');

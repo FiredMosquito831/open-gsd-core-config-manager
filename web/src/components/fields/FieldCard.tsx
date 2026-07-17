@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useController, type Control } from 'react-hook-form';
 import type { IndexedField } from '../../schema/indexSchema';
 import type { EffectiveLeaf } from '../../../../packages/config-io/src/types';
 import { provenanceLabel } from '../../schema/effective';
+import { useUiStore } from '../../state/uiStore';
 import { ScalarFieldControl } from './ScalarFieldControl';
 import { EnumCombobox } from './EnumCombobox';
 
@@ -16,6 +17,9 @@ interface FieldCardProps {
 
 export function FieldCard({ field, leaf, control, onFieldChange, onResetField }: FieldCardProps) {
   const [expanded, setExpanded] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
+  const { highlightTarget, clearHighlight } = useUiStore();
+  const isHighlighted = highlightTarget === field.path;
   const id = `field-${field.path}`;
   const provenance = leaf?.from;
   const effectiveValue = leaf?.value;
@@ -27,6 +31,14 @@ export function FieldCard({ field, leaf, control, onFieldChange, onResetField }:
   });
 
   const displayValue = controllerField.value !== undefined ? controllerField.value : effectiveValue;
+
+  useEffect(() => {
+    if (!isHighlighted || !cardRef.current) return;
+    cardRef.current.focus();
+    cardRef.current.scrollIntoView?.({ block: 'center', behavior: 'smooth' });
+    const timeout = window.setTimeout(() => clearHighlight(), 1800);
+    return () => window.clearTimeout(timeout);
+  }, [clearHighlight, isHighlighted]);
 
   const handleReset = () => {
     controllerField.onChange(undefined);
@@ -40,7 +52,12 @@ export function FieldCard({ field, leaf, control, onFieldChange, onResetField }:
     describedOptions.length < field.enumValues.length;
 
   return (
-    <div data-testid={`field-${field.path}`} className="gsd-field-card">
+    <div
+      ref={cardRef}
+      data-testid={`field-${field.path}`}
+      className={`gsd-field-card ${isHighlighted ? 'gsd-field-card--highlighted' : ''}`}
+      tabIndex={-1}
+    >
       <div className="gsd-field-card__header">
         <div>
           <label className="gsd-field-card__title" htmlFor={id}>
