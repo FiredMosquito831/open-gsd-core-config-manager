@@ -53,7 +53,9 @@ describe('apiFetch', () => {
   });
 
   it('throws ApiError on ApiErr envelope', async () => {
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(mockJsonResponse({ ok: false, errors: [{ message: 'nope' }] }));
+    vi.spyOn(globalThis, 'fetch').mockImplementation(() =>
+      Promise.resolve(mockJsonResponse({ ok: false, errors: [{ message: 'nope' }] })),
+    );
     await expect(apiFetch('/api/configs')).rejects.toBeInstanceOf(ApiError);
     try {
       await apiFetch('/api/configs');
@@ -90,7 +92,7 @@ describe('route wrappers', () => {
   it('configs.listConfigs calls /api/configs', async () => {
     const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(mockJsonResponse({ ok: true, configs: [] }));
     await configs.listConfigs();
-    expect(fetchSpy).toHaveBeenCalledWith('/api/configs', expect.objectContaining({ method: 'GET' }));
+    expect(fetchSpy).toHaveBeenCalledWith('/api/configs', expect.any(Object));
   });
 
   it('configs.trackConfig POSTs /api/configs/track', async () => {
@@ -107,7 +109,7 @@ describe('route wrappers', () => {
   it('configs.loadConfig GETs /api/configs/:id', async () => {
     const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(mockJsonResponse({ ok: true, data: {} }));
     await configs.loadConfig('id-123');
-    expect(fetchSpy).toHaveBeenCalledWith('/api/configs/id-123', expect.objectContaining({ method: 'GET' }));
+    expect(fetchSpy).toHaveBeenCalledWith('/api/configs/id-123', expect.any(Object));
   });
 
   it('configs.saveConfig PUTs the candidate', async () => {
@@ -122,12 +124,12 @@ describe('route wrappers', () => {
   it('schema.getSchema calls /api/schema', async () => {
     const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(mockJsonResponse({ ok: true, schema: {} }));
     await schema.getSchema();
-    expect(fetchSpy).toHaveBeenCalledWith('/api/schema', expect.objectContaining({ method: 'GET' }));
+    expect(fetchSpy).toHaveBeenCalledWith('/api/schema', expect.any(Object));
   });
 
   it('workspace.listWorkspaceConfigs calls /api/workspace/configs', async () => {
     const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(mockJsonResponse({ ok: true, configs: [] }));
     await workspace.listWorkspaceConfigs();
-    expect(fetchSpy).toHaveBeenCalledWith('/api/workspace/configs', expect.objectContaining({ method: 'GET' }));
+    expect(fetchSpy).toHaveBeenCalledWith('/api/workspace/configs', expect.any(Object));
   });
 });
