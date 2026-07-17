@@ -5,9 +5,9 @@ import {
   deleteDotPath,
   buildProjectSaveCandidate,
   FORBIDDEN_SEGMENTS,
-} from '../../web/src/schema/patchProject';
-import unknownFixture from '../fixtures/project-config-with-fabricated-unknown-keys.json';
-import type { LoadResult } from '../../packages/config-io/src/types';
+} from '../../web/src/schema/patchProject.js';
+import unknownFixture from '../fixtures/project-config-with-fabricated-unknown-keys.json' with { type: 'json' };
+import type { LoadResult } from '../../packages/config-io/src/types.js';
 
 function makeLoadResult(project: Record<string, unknown>): LoadResult {
   return {

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { createClientValidator } from '../../web/src/schema/validation';
-import type { SchemaEntry } from '../../packages/config-io/src/types';
+import { createClientValidator } from '../../web/src/schema/validation.js';
+import type { SchemaEntry } from '../../packages/config-io/src/types.js';
 
 const schema: Record<string, SchemaEntry> = {
   mode: {

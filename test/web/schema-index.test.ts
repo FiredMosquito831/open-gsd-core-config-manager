@@ -1,10 +1,10 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { indexSchema } from '../../web/src/schema/indexSchema';
-import { getEffectiveLeaf, provenanceLabel } from '../../web/src/schema/effective';
-import { useUiStore } from '../../web/src/state/uiStore';
-import type { SchemaEntry, EffectiveNode } from '../../packages/config-io/src/types';
-import bundledSchema from '../../packages/schema-data/bundled-schema.json';
+import { indexSchema } from '../../web/src/schema/indexSchema.js';
+import { getEffectiveLeaf, provenanceLabel } from '../../web/src/schema/effective.js';
+import { useUiStore } from '../../web/src/state/uiStore.js';
+import type { SchemaEntry, EffectiveNode } from '../../packages/config-io/src/types.js';
+import bundledSchema from '../../packages/schema-data/bundled-schema.json' with { type: 'json' };
 
 const minimalSchema: Record<string, SchemaEntry> = {
   'workflow.tdd_mode': {

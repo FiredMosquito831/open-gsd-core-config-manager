@@ -1,15 +1,15 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('../../web/src/bootstrap/token', () => ({
+vi.mock('../../web/src/bootstrap/token.js', () => ({
   getLaunchToken: vi.fn(() => 'test-token-123'),
   consumeLaunchToken: vi.fn(),
 }));
 
-import { apiFetch, ApiError } from '../../web/src/api/client';
-import * as configs from '../../web/src/api/configs';
-import * as schema from '../../web/src/api/schema';
-import * as workspace from '../../web/src/api/workspace';
+import { apiFetch, ApiError } from '../../web/src/api/client.js';
+import * as configs from '../../web/src/api/configs.js';
+import * as schema from '../../web/src/api/schema.js';
+import * as workspace from '../../web/src/api/workspace.js';
 
 afterEach(() => {
   vi.restoreAllMocks();
