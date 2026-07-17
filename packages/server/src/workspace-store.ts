@@ -245,6 +245,8 @@ export function createWorkspaceStore(opts: WorkspaceStoreOptions = {}): Workspac
               } else {
                 candidates.push({ projectName: basename(dir), path: configPath, status: 'new' });
               }
+            } else {
+              candidates.push({ projectName: basename(dir), path: configPath, status: 'invalid' });
             }
           } catch {
             // .planning exists but config.json is missing or inaccessible.

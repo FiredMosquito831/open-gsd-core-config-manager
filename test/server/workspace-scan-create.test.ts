@@ -99,6 +99,22 @@ describe('POST /api/workspace/scan', () => {
     expect(body.candidates[0].path).toContain('valid');
   });
 
+  it('marks non-file .planning/config.json as invalid', async () => {
+    const projectDir = join(scanRoot, 'invalid');
+    mkdirSync(join(projectDir, '.planning'), { recursive: true });
+    mkdirSync(join(projectDir, '.planning', 'config.json'));
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/workspace/scan',
+      headers: authHeaders(),
+      payload: { rootPath: scanRoot },
+    });
+    const body = res.json() as { ok: boolean; candidates: Array<{ path: string; status: string }> };
+    expect(body.candidates).toHaveLength(1);
+    expect(body.candidates[0].status).toBe('invalid');
+  });
+
   it('does not mutate the persisted workspace list', async () => {
     makeProject(scanRoot, 'alpha');
 
