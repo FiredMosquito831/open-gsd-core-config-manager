@@ -6,5 +6,6 @@ export default defineConfig({
     environment: 'node',
     watch: false,
     passWithNoTests: true,
+    pool: 'vmThreads',
   },
 });
