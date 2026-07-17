@@ -22,7 +22,7 @@ tdd: false
 - hypothesis: The five reported findings are reproducible in the Phase 03 implementation and require isolated regression coverage plus contract-preserving fixes.
 - test: Inspect complete implementations and run focused tests before changing behavior.
 - expecting: Each finding maps to a concrete control-flow or configuration defect.
-- next_action: Run focused workspace and web tests, then inspect failures and apply one minimal fix at a time.
+- next_action: Archive the resolved session after committing the vmThreads configuration and web mock-reset isolation fix.
 
 ## Evidence
 
@@ -30,6 +30,60 @@ tdd: false
   checked: Complete relevant source files in workspace-store.ts, schema index/field rendering, dialogs, and vitest.config.ts
   found: ScalarFieldControl selects boolean whenever a union contains boolean; scan uses statSync and follows symlinked directories; create checks existsSync before saveWithSnapshot; dialog handlers lack try/finally; Vitest uses vmThreads globally.
   implication: All five reported findings have direct implementation support and remain candidates for confirmation by focused tests.
+
+- timestamp: 2026-07-18
+  checked: Grouped editor-save and sidebar-workspace tests under threads and vmThreads
+  found: Both pools completed the grouped tests with 15/15 passing in this worker; the full web suite also completed under vmThreads with 76/76 passing.
+  implication: The requested vmThreads configuration is viable here; mock reset is the targeted isolation guard for per-test implementations and call history.
+
+- timestamp: 2026-07-18
+  checked: Test cleanup hooks in editor-save.test.tsx and sidebar-workspace.test.tsx
+  found: Both suites used restoreAllMocks, which restores spies but does not clear mock implementations/call state needed by module-level mocked API functions.
+  implication: resetAllMocks provides deterministic mock state between tests without removing the declared module mocks.
+
+- timestamp: 2026-07-18
+  checked: npm run typecheck
+  found: Command passed with no diagnostics.
+  implication: The configuration and test cleanup changes preserve TypeScript contracts.
+
+- timestamp: 2026-07-18
+  checked: npm test -- --pool=vmThreads test/web
+  found: 12 test files and 76 tests passed.
+  implication: Full web regression coverage passes with vmThreads restored.
+
+- timestamp: 2026-07-18
+  checked: npm test -- --pool=vmThreads test/web/editor-save.test.tsx test/web/sidebar-workspace.test.tsx
+  found: 2 files and 15 tests passed.
+  implication: The grouped leakage scenario is covered and passes after resetAllMocks.
+
+## Eliminated
+
+- hypothesis: vmThreads cannot start or run the grouped web tests in this environment
+  evidence: The grouped suite completed with 15/15 passing, and the full web suite completed with 76/76 passing under vmThreads.
+  timestamp: 2026-07-18
+
+- hypothesis: Product source changes are required to resolve this reported leakage
+  evidence: Restoring vmThreads and resetting module mocks in the two affected suites made grouped and full web tests pass; no product runtime code changed.
+  timestamp: 2026-07-18
+
+## Resolution
+
+- root_cause: "The affected web suites used module-level mocked API functions but only called restoreAllMocks in afterEach. That restores spy implementations rather than clearing mock state/implementations configured by individual tests, allowing state and behavior to leak when suites share vmThreads execution. The global test pool had also been changed away from the requested vmThreads configuration."
+- fix: "Restored pool: 'vmThreads' in vitest.config.ts and changed cleanup in editor-save.test.tsx and sidebar-workspace.test.tsx to vi.resetAllMocks(), preserving module mocks while clearing their per-test state and implementations."
+- verification: "The grouped suites pass under vmThreads (2 files, 15 tests), the full web suite passes under vmThreads (12 files, 76 tests), and npm run typecheck passes."
+- files_changed: ["test/web/editor-save.test.tsx", "test/web/sidebar-workspace.test.tsx", "vitest.config.ts"]
+- cycles: investigation 2 + fix 1
+
+## Reasoning Checkpoint
+
+- hypothesis: Mock implementations and call history from module-level API mocks are not fully cleared by restoreAllMocks between tests, and the pool configuration must be restored to vmThreads.
+- confirming_evidence:
+  - Both affected suites declare vi.mock API modules and configure their exported vi.fn implementations per test, but cleanup only calls vi.restoreAllMocks.
+  - The requested grouped and complete web suites pass after resetAllMocks with vmThreads restored, and typecheck remains clean.
+- falsification_test: Running the grouped suites and full web suite under vmThreads after cleanup would still show leaked API results, stale call counts, or worker failures.
+- fix_rationale: resetAllMocks clears the mutable mock state while retaining the module mock declarations; restoring vmThreads matches the coordinator's required execution mode.
+- blind_spots: The original coordinator-reported timeout was not reproduced in this resumed worker; cross-process isolation and browser-level behavior are outside these Vitest tests.
+
 
 - timestamp: 2026-07-18
   checked: Focused workspace tests with threads pool and existing web schema test

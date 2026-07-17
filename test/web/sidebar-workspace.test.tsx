@@ -39,7 +39,7 @@ vi.mock('../../web/src/api/configs.js', async () => {
 
 afterEach(() => {
   cleanup();
-  vi.restoreAllMocks();
+  vi.resetAllMocks();
   window.history.replaceState({}, '', '/');
 });
 

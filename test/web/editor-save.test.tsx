@@ -34,7 +34,7 @@ vi.mock('../../web/src/api/configs.js', async () => {
 
 afterEach(() => {
   cleanup();
-  vi.restoreAllMocks();
+  vi.resetAllMocks();
   useUiStore.setState({
     activeConfigId: null,
     activeChapter: null,
