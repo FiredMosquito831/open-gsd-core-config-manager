@@ -177,3 +177,37 @@ describe('global search', () => {
     expect(document.activeElement).toBe(screen.getByTestId('field-workflow.tdd_mode'));
   });
 });
+
+
+describe('unknown key chapter', () => {
+  it('shows read-only unknown keys in an Unrecognized chapter with safe value text', async () => {
+    await renderWithActiveConfig();
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Unrecognized' }));
+
+    await waitFor(() => screen.getByTestId('unknown-workflow.x_future_toggle'));
+    expect(screen.getByText('workflow.x_future_toggle')).toBeTruthy();
+    expect(screen.getByText('project')).toBeTruthy();
+    expect(screen.getByText('string')).toBeTruthy();
+    expect(screen.getByText('<img src=x onerror=alert(1)>')).toBeTruthy();
+    expect(screen.queryByRole('img')).toBeNull();
+    expect(screen.getByText(/schema cannot document or guide this key/i)).toBeTruthy();
+    expect(screen.getByText(/read-only in phase 3/i)).toBeTruthy();
+    expect(screen.queryByRole('textbox', { name: /workflow.x_future_toggle/i })).toBeNull();
+  });
+
+  it('preserves unknown project keys in the save candidate after editing a known key', async () => {
+    const { saveConfig } = await import('../../web/src/api/configs.js');
+    vi.mocked(saveConfig).mockResolvedValue({ snapshotId: 'snap-1' });
+    await renderWithActiveConfig();
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Workflow' }));
+    await waitFor(() => screen.getByTestId('field-workflow.tdd_mode'));
+    fireEvent.click(screen.getByLabelText('TDD Mode'));
+    fireEvent.click(screen.getByRole('button', { name: /save changes/i }));
+
+    await waitFor(() => expect(saveConfig).toHaveBeenCalled());
+    const candidate = vi.mocked(saveConfig).mock.calls[0][1] as { workflow?: Record<string, unknown> };
+    expect(candidate.workflow?.x_future_toggle).toBe('<img src=x onerror=alert(1)>');
+  });
+});
