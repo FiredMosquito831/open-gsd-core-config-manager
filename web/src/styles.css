@@ -588,3 +588,307 @@ body {
   gap: 0.5rem;
   font-size: 0.875rem;
 }
+
+/* Chapter navigation */
+.gsd-chapter-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  height: 100%;
+}
+
+.gsd-chapter-nav__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.gsd-chapter-nav__item {
+  display: flex;
+}
+
+.gsd-chapter-nav__button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid transparent;
+  border-radius: var(--gsd-radius-sm);
+  background: transparent;
+  color: var(--gsd-text);
+  font-size: 0.875rem;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.gsd-chapter-nav__button:hover {
+  background: var(--gsd-surface-hover);
+}
+
+.gsd-chapter-nav__button--active {
+  background: var(--gsd-accent-subtle);
+  border-color: var(--gsd-accent);
+  color: var(--gsd-accent);
+}
+
+.gsd-chapter-nav__count {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--gsd-text-muted);
+  background: var(--gsd-surface-hover);
+  padding: 0.125rem 0.375rem;
+  border-radius: var(--gsd-radius-sm);
+}
+
+.gsd-chapter-nav__button--active .gsd-chapter-nav__count {
+  color: var(--gsd-accent);
+  background: var(--gsd-bg);
+}
+
+/* Chapter view */
+.gsd-chapter-view {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.gsd-chapter-view__title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--gsd-text);
+}
+
+.gsd-chapter-view__fields {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Field cards */
+.gsd-field-card {
+  background: var(--gsd-surface-elevated);
+  border: 1px solid var(--gsd-border);
+  border-radius: var(--gsd-radius);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  box-shadow: var(--gsd-shadow);
+}
+
+.gsd-field-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.gsd-field-card__title {
+  font-weight: 600;
+  font-size: 0.9375rem;
+  color: var(--gsd-text);
+}
+
+.gsd-field-card__path {
+  font-size: 0.75rem;
+  color: var(--gsd-text-muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.gsd-field-card__description {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--gsd-text-muted);
+  line-height: 1.5;
+}
+
+.gsd-field-card__control {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.gsd-field-card__input,
+.gsd-field-card__select {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--gsd-border-strong);
+  border-radius: var(--gsd-radius-sm);
+  background: var(--gsd-bg);
+  color: var(--gsd-text);
+  font-size: 0.875rem;
+  width: 100%;
+  max-width: 24rem;
+}
+
+.gsd-field-card__input:focus,
+.gsd-field-card__select:focus {
+  outline: 2px solid var(--gsd-accent);
+  outline-offset: 1px;
+}
+
+.gsd-field-card__actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.gsd-field-card__details {
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--gsd-border);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.gsd-field-card__details h4 {
+  margin: 0 0 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--gsd-text);
+}
+
+.gsd-field-card__options dl {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.gsd-field-card__option {
+  display: flex;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.gsd-field-card__option dt {
+  font-weight: 500;
+  color: var(--gsd-text);
+  min-width: 6rem;
+}
+
+.gsd-field-card__option dd {
+  margin: 0;
+  color: var(--gsd-text-muted);
+}
+
+.gsd-field-card__current {
+  font-size: 0.875rem;
+  color: var(--gsd-text-muted);
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.gsd-field-card__current code {
+  color: var(--gsd-text);
+  background: var(--gsd-surface);
+  padding: 0.125rem 0.375rem;
+  border-radius: var(--gsd-radius-sm);
+}
+
+.gsd-provenance {
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 0.125rem 0.5rem;
+  border-radius: var(--gsd-radius-sm);
+  white-space: nowrap;
+}
+
+.gsd-provenance--canonical {
+  color: var(--gsd-text-muted);
+  background: var(--gsd-surface);
+}
+
+.gsd-provenance--global {
+  color: var(--gsd-accent);
+  background: var(--gsd-accent-subtle);
+}
+
+.gsd-provenance--project {
+  color: var(--gsd-success);
+  background: var(--gsd-success-bg);
+}
+
+.gsd-content-gap {
+  color: var(--gsd-warning);
+}
+
+.gsd-content-gap-notice {
+  font-size: 0.875rem;
+  color: var(--gsd-warning);
+  background: var(--gsd-warning-bg);
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--gsd-radius-sm);
+  margin: 0.5rem 0 0;
+}
+
+/* Specialized handoff cards */
+.gsd-handoff-card {
+  background: var(--gsd-surface-elevated);
+  border: 1px solid var(--gsd-border);
+  border-radius: var(--gsd-radius);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  box-shadow: var(--gsd-shadow);
+}
+
+.gsd-handoff-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.gsd-handoff-card__title {
+  font-weight: 600;
+  font-size: 0.9375rem;
+  color: var(--gsd-text);
+}
+
+.gsd-handoff-card__badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.125rem 0.5rem;
+  border-radius: var(--gsd-radius-sm);
+  background: var(--gsd-accent-subtle);
+  color: var(--gsd-accent);
+  white-space: nowrap;
+}
+
+.gsd-handoff-card__path {
+  font-size: 0.75rem;
+  color: var(--gsd-text-muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.gsd-handoff-card__description,
+.gsd-handoff-card__notice,
+.gsd-handoff-card__hint {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--gsd-text-muted);
+  line-height: 1.5;
+}
+
+.gsd-handoff-card__notice {
+  color: var(--gsd-text);
+  background: var(--gsd-surface);
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--gsd-radius-sm);
+}
+
+.gsd-handoff-card__hint code {
+  color: var(--gsd-accent);
+  background: var(--gsd-accent-subtle);
+  padding: 0.125rem 0.25rem;
+  border-radius: var(--gsd-radius-sm);
+}
+
