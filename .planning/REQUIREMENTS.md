@@ -23,28 +23,28 @@ Requirements for initial release. Each maps to roadmap phases.
 ### Schema & Documentation
 
 - [x] **SCHEMA-01**: The tool bundles a curated canonical schema (keys, types, options, defaults) covering every gsd-core config chapter
-- [ ] **SCHEMA-02**: Every config field displays a plain-language explanation of what it does, written for beginners
-- [ ] **SCHEMA-03**: Every enum/option value displays a plain-language explanation of what that specific choice means and its implications
+- [x] **SCHEMA-02**: Every config field displays a plain-language explanation of what it does, written for beginners
+- [x] **SCHEMA-03**: Every enum/option value displays a plain-language explanation of what that specific choice means and its implications
 - [x] **SCHEMA-04**: The schema-driven renderer covers all config chapters with no key omitted; adding a new bundled key requires no per-key hand-coding
 - [ ] **SCHEMA-05**: User can refresh/reconcile the canonical schema from the open-gsd/gsd-core repository, seeing added/changed/deprecated keys, without losing curated descriptions
-- [ ] **SCHEMA-06**: Unknown/future keys present in a loaded file that are not in the schema are surfaced to the user rather than hidden or dropped
+- [x] **SCHEMA-06**: Unknown/future keys present in a loaded file that are not in the schema are surfaced to the user rather than hidden or dropped
 
 ### Config Discovery & Tracking
 
-- [ ] **DISC-01**: User can add an existing config file to the workspace via path entry or file picker
-- [ ] **DISC-02**: The tool remembers tracked config files in a persistent sidebar list across sessions
-- [ ] **DISC-03**: User can scan a chosen folder to discover `.planning/config.json` files and add them to the sidebar (respecting `node_modules`/`.git` boundaries)
-- [ ] **DISC-04**: User can create a brand-new config file initialized from defaults
-- [ ] **DISC-05**: Clicking a config in the sidebar loads its data into the editor for viewing and modifying
+- [x] **DISC-01**: User can add an existing config file to the workspace via path entry or file picker
+- [x] **DISC-02**: The tool remembers tracked config files in a persistent sidebar list across sessions
+- [x] **DISC-03**: User can scan a chosen folder to discover `.planning/config.json` files and add them to the sidebar (respecting `node_modules`/`.git` boundaries)
+- [x] **DISC-04**: User can create a brand-new config file initialized from defaults
+- [x] **DISC-05**: Clicking a config in the sidebar loads its data into the editor for viewing and modifying
 - [x] **DISC-06**: The tool locates and loads the applicable `defaults.json` (global `~/.gsd/defaults.json`) alongside a project config
 
 ### Editing UI
 
-- [ ] **EDIT-01**: The UI organizes config keys into category tabs ("chapters") derived from the canonical schema
-- [ ] **EDIT-02**: Each field indicates whether its value is a default or an explicit override, with a reset-to-default control
+- [x] **EDIT-01**: The UI organizes config keys into category tabs ("chapters") derived from the canonical schema
+- [x] **EDIT-02**: Each field indicates whether its value is a default or an explicit override, with a reset-to-default control
 - [ ] **EDIT-03**: Each field shows the effective value and its provenance across the resolution layers (canonical default → global defaults → project config)
-- [ ] **EDIT-04**: Enum-valued fields are edited via dropdown/radio controls, not free text
-- [ ] **EDIT-05**: User can search/filter settings by key or description across all chapters
+- [x] **EDIT-04**: Enum-valued fields are edited via dropdown/radio controls, not free text
+- [x] **EDIT-05**: User can search/filter settings by key or description across all chapters
 - [x] **EDIT-06**: Fields show inline validation errors as the user edits (driven by the same schema used server-side)
 
 ### Pools (arrays & dynamic maps)
@@ -114,19 +114,19 @@ Which phases cover which requirements. Populated during roadmap creation.
 | SEC-01 | Phase 2 | Complete |
 | SEC-02 | Phase 2 | Complete |
 | SAVE-04 | Phase 2 | Complete |
-| SCHEMA-02 | Phase 3 | Pending |
-| SCHEMA-03 | Phase 3 | Pending |
+| SCHEMA-02 | Phase 3 | Complete |
+| SCHEMA-03 | Phase 3 | Complete |
 | SCHEMA-04 | Phase 3 | Complete |
-| SCHEMA-06 | Phase 3 | Pending |
-| DISC-01 | Phase 3 | Pending |
-| DISC-02 | Phase 3 | Pending |
-| DISC-03 | Phase 3 | Pending |
-| DISC-04 | Phase 3 | Pending |
-| DISC-05 | Phase 3 | Pending |
-| EDIT-01 | Phase 3 | Pending |
-| EDIT-02 | Phase 3 | Pending |
-| EDIT-04 | Phase 3 | Pending |
-| EDIT-05 | Phase 3 | Pending |
+| SCHEMA-06 | Phase 3 | Complete |
+| DISC-01 | Phase 3 | Complete |
+| DISC-02 | Phase 3 | Complete |
+| DISC-03 | Phase 3 | Complete |
+| DISC-04 | Phase 3 | Complete |
+| DISC-05 | Phase 3 | Complete |
+| EDIT-01 | Phase 3 | Complete |
+| EDIT-02 | Phase 3 | Complete |
+| EDIT-04 | Phase 3 | Complete |
+| EDIT-05 | Phase 3 | Complete |
 | EDIT-06 | Phase 3 | Complete |
 | SEC-03 | Phase 4 | Pending |
 | EDIT-03 | Phase 4 | Pending |

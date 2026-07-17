@@ -15,7 +15,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Schema Foundation & Data-Layer Safety** - Bundled canonical schema plus safe, layered, corruption-proof config read/write with zero data loss (completed 2026-07-12)
 - [x] **Phase 2: Local Loopback Server, CLI & Security Hardening** - Single-command `npx` launch, secured local server, and automatic save snapshots (completed 2026-07-12)
-- [ ] **Phase 3: Generic Schema-Driven UI Shell** - Every config chapter rendered with plain-language docs, tracked-file sidebar, search, and inline validation
+- [x] **Phase 3: Generic Schema-Driven UI Shell** - Every config chapter rendered with plain-language docs, tracked-file sidebar, search, and inline validation (completed 2026-07-17)
 - [ ] **Phase 4: Pool Editors & Model Profile Specialization** - Guided editors for array/map pools and GSD model profiles, with effective-value/precedence display
 - [ ] **Phase 5: Version History UI** - Browse, diff, and one-click revert of past config snapshots
 - [ ] **Phase 6: Live Schema Reconcile Against gsd-core** - On-demand schema refresh from the live gsd-core repo without losing curated docs
@@ -109,11 +109,11 @@ Plans:
 **Plans**: 1/6 plans executed
 
 - [x] 03-01-PLAN.md
-- [ ] 03-02-PLAN.md
-- [ ] 03-03-PLAN.md
-- [ ] 03-04-PLAN.md
-- [ ] 03-05-PLAN.md
-- [ ] 03-06-PLAN.md
+- [x] 03-02-PLAN.md
+- [x] 03-03-PLAN.md
+- [x] 03-04-PLAN.md
+- [x] 03-05-PLAN.md
+- [x] 03-06-PLAN.md
 
 **UI hint**: yes
 
@@ -171,7 +171,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 |-------|----------------|--------|-----------|
 | 1. Schema Foundation & Data-Layer Safety | 7/7 | Complete    | 2026-07-12 |
 | 2. Local Loopback Server, CLI & Security Hardening | 7/7 | Complete    | 2026-07-12 |
-| 3. Generic Schema-Driven UI Shell | 1/6 | In Progress|  |
+| 3. Generic Schema-Driven UI Shell | 6/6 | Complete    | 2026-07-17 |
 | 4. Pool Editors & Model Profile Specialization | 0/TBD | Not started | - |
 | 5. Version History UI | 0/TBD | Not started | - |
 | 6. Live Schema Reconcile Against gsd-core | 0/TBD | Not started | - |
