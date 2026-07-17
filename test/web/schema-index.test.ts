@@ -97,8 +97,8 @@ describe('indexSchema', () => {
     const index = indexSchema(minimalSchema);
     const mode = index.fieldsByPath.get('mode')!;
     expect(mode.searchableText).toContain('mode');
-    expect(mode.searchableText).toContain('Default agent behavior');
-    expect(mode.searchableText).toContain('Human-in-the-loop');
+    expect(mode.searchableText).toContain('default agent behavior');
+    expect(mode.searchableText).toContain('human-in-the-loop');
   });
 
   it('reports content gaps for enum entries missing x-options', () => {
