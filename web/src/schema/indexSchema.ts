@@ -30,6 +30,10 @@ export interface SchemaIndex {
 function isHandoffEntry(
   entry: SchemaEntry,
 ): { isHandoff: true; reason: 'array' | 'object' | 'dynamic-map' } | { isHandoff: false } {
+  if (Array.isArray(entry.type)) {
+    if (entry.type.includes('array')) return { isHandoff: true, reason: 'array' };
+    if (entry.type.includes('object')) return { isHandoff: true, reason: 'object' };
+  }
   if (entry.type === 'array') return { isHandoff: true, reason: 'array' };
   if (entry.patternProperties && Object.keys(entry.patternProperties).length > 0) {
     return { isHandoff: true, reason: 'dynamic-map' };

@@ -7,7 +7,7 @@
  * the same validate/atomic/snapshot pipeline as PUT /api/configs/:id.
  */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync, existsSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { FastifyInstance } from 'fastify';
@@ -113,6 +113,27 @@ describe('POST /api/workspace/scan', () => {
     const body = res.json() as { ok: boolean; candidates: Array<{ path: string; status: string }> };
     expect(body.candidates).toHaveLength(1);
     expect(body.candidates[0].status).toBe('invalid');
+  });
+
+  it('does not follow directory symlinks outside the selected root', async () => {
+    const outsideRoot = mkdtempSync(join(tmpdir(), 'gsdcm-scan-outside-'));
+    try {
+      makeProject(outsideRoot, 'outside-project');
+      symlinkSync(outsideRoot, join(scanRoot, 'outside-link'), 'dir');
+
+      const res = await app.inject({
+        method: 'POST',
+        url: '/api/workspace/scan',
+        headers: authHeaders(),
+        payload: { rootPath: scanRoot },
+      });
+
+      expect(res.statusCode).toBe(200);
+      const body = res.json() as { candidates: Array<{ path: string }> };
+      expect(body.candidates).toHaveLength(0);
+    } finally {
+      rmSync(outsideRoot, { recursive: true, force: true });
+    }
   });
 
   it('does not mutate the persisted workspace list', async () => {
@@ -251,6 +272,18 @@ describe('POST /api/workspace/configs/create', () => {
     const listBody = list.json() as { ok: boolean; configs: Array<{ id: string }> };
     expect(listBody.configs).toHaveLength(1);
     expect(listBody.configs[0].id).toBe(body.config.id);
+  });
+
+  it('allows only one simultaneous no-overwrite create for a target', async () => {
+    const projectDir = join(scanRoot, 'simultaneous-project');
+    mkdirSync(projectDir, { recursive: true });
+
+    const [first, second] = await Promise.all([
+      app.inject({ method: 'POST', url: '/api/workspace/configs/create', headers: authHeaders(), payload: { projectDir, overwrite: false } }),
+      app.inject({ method: 'POST', url: '/api/workspace/configs/create', headers: authHeaders(), payload: { projectDir, overwrite: false } }),
+    ]);
+
+    expect([first.statusCode, second.statusCode].sort()).toEqual([200, 400]);
   });
 
   it('refuses to overwrite an existing config without overwrite=true', async () => {

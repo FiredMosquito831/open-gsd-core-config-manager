@@ -21,8 +21,11 @@ export function ScanReviewDialog({ candidates, onConfirm, onCancel }: ScanReview
 
   const handleConfirm = async () => {
     setSubmitting(true);
-    await onConfirm(Array.from(selected));
-    setSubmitting(false);
+    try {
+      await onConfirm(Array.from(selected));
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (

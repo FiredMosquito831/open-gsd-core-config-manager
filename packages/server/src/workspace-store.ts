@@ -11,9 +11,23 @@
  * `invalid`) is derived at load time so a file that disappears or becomes
  * invalid between launches is still surfaced with a problem state (D-14).
  */
-import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve, basename, isAbsolute } from 'node:path';
-import type { TrackedConfig, TrackedWorkspaceConfig } from './api-types.js';
+
+const createLocks = new Map<string, Promise<unknown>>();
+
+async function withCreateLock<T>(key: string, fn: () => Promise<T>): Promise<T> {
+  const prior = createLocks.get(key) ?? Promise.resolve();
+  const run = prior.then(fn, fn);
+  const chained = run.then(() => undefined, () => undefined);
+  createLocks.set(key, chained);
+  void chained.finally(() => {
+    if (createLocks.get(key) === chained) createLocks.delete(key);
+  });
+  return run;
+}
+
+import type { TrackedWorkspaceConfig } from './api-types.js';
 import { createRegistry, RegistryError, type ConfigRegistry } from './registry.js';
 import { saveWithSnapshot } from './snapshot-store/save-with-snapshot.js';
 import { getValidator } from './schema.js';
@@ -258,11 +272,11 @@ export function createWorkspaceStore(opts: WorkspaceStoreOptions = {}): Workspac
           const fullPath = join(dir, entry);
           let stat;
           try {
-            stat = statSync(fullPath);
+            stat = lstatSync(fullPath);
           } catch {
             continue;
           }
-          if (!stat.isDirectory()) continue;
+          if (stat.isSymbolicLink() || !stat.isDirectory()) continue;
           stack.push(fullPath);
         }
       }
@@ -284,26 +298,28 @@ export function createWorkspaceStore(opts: WorkspaceStoreOptions = {}): Workspac
       }
       const targetPath = resolve(projectDir, '.planning', 'config.json');
 
-      if (existsSync(targetPath) && !overwrite) {
-        throw new RegistryError('Config file already exists; set overwrite to replace it');
-      }
+      return withCreateLock(targetPath, async () => {
+        if (existsSync(targetPath) && !overwrite) {
+          throw new RegistryError('Config file already exists; set overwrite to replace it');
+        }
 
-      mkdirSync(dirname(targetPath), { recursive: true });
-      const minimalConfig = { mode: 'interactive' };
+        mkdirSync(dirname(targetPath), { recursive: true });
+        const minimalConfig = { mode: 'interactive' };
 
-      const result = await saveWithSnapshot(targetPath, minimalConfig, getValidator(), { root });
-      if (!result.ok) {
-        // Validation should not fail for a minimal known-good config, but if
-        // it does, surface it as a generic creation failure.
-        throw new RegistryError('Created config failed schema validation');
-      }
+        const result = await saveWithSnapshot(targetPath, minimalConfig, getValidator(), { root });
+        if (!result.ok) {
+          // Validation should not fail for a minimal known-good config, but if
+          // it does, surface it as a generic creation failure.
+          throw new RegistryError('Created config failed schema validation');
+        }
 
-      const tracked = registry.track(targetPath);
-      const status = deriveStatus(tracked.path);
-      const entry: TrackedWorkspaceConfig = { ...tracked, ...status };
-      entries.set(tracked.id, entry);
-      persist();
-      return entry;
+        const tracked = registry.track(targetPath);
+        const status = deriveStatus(tracked.path);
+        const entry: TrackedWorkspaceConfig = { ...tracked, ...status };
+        entries.set(tracked.id, entry);
+        persist();
+        return entry;
+      });
     },
   };
 }

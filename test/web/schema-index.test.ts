@@ -79,6 +79,23 @@ describe('indexSchema', () => {
     });
   });
 
+  it('hands off union entries that can contain objects instead of coercing them to scalars', () => {
+    const index = indexSchema({
+      parallelization: {
+        type: ['boolean', 'object'],
+        title: 'Parallelization',
+        'x-category': 'Workflow',
+        'x-description': 'Controls parallel work.',
+        'x-provenance': 'config-defaults',
+      },
+    });
+
+    expect(index.fieldsByPath.get('parallelization')).toMatchObject({
+      isHandoff: true,
+      handoffReason: 'object',
+    });
+  });
+
   it('flags array, object, and dynamic-map entries as handoff fields', () => {
     const index = indexSchema(minimalSchema);
     expect(index.fieldsByPath.get('ship.pr_body_sections')?.isHandoff).toBe(true);

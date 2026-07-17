@@ -22,10 +22,13 @@ export function CreateConfigDialog({ onClose }: CreateConfigDialogProps) {
 
   const handleCreate = async () => {
     setSubmitting(true);
-    await createConfig(projectDir, preview?.exists ?? false);
-    await queryClient.invalidateQueries({ queryKey: ['workspace', 'configs'] });
-    setSubmitting(false);
-    onClose();
+    try {
+      await createConfig(projectDir, preview?.exists ?? false);
+      await queryClient.invalidateQueries({ queryKey: ['workspace', 'configs'] });
+      onClose();
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
