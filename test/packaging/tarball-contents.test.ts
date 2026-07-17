@@ -80,9 +80,15 @@ describe('tarball contents (DIST-03)', () => {
     expect(result.files.some((f) => f.path === 'dist/cli.js')).toBe(true);
   });
 
-  it('contains the built UI', () => {
+  it('contains the built Vite UI shell and assets', () => {
     const result = packDryRun();
     expect(result.files.some((f) => f.path === 'dist/client/index.html')).toBe(true);
+    expect(result.files.some((f) => /^dist\/client\/assets\/index-.*\.js$/.test(f.path))).toBe(true);
+    expect(result.files.some((f) => /^dist\/client\/assets\/index-.*\.css$/.test(f.path))).toBe(true);
+
+    const builtHtml = readFileSync(CLIENT_ENTRY, 'utf8');
+    expect(builtHtml).toContain('/assets/');
+    expect(builtHtml).not.toMatch(/placeholder/i);
   });
 
   it('ships no source, tests, or planning artifacts', () => {
