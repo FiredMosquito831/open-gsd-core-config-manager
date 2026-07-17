@@ -95,7 +95,7 @@ export function TrackedConfigSidebar() {
           onCancel={() => setLocatingId(null)}
         />
       )}
-      {creating && <CreateConfigDialog />}
+      {creating && <CreateConfigDialog onClose={() => setCreating(false)} />}
     </div>
   );
 }

@@ -20,7 +20,6 @@ export function PathEntryDialog({ title, description, submitLabel, onSubmit, onC
     setSubmitting(true);
     try {
       await onSubmit(path);
-      onCancel();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to submit path');
     } finally {

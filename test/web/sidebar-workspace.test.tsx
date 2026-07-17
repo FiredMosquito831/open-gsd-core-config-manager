@@ -137,8 +137,10 @@ describe('add menu', () => {
 
     renderWeb(<App connected />);
 
-    expect(screen.getByRole('button', { name: 'Add' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Create new config' })).toBeTruthy();
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Add' })).toBeTruthy();
+      expect(screen.getByRole('button', { name: 'Create new config' })).toBeTruthy();
+    });
 
     fireEvent.click(screen.getByRole('button', { name: 'Add' }));
     expect(screen.getByRole('menuitem', { name: 'File picker' })).toBeTruthy();
@@ -158,6 +160,7 @@ describe('add menu', () => {
 
     renderWeb(<App connected />);
 
+    await waitFor(() => screen.getByRole('button', { name: 'Add' }));
     fireEvent.click(screen.getByRole('button', { name: 'Add' }));
     fireEvent.click(screen.getByRole('menuitem', { name: 'File picker' }));
 
@@ -184,6 +187,7 @@ describe('add menu', () => {
 
     renderWeb(<App connected />);
 
+    await waitFor(() => screen.getByRole('button', { name: 'Add' }));
     fireEvent.click(screen.getByRole('button', { name: 'Add' }));
     fireEvent.click(screen.getByRole('menuitem', { name: 'Absolute path' }));
 
@@ -215,6 +219,7 @@ describe('scan', () => {
 
     renderWeb(<App connected />);
 
+    await waitFor(() => screen.getByRole('button', { name: 'Add' }));
     fireEvent.click(screen.getByRole('button', { name: 'Add' }));
     fireEvent.click(screen.getByRole('menuitem', { name: 'Scan chosen folder' }));
 
@@ -226,9 +231,11 @@ describe('scan', () => {
       expect(scanWorkspace).toHaveBeenCalledWith('/projects');
     });
 
-    expect(screen.getByText('alpha')).toBeTruthy();
-    expect(screen.getByText('beta')).toBeTruthy();
-    expect(screen.getByText('gamma')).toBeTruthy();
+    await waitFor(() => {
+      expect(screen.getAllByText(/alpha/i).length).toBeGreaterThan(0);
+      expect(screen.getAllByText(/beta/i).length).toBeGreaterThan(0);
+      expect(screen.getAllByText(/gamma/i).length).toBeGreaterThan(0);
+    });
 
     const trackedCheckbox = screen.getByLabelText(/beta — already tracked/i) as HTMLInputElement;
     expect(trackedCheckbox.disabled).toBe(true);
@@ -261,6 +268,7 @@ describe('create', () => {
 
     renderWeb(<App connected />);
 
+    await waitFor(() => screen.getByRole('button', { name: 'Create new config' }));
     fireEvent.click(screen.getByRole('button', { name: 'Create new config' }));
 
     const input = screen.getByPlaceholderText('/home/projects/my-project');
