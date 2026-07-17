@@ -248,3 +248,13 @@ None - no external service configuration required.
 ---
 *Phase: 03-generic-schema-driven-ui-shell*
 *Completed: 2026-07-17*
+
+## Self-Check: PASSED
+
+- [x] `.planning/phases/03-generic-schema-driven-ui-shell/03-02-SUMMARY.md` exists
+- [x] Task 1 commit `eba7e98` exists
+- [x] Task 2 commit `b30ea42` exists
+- [x] Task 3 commit `042dac3` exists
+- [x] Summary commit `0a28d08` exists
+- [x] Targeted verification (`test/server/schema-route.test.ts`, `test/server/workspace-routes.test.ts`, `test/server/workspace-scan-create.test.ts`) passes: 27/27
+- [x] Typecheck passes
