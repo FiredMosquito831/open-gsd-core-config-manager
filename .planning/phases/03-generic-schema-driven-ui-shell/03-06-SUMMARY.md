@@ -98,13 +98,13 @@ coverage:
         status: pass
     human_judgment: false
   - id: D20
-    description: "End-of-phase browser visual/manual smoke still requires human approval."
+    description: "End-of-phase browser smoke verifies built CLI launch, token bootstrap, shell rendering, fixture loading, search, unknown keys, and validation blocking."
     requirement: Phase 3 ROADMAP success criteria
     verification:
-      - kind: manual
-        ref: "Manual launch smoke against tokenized URL"
-        status: pending-human
-    human_judgment: true
+      - kind: browser-smoke
+        ref: "Playwright launch smoke against built dist/cli.js tokenized URL"
+        status: pass
+    human_judgment: false
 # Metrics
 duration: 2h37m
 completed: 2026-07-17
@@ -219,16 +219,20 @@ status: complete
 - `npm test` - failed as a full concurrent run due to CLI/teardown smoke test timeouts; rerun subsets above passed.
 - Automated local launch smoke - passed: built `dist/cli.js --no-open` printed tokenized URL, root SPA returned HTTP 200 with `/assets/` HTML, and token-authenticated `/api/health` returned HTTP 200.
 
-## Manual Launch Smoke Checkpoint Status
+## Browser Launch Smoke Checkpoint Status
 
-Human browser approval was not fabricated. Automated local launch smoke covered server start, tokenized URL issuance, static SPA serving, and token-authenticated health. Remaining manual visual smoke for the user/orchestrator:
+The orchestrator performed the requested browser smoke with Playwright after Chrome DevTools MCP failed with `Target.setDiscoverTargets: Target closed`.
 
-1. Run the built CLI from this worktree/repo and open the printed tokenized URL.
-2. Verify the three-pane UI renders with tracked configs, chapter nav, and editor/search pane.
-3. Load a tracked fixture/config and verify field cards, global search, and result navigation.
-4. Verify the `Unrecognized` chapter appears for unknown-key fixtures and values render as escaped text only.
-5. Verify invalid edits keep save disabled or blocked with validation feedback.
-6. Confirm the visual tone feels like a polished modern developer settings tool.
+- Initial smoke found a real runtime bug: the built SPA rendered blank with `No QueryClient set, use QueryClientProvider to set one`.
+- Fixed in follow-up commit `3e5b8a3` by wrapping `<App />` in `QueryClientProvider` at `web/src/main.tsx`, then rebuilding `dist/client`.
+- Re-ran the built CLI (`node dist/cli.js --no-open --port 4179`) and opened the tokenized URL in Chromium.
+- Verified token bootstrap strips `?t=` to `/` with no browser errors.
+- Verified the three-pane UI renders with tracked configs, chapter navigation, search, and editor surface.
+- Tracked and loaded `test/fixtures/project-config-with-fabricated-unknown-keys.json`.
+- Verified field cards render, global search finds `workflow.tdd_mode`, and the dedicated `Unrecognized` chapter renders unknown project keys read-only with safe previews.
+- Verified invalid numeric edit feedback: clearing `workflow.subagent_timeout` shows `must be number` and disables Save.
+
+Smoke artifacts captured locally: `/tmp/phase3-smoke-after-fix.png`, `/tmp/phase3-smoke-selected.png`, and `/tmp/phase3-smoke-interactions-2.png`.
 
 ## Auth Gates
 
