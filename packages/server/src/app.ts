@@ -37,7 +37,10 @@ import { buildCorsOptions } from './plugins/cors.js';
 import { registerStatic } from './static/serve.js';
 import { healthRoutes } from './routes/health.js';
 import { configRoutes } from './routes/configs.js';
+import { schemaRoutes } from './routes/schema.js';
+import { workspaceRoutes } from './routes/workspace.js';
 import { createRegistry, type ConfigRegistry } from './registry.js';
+import { createWorkspaceStore, type WorkspaceStore } from './workspace-store.js';
 
 // Exposes the tracked-config registry on the built FastifyInstance (Plan 05)
 // so the CLI (Plan 06) can reach the same registry instance `buildApp`
@@ -54,6 +57,10 @@ export interface BuildAppOptions {
   logger?: boolean | object;
   /** Pre-existing registry to reuse (defaults to a fresh `createRegistry()`). */
   registry?: ConfigRegistry;
+  /** Pre-existing workspace store to reuse. */
+  workspaceStore?: WorkspaceStore;
+  /** Injected app-data root for workspace persistence and snapshot store (test seam). */
+  workspaceRoot?: string;
   /** Injected app-data root for `saveWithSnapshot` (test seam — see snapshot-store/paths.ts). */
   snapshotRoot?: string;
   /** Sink for saveWithSnapshot's D-12 non-fatal snapshot-failure warning (defaults to console.warn). */
@@ -62,7 +69,8 @@ export interface BuildAppOptions {
 
 export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> {
   const app = Fastify({ logger: opts.logger ?? false });
-  const registry = opts.registry ?? createRegistry();
+  const workspaceStore = opts.workspaceStore ?? createWorkspaceStore({ appDataRoot: opts.workspaceRoot });
+  const registry = opts.registry ?? workspaceStore.registry;
   app.decorate('configRegistry', registry);
   const warn = opts.warn ?? console.warn;
 
@@ -96,7 +104,9 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
       registerOriginGuard(api, opts.ctx);
       registerTokenGuard(api, opts.ctx);
       await api.register(healthRoutes);
+      await api.register(schemaRoutes);
       await api.register(configRoutes, { registry, snapshotRoot: opts.snapshotRoot, warn: opts.warn });
+      await api.register(workspaceRoutes, { workspaceStore });
     },
     { prefix: '/api' },
   );

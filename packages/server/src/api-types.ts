@@ -33,3 +33,15 @@ export interface TrackedConfig {
   /** Display label for the Phase 3 sidebar — parent directory name plus filename. */
   name: string;
 }
+
+/**
+ * A persisted workspace entry (03-02-PLAN.md). Adds a derived status to the
+ * frozen TrackedConfig so missing or invalid files can be surfaced in the
+ * sidebar without being silently discarded (D-14).
+ */
+export interface TrackedWorkspaceConfig extends TrackedConfig {
+  /** Derived state: file is present and valid, missing, or no longer passes validation. */
+  status: 'ok' | 'missing' | 'invalid';
+  /** Human-readable problem description when status is not 'ok'. */
+  problem?: string;
+}

@@ -42,6 +42,8 @@ import type { FastifyInstance } from 'fastify';
 import { buildApp } from '../../server/src/app.js';
 import { createLaunchContext, sealLaunchContext, type LaunchContext } from '../../server/src/context.js';
 import { createOutput, type OutputPort } from './output.js';
+import { createWorkspaceStore } from '../../server/src/workspace-store.js';
+import { appDataRoot } from '../../server/src/snapshot-store/paths.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -103,7 +105,14 @@ export async function bootstrap(opts: BootstrapOptions, deps: BootstrapDeps = {}
   const clientRoot = deps.clientRoot ?? defaultClientRoot();
 
   const ctx = createLaunchContext();
-  const app = await buildApp({ ctx, clientRoot, warn: (message) => out.warnLine(message) });
+  const workspaceStore = createWorkspaceStore({ appDataRoot: appDataRoot() });
+  const app = await buildApp({
+    ctx,
+    clientRoot,
+    registry: workspaceStore.registry,
+    workspaceStore,
+    warn: (message) => out.warnLine(message),
+  });
 
   await app.listen({ port: opts.port ?? 0, host: '127.0.0.1' });
   const { port } = app.server.address() as AddressInfo;

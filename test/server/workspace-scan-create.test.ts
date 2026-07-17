@@ -7,7 +7,7 @@
  * the same validate/atomic/snapshot pipeline as PUT /api/configs/:id.
  */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync, existsSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { FastifyInstance } from 'fastify';
@@ -138,7 +138,7 @@ describe('POST /api/workspace/scan', () => {
       payload: { rootPath: scanRoot },
     });
     const body = res.json() as { ok: boolean; candidates: Array<{ path: string; status: string }> };
-    const candidate = body.candidates.find((c) => c.path === configPath);
+    const candidate = body.candidates.find((c: { path: string; status: string }) => c.path === configPath);
     expect(candidate).toBeTruthy();
     expect(candidate!.status).toBe('tracked');
   });

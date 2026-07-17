@@ -47,6 +47,24 @@ export interface ConfigRegistry {
   list(): TrackedConfig[];
   /** Resolves a client-supplied opaque id to its `TrackedConfig`, or `undefined` if unknown. */
   resolve(id: string): TrackedConfig | undefined;
+  /** Removes a tracked config by id. Returns `true` if it existed. */
+  remove(id: string): boolean;
+  /**
+   * Reorders tracked configs by re-inserting them in the given id order.
+   * Unknown ids are ignored; ids not mentioned are appended in their previous order.
+   */
+  reorder(ids: string[]): void;
+  /**
+   * Updates the path associated with an existing id while keeping the id stable.
+   * The new path is validated the same way as `track()`; any existing entry for
+   * the new path is removed so the id stays unique per path.
+   */
+  relocate(id: string, rawPath: string): TrackedConfig;
+}
+
+export interface CreateRegistryOptions {
+  /** Pre-populate the registry with validated configs (Phase 3 persistence seed). */
+  seed?: TrackedConfig[];
 }
 
 function idFor(resolvedPath: string): string {
@@ -82,32 +100,49 @@ function nameFor(resolvedPath: string): string {
   return `${basename(dirname(resolvedPath))}/${basename(resolvedPath)}`;
 }
 
-export function createRegistry(): ConfigRegistry {
+function validatePath(rawPath: string): { resolvedPath: string; id: string } {
+  if (!isAbsolute(rawPath)) {
+    throw new RegistryError('Config path must be an absolute path');
+  }
+
+  const resolvedPath = resolve(rawPath);
+
+  if (!basename(resolvedPath).endsWith('.json')) {
+    throw new RegistryError('Config path must reference a .json file');
+  }
+
+  let stat;
+  try {
+    stat = statSync(resolvedPath);
+  } catch {
+    stat = null;
+  }
+  if (stat && !stat.isFile()) {
+    throw new RegistryError('Config path must reference a regular file');
+  }
+
+  return { resolvedPath, id: idFor(resolvedPath) };
+}
+
+export function createRegistry(opts?: CreateRegistryOptions): ConfigRegistry {
   const byId = new Map<string, TrackedConfig>();
+
+  if (opts?.seed) {
+    for (const config of opts.seed) {
+      try {
+        // Re-validate persisted paths: a path that has become invalid since
+        // it was tracked should not be silently accepted into the registry.
+        validatePath(config.path);
+      } catch {
+        continue;
+      }
+      byId.set(config.id, config);
+    }
+  }
 
   return {
     track(rawPath: string): TrackedConfig {
-      if (!isAbsolute(rawPath)) {
-        throw new RegistryError('Config path must be an absolute path');
-      }
-
-      const resolvedPath = resolve(rawPath);
-
-      if (!basename(resolvedPath).endsWith('.json')) {
-        throw new RegistryError('Config path must reference a .json file');
-      }
-
-      let stat;
-      try {
-        stat = statSync(resolvedPath);
-      } catch {
-        stat = null;
-      }
-      if (stat && !stat.isFile()) {
-        throw new RegistryError('Config path must reference a regular file');
-      }
-
-      const id = idFor(resolvedPath);
+      const { resolvedPath, id } = validatePath(rawPath);
       const existing = byId.get(id);
       if (existing) return existing;
 
@@ -122,6 +157,52 @@ export function createRegistry(): ConfigRegistry {
 
     resolve(id: string): TrackedConfig | undefined {
       return byId.get(id);
+    },
+
+    remove(id: string): boolean {
+      return byId.delete(id);
+    },
+
+    reorder(ids: string[]): void {
+      const ordered = new Map<string, TrackedConfig>();
+      const remaining = new Map(byId);
+
+      for (const id of ids) {
+        const config = remaining.get(id);
+        if (config) {
+          ordered.set(id, config);
+          remaining.delete(id);
+        }
+      }
+
+      for (const [id, config] of remaining) {
+        ordered.set(id, config);
+      }
+
+      byId.clear();
+      for (const [id, config] of ordered) {
+        byId.set(id, config);
+      }
+    },
+
+    relocate(id: string, rawPath: string): TrackedConfig {
+      const { resolvedPath } = validatePath(rawPath);
+
+      const existing = byId.get(id);
+      if (!existing) {
+        throw new RegistryError('Unknown tracked config id');
+      }
+
+      // The new path may have had its own id; remove it so the relocated id
+      // is the sole owner of this path.
+      const newPathId = idFor(resolvedPath);
+      if (newPathId !== id) {
+        byId.delete(newPathId);
+      }
+
+      const updated: TrackedConfig = { id, path: resolvedPath, name: nameFor(resolvedPath) };
+      byId.set(id, updated);
+      return updated;
     },
   };
 }
