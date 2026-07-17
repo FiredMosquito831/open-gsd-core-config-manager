@@ -62,10 +62,8 @@ describe('sidebar', () => {
     await waitFor(() => screen.getByText('alpha/config.json'));
     fireEvent.click(screen.getByText('alpha/config.json'));
 
-    await waitFor(() => {
-      expect(loadConfig).toHaveBeenCalledWith('1');
-    });
-    expect(screen.getByText('Ready to edit')).toBeTruthy();
+    await waitFor(() => screen.getByText('Ready to edit'));
+    expect(loadConfig).toHaveBeenCalledWith('1');
   });
 
   it('disables editing for missing entries and shows recovery actions', async () => {
@@ -77,8 +75,8 @@ describe('sidebar', () => {
     renderWeb(<App connected />);
 
     await waitFor(() => screen.getByText('beta/config.json'));
-    const button = screen.getByText('beta/config.json').closest('button');
-    expect(button).toBeDisabled();
+    const button = screen.getByText('beta/config.json').closest('button') as HTMLButtonElement;
+    expect(button.disabled).toBe(true);
     expect(screen.getByText('Config file not found')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Locate again' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Remove' })).toBeTruthy();
