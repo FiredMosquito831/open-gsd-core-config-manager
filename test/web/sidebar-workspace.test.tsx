@@ -11,6 +11,10 @@ vi.mock('../../web/src/api/workspace.js', async () => {
     listWorkspaceConfigs: vi.fn(),
     locateWorkspace: vi.fn(),
     removeWorkspace: vi.fn(),
+    trackWorkspace: vi.fn(),
+    scanWorkspace: vi.fn(),
+    previewCreateConfig: vi.fn(),
+    createConfig: vi.fn(),
   };
 });
 
@@ -122,6 +126,158 @@ describe('sidebar', () => {
 
     await waitFor(() => {
       expect(locateWorkspace).toHaveBeenCalledWith('2', '/gamma/.planning/config.json');
+    });
+  });
+});
+
+describe('add menu', () => {
+  it('offers file picker, absolute path, and scan options; create is separate', async () => {
+    const { listWorkspaceConfigs } = await import('../../web/src/api/workspace.js');
+    vi.mocked(listWorkspaceConfigs).mockResolvedValue([]);
+
+    renderWeb(<App connected />);
+
+    expect(screen.getByRole('button', { name: 'Add' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Create new config' })).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+    expect(screen.getByRole('menuitem', { name: 'File picker' })).toBeTruthy();
+    expect(screen.getByRole('menuitem', { name: 'Absolute path' })).toBeTruthy();
+    expect(screen.getByRole('menuitem', { name: 'Scan chosen folder' })).toBeTruthy();
+  });
+
+  it('never submits fake browser paths; routes to path entry', async () => {
+    const { listWorkspaceConfigs, trackWorkspace } = await import('../../web/src/api/workspace.js');
+    vi.mocked(listWorkspaceConfigs).mockResolvedValue([]);
+    vi.mocked(trackWorkspace).mockResolvedValue({
+      id: '3',
+      path: '/delta/.planning/config.json',
+      name: 'delta/config.json',
+      status: 'ok',
+    });
+
+    renderWeb(<App connected />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'File picker' }));
+
+    expect(screen.getByText(/Browsers hide the real file path/i)).toBeTruthy();
+
+    const input = screen.getByPlaceholderText('/home/projects/my-project/.planning/config.json');
+    fireEvent.change(input, { target: { value: '/delta/.planning/config.json' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Add config' }));
+
+    await waitFor(() => {
+      expect(trackWorkspace).toHaveBeenCalledWith('/delta/.planning/config.json');
+    });
+  });
+
+  it('absolute path entry calls trackWorkspace and refreshes sidebar', async () => {
+    const { listWorkspaceConfigs, trackWorkspace } = await import('../../web/src/api/workspace.js');
+    vi.mocked(listWorkspaceConfigs).mockResolvedValue([]);
+    vi.mocked(trackWorkspace).mockResolvedValue({
+      id: '4',
+      path: '/epsilon/.planning/config.json',
+      name: 'epsilon/config.json',
+      status: 'ok',
+    });
+
+    renderWeb(<App connected />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Absolute path' }));
+
+    const input = screen.getByPlaceholderText('/home/projects/my-project/.planning/config.json');
+    fireEvent.change(input, { target: { value: '/epsilon/.planning/config.json' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Add config' }));
+
+    await waitFor(() => {
+      expect(trackWorkspace).toHaveBeenCalledWith('/epsilon/.planning/config.json');
+    });
+  });
+});
+
+describe('scan', () => {
+  it('shows scan review dialog with candidates and only tracks confirmed selections', async () => {
+    const { listWorkspaceConfigs, scanWorkspace, trackWorkspace } = await import('../../web/src/api/workspace.js');
+    vi.mocked(listWorkspaceConfigs).mockResolvedValue([]);
+    vi.mocked(scanWorkspace).mockResolvedValue([
+      { projectName: 'alpha', path: '/alpha/.planning/config.json', status: 'new' },
+      { projectName: 'beta', path: '/beta/.planning/config.json', status: 'tracked' },
+      { projectName: 'gamma', path: '/gamma/.planning/config.json', status: 'new' },
+    ]);
+    vi.mocked(trackWorkspace).mockResolvedValue({
+      id: '5',
+      path: '/alpha/.planning/config.json',
+      name: 'alpha/config.json',
+      status: 'ok',
+    });
+
+    renderWeb(<App connected />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Scan chosen folder' }));
+
+    const input = screen.getByPlaceholderText('/home/projects/my-project/.planning/config.json');
+    fireEvent.change(input, { target: { value: '/projects' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Scan' }));
+
+    await waitFor(() => {
+      expect(scanWorkspace).toHaveBeenCalledWith('/projects');
+    });
+
+    expect(screen.getByText('alpha')).toBeTruthy();
+    expect(screen.getByText('beta')).toBeTruthy();
+    expect(screen.getByText('gamma')).toBeTruthy();
+
+    const trackedCheckbox = screen.getByLabelText(/beta — already tracked/i) as HTMLInputElement;
+    expect(trackedCheckbox.disabled).toBe(true);
+
+    fireEvent.click(screen.getByLabelText(/gamma/i));
+    fireEvent.click(screen.getByRole('button', { name: 'Add selected' }));
+
+    await waitFor(() => {
+      expect(trackWorkspace).toHaveBeenCalledWith('/alpha/.planning/config.json');
+      expect(trackWorkspace).not.toHaveBeenCalledWith('/gamma/.planning/config.json');
+      expect(trackWorkspace).not.toHaveBeenCalledWith('/beta/.planning/config.json');
+    });
+  });
+});
+
+describe('create', () => {
+  it('previews target path, warns if exists, and requires confirmation', async () => {
+    const { listWorkspaceConfigs, previewCreateConfig, createConfig } = await import('../../web/src/api/workspace.js');
+    vi.mocked(listWorkspaceConfigs).mockResolvedValue([]);
+    vi.mocked(previewCreateConfig).mockResolvedValue({
+      targetPath: '/zeta/.planning/config.json',
+      exists: true,
+    });
+    vi.mocked(createConfig).mockResolvedValue({
+      id: '6',
+      path: '/zeta/.planning/config.json',
+      name: 'zeta/config.json',
+      status: 'ok',
+    });
+
+    renderWeb(<App connected />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Create new config' }));
+
+    const input = screen.getByPlaceholderText('/home/projects/my-project');
+    fireEvent.change(input, { target: { value: '/zeta' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Preview target path' }));
+
+    await waitFor(() => {
+      expect(previewCreateConfig).toHaveBeenCalledWith('/zeta');
+    });
+
+    expect(screen.getByText(/A config already exists/i)).toBeTruthy();
+
+    fireEvent.click(screen.getByLabelText(/I understand/i));
+    fireEvent.click(screen.getByRole('button', { name: 'Create config' }));
+
+    await waitFor(() => {
+      expect(createConfig).toHaveBeenCalledWith('/zeta', true);
     });
   });
 });

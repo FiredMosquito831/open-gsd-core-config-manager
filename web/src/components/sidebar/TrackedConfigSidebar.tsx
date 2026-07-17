@@ -5,6 +5,8 @@ import { useUiStore } from '../../state/uiStore';
 import { Button } from '../common/Button';
 import { MissingConfigActions } from './MissingConfigActions';
 import { PathEntryDialog } from './PathEntryDialog';
+import { AddConfigMenu } from './AddConfigMenu';
+import { CreateConfigDialog } from './CreateConfigDialog';
 import type { TrackedWorkspaceConfig } from '../../../../packages/server/src/api-types';
 
 export function TrackedConfigSidebar() {
@@ -15,6 +17,7 @@ export function TrackedConfigSidebar() {
   const { activeConfigId, setActiveConfigId } = useUiStore();
   const queryClient = useQueryClient();
   const [locatingId, setLocatingId] = useState<string | null>(null);
+  const [creating, setCreating] = useState(false);
 
   const handleSelect = (config: TrackedWorkspaceConfig) => {
     if (config.status !== 'ok') return;
@@ -41,7 +44,13 @@ export function TrackedConfigSidebar() {
 
   return (
     <div className="gsd-sidebar">
-      <h2 className="gsd-sidebar__heading">Tracked configs</h2>
+      <div className="gsd-sidebar__header">
+        <h2 className="gsd-sidebar__heading">Tracked configs</h2>
+        <div className="gsd-sidebar__actions">
+          <AddConfigMenu />
+          <Button onClick={() => setCreating(true)}>Create new config</Button>
+        </div>
+      </div>
       {!configs?.length ? (
         <div className="gsd-sidebar__empty">No tracked configs yet.</div>
       ) : (
@@ -86,6 +95,7 @@ export function TrackedConfigSidebar() {
           onCancel={() => setLocatingId(null)}
         />
       )}
+      {creating && <CreateConfigDialog />}
     </div>
   );
 }
