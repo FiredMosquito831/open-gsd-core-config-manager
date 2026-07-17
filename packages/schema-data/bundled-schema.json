@@ -614,13 +614,13 @@
     ],
     "x-options": {
       "augment": {
-        "x-description": ""
+        "x-description": "Add MemPalace recall on top of normal project context without replacing the existing context sources."
       },
       "kg_backend": {
-        "x-description": ""
+        "x-description": "Use the temporal knowledge-graph backend as the primary memory source for MemPalace recall."
       },
       "replace": {
-        "x-description": ""
+        "x-description": "Replace the normal memory injection path with MemPalace recall output instead of appending it."
       }
     }
   },
@@ -1176,13 +1176,13 @@
     ],
     "x-options": {
       "quick": {
-        "x-description": ""
+        "x-description": "Run a lightweight review for obvious correctness issues and high-signal cleanup opportunities."
       },
       "standard": {
-        "x-description": ""
+        "x-description": "Run the default balanced review depth for normal phase work."
       },
       "deep": {
-        "x-description": ""
+        "x-description": "Run a more exhaustive review that spends more time on edge cases, integration risks, and subtle bugs."
       }
     }
   },
@@ -1250,10 +1250,10 @@
     ],
     "x-options": {
       "warn": {
-        "x-description": ""
+        "x-description": "Report codebase drift as an advisory warning so the user can decide whether to remap context."
       },
       "auto-remap": {
-        "x-description": ""
+        "x-description": "Automatically trigger a codebase remap when drift exceeds the configured threshold."
       }
     }
   },
@@ -1452,19 +1452,19 @@
     ],
     "x-options": {
       "critical": {
-        "x-description": ""
+        "x-description": "Block phase completion only when critical security findings remain open."
       },
       "high": {
-        "x-description": ""
+        "x-description": "Block phase completion for unresolved high or critical security findings."
       },
       "medium": {
-        "x-description": ""
+        "x-description": "Block phase completion for unresolved medium, high, or critical security findings."
       },
       "low": {
-        "x-description": ""
+        "x-description": "Block phase completion for any unresolved security finding, including low severity."
       },
       "none": {
-        "x-description": ""
+        "x-description": "Do not block phase completion on security findings; report them as advisory follow-up instead."
       }
     }
   },
