@@ -66,7 +66,7 @@ const runtimeInstallMatrix = specializedCatalog.runtimeInstallMatrix;
 const descriptor = (
   path: string,
   editor: SpecializedEditor,
-  options: Omit<SpecializedDescriptor, 'path' | 'editor' | 'sourceEvidence'> = {},
+  options: Partial<Omit<SpecializedDescriptor, 'path' | 'editor' | 'sourceEvidence'>> & { sourceEvidence?: string[] } = {},
 ): SpecializedDescriptor => ({
   ...(schemaMetadata(path) ?? {
     path,
@@ -153,5 +153,5 @@ export function isSpecializedEditable(path: string): boolean {
 
 export function specializedEntryMetadata(path: string): Pick<SchemaEntry, 'x-specialized'> | undefined {
   const item = getSpecializedDescriptor(path);
-  return item ? { 'x-specialized': item } : undefined;
+  return item ? { 'x-specialized': item as unknown as NonNullable<SchemaEntry['x-specialized']> } : undefined;
 }
