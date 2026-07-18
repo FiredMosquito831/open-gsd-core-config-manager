@@ -18,7 +18,7 @@ Requirements for initial release. Each maps to roadmap phases.
 
 - [x] **SEC-01**: The local helper binds only to 127.0.0.1 and rejects requests whose Host header is not in an explicit allowlist (DNS-rebinding protection)
 - [x] **SEC-02**: Mutating (write) requests require a per-launch random token embedded in the opened URL; requests without it are rejected
-- [ ] **SEC-03**: Integration/API-key config fields are masked in the UI by default and never logged
+- [x] **SEC-03**: Integration/API-key config fields are masked in the UI by default and never logged
 
 ### Schema & Documentation
 
@@ -42,23 +42,23 @@ Requirements for initial release. Each maps to roadmap phases.
 
 - [x] **EDIT-01**: The UI organizes config keys into category tabs ("chapters") derived from the canonical schema
 - [x] **EDIT-02**: Each field indicates whether its value is a default or an explicit override, with a reset-to-default control
-- [ ] **EDIT-03**: Each field shows the effective value and its provenance across the resolution layers (canonical default → global defaults → project config)
+- [x] **EDIT-03**: Each field shows the effective value and its provenance across the resolution layers (canonical default → global defaults → project config)
 - [x] **EDIT-04**: Enum-valued fields are edited via dropdown/radio controls, not free text
 - [x] **EDIT-05**: User can search/filter settings by key or description across all chapters
 - [x] **EDIT-06**: Fields show inline validation errors as the user edits (driven by the same schema used server-side)
 
 ### Pools (arrays & dynamic maps)
 
-- [ ] **POOL-01**: Array-valued and dynamic-map config keys are edited as "pools" where the user adds, configures, reorders, and removes entries through guided controls (no raw JSON)
-- [ ] **POOL-02**: Structured-object pools (e.g. `ship.pr_body_sections`, `review.reviewer_instances`) present per-field editors for each entry
-- [ ] **POOL-03**: Agent-keyed maps (e.g. `model_overrides`, `effort.agent_overrides`) are edited via an agent picker plus a value picker
+- [x] **POOL-01**: Array-valued and dynamic-map config keys are edited as "pools" where the user adds, configures, reorders, and removes entries through guided controls (no raw JSON)
+- [x] **POOL-02**: Structured-object pools (e.g. `ship.pr_body_sections`, `review.reviewer_instances`) present per-field editors for each entry
+- [x] **POOL-03**: Agent-keyed maps (e.g. `model_overrides`, `effort.agent_overrides`) are edited via an agent picker plus a value picker
 
 ### Model Profiles
 
-- [ ] **PROF-01**: User can view existing GSD model profiles and their per-agent/per-role tier assignments
-- [ ] **PROF-02**: User can edit an existing model profile
-- [ ] **PROF-03**: User can create a custom model profile per gsd-core docs
-- [ ] **PROF-04**: The model-profile editor surfaces when a change requires re-running `gsd install` to take effect (runtime-baked settings)
+- [x] **PROF-01**: User can view existing GSD model profiles and their per-agent/per-role tier assignments
+- [x] **PROF-02**: User can edit an existing model profile
+- [x] **PROF-03**: User can create a custom model profile per gsd-core docs
+- [x] **PROF-04**: The model-profile editor surfaces when a change requires re-running `gsd install` to take effect (runtime-baked settings)
 
 ### Save Safety & Version History
 
@@ -128,15 +128,15 @@ Which phases cover which requirements. Populated during roadmap creation.
 | EDIT-04 | Phase 3 | Complete |
 | EDIT-05 | Phase 3 | Complete |
 | EDIT-06 | Phase 3 | Complete |
-| SEC-03 | Phase 4 | Pending |
-| EDIT-03 | Phase 4 | Pending |
-| POOL-01 | Phase 4 | Pending |
-| POOL-02 | Phase 4 | Pending |
-| POOL-03 | Phase 4 | Pending |
-| PROF-01 | Phase 4 | Pending |
-| PROF-02 | Phase 4 | Pending |
-| PROF-03 | Phase 4 | Pending |
-| PROF-04 | Phase 4 | Pending |
+| SEC-03 | Phase 4 | Complete |
+| EDIT-03 | Phase 4 | Complete |
+| POOL-01 | Phase 4 | Complete |
+| POOL-02 | Phase 4 | Complete |
+| POOL-03 | Phase 4 | Complete |
+| PROF-01 | Phase 4 | Complete |
+| PROF-02 | Phase 4 | Complete |
+| PROF-03 | Phase 4 | Complete |
+| PROF-04 | Phase 4 | Complete |
 | SAVE-05 | Phase 5 | Pending |
 | SAVE-06 | Phase 5 | Pending |
 | SCHEMA-05 | Phase 6 | Pending |

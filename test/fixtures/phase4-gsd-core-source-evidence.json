@@ -1,0 +1,340 @@
+{
+  "schemaVersion": 1,
+  "source": {
+    "revision": "36a311c5bb5fa1a475cfbb685a845cd2d5bf88fe",
+    "nextRef": "https://api.github.com/repos/open-gsd/gsd-core/git/refs/heads/next",
+    "retrievedAt": "2026-07-18T20:32:11.196Z",
+    "rawRoot": "https://raw.githubusercontent.com/open-gsd/gsd-core/36a311c5bb5fa1a475cfbb685a845cd2d5bf88fe/",
+    "digests": {
+      "docs/CONFIGURATION.md": "92e71b15bba6d328bafee191ae9448a4baab895d0441ba37f9c430830c31a7f7",
+      "docs/how-to/configure-model-profiles.md": "46b5bbb0c03d0cdf6c20030a8eae65c4481d256229665e604014df8aeb684821",
+      "gsd-core/bin/shared/model-catalog.json": "b55176ca044728d3aa098ae8a750fccd4f00489289f6150e549aa577e49b2caf",
+      "src/model-catalog.cts": "b2992277815323befe7a3f111b031024b37903097124cf9d1f543503b27380f4",
+      "src/model-resolver.cts": "76292d87f414c0f4731544fabf5c5a870884fcb0a226729389a4257639182cdc",
+      "src/config-loader.cts": "08eda003f85ca87a973747d3aabe086458dfa008be2a2020fd73c0f10d229ead",
+      "src/model-profiles.cts": "0b6567730e11c945b2b399f68aed8c14774d17b904b0d9ecf203eb2d7c13a543"
+    }
+  },
+  "sourceFiles": [
+    {
+      "path": "docs/CONFIGURATION.md",
+      "url": "https://raw.githubusercontent.com/open-gsd/gsd-core/36a311c5bb5fa1a475cfbb685a845cd2d5bf88fe/docs/CONFIGURATION.md",
+      "sha256": "92e71b15bba6d328bafee191ae9448a4baab895d0441ba37f9c430830c31a7f7",
+      "anchors": [
+        "model_profile",
+        "model_overrides",
+        "model_profile_overrides",
+        "model_policy.runtime_tiers",
+        "review.reviewer_instances",
+        "Displayed as `****<last-4>`"
+      ]
+    },
+    {
+      "path": "docs/how-to/configure-model-profiles.md",
+      "url": "https://raw.githubusercontent.com/open-gsd/gsd-core/36a311c5bb5fa1a475cfbb685a845cd2d5bf88fe/docs/how-to/configure-model-profiles.md",
+      "sha256": "46b5bbb0c03d0cdf6c20030a8eae65c4481d256229665e604014df8aeb684821",
+      "anchors": [
+        "quality",
+        "balanced",
+        "budget",
+        "adaptive",
+        "inherit",
+        "planning",
+        "discuss",
+        "research",
+        "execution",
+        "verification",
+        "completion"
+      ]
+    },
+    {
+      "path": "gsd-core/bin/shared/model-catalog.json",
+      "url": "https://raw.githubusercontent.com/open-gsd/gsd-core/36a311c5bb5fa1a475cfbb685a845cd2d5bf88fe/gsd-core/bin/shared/model-catalog.json",
+      "sha256": "b55176ca044728d3aa098ae8a750fccd4f00489289f6150e549aa577e49b2caf",
+      "anchors": [
+        "profiles",
+        "phaseTypes",
+        "adaptiveTierMap",
+        "runtimeTierDefaults",
+        "agents"
+      ]
+    },
+    {
+      "path": "src/model-catalog.cts",
+      "url": "https://raw.githubusercontent.com/open-gsd/gsd-core/36a311c5bb5fa1a475cfbb685a845cd2d5bf88fe/src/model-catalog.cts",
+      "sha256": "b2992277815323befe7a3f111b031024b37903097124cf9d1f543503b27380f4",
+      "anchors": [
+        "agents",
+        "phaseTypes"
+      ]
+    },
+    {
+      "path": "src/model-resolver.cts",
+      "url": "https://raw.githubusercontent.com/open-gsd/gsd-core/36a311c5bb5fa1a475cfbb685a845cd2d5bf88fe/src/model-resolver.cts",
+      "sha256": "76292d87f414c0f4731544fabf5c5a870884fcb0a226729389a4257639182cdc",
+      "anchors": [
+        "model_profile_overrides",
+        "runtime_tiers",
+        "balanced"
+      ]
+    },
+    {
+      "path": "src/config-loader.cts",
+      "url": "https://raw.githubusercontent.com/open-gsd/gsd-core/36a311c5bb5fa1a475cfbb685a845cd2d5bf88fe/src/config-loader.cts",
+      "sha256": "08eda003f85ca87a973747d3aabe086458dfa008be2a2020fd73c0f10d229ead",
+      "anchors": [
+        "model_policy",
+        "model_overrides"
+      ]
+    },
+    {
+      "path": "src/model-profiles.cts",
+      "url": "https://raw.githubusercontent.com/open-gsd/gsd-core/36a311c5bb5fa1a475cfbb685a845cd2d5bf88fe/src/model-profiles.cts",
+      "sha256": "0b6567730e11c945b2b399f68aed8c14774d17b904b0d9ecf203eb2d7c13a543",
+      "anchors": [
+        "model-profiles"
+      ]
+    }
+  ],
+  "profileCatalog": [
+    "quality",
+    "balanced",
+    "budget",
+    "adaptive",
+    "inherit"
+  ],
+  "phaseTypes": [
+    "planning",
+    "discuss",
+    "research",
+    "execution",
+    "verification",
+    "completion"
+  ],
+  "adaptiveTierMap": {
+    "heavy": "opus",
+    "standard": "sonnet",
+    "light": "haiku"
+  },
+  "agentCatalog": [
+    "gsd-planner",
+    "gsd-roadmapper",
+    "gsd-executor",
+    "gsd-phase-researcher",
+    "gsd-project-researcher",
+    "gsd-research-synthesizer",
+    "gsd-debugger",
+    "gsd-codebase-mapper",
+    "gsd-verifier",
+    "gsd-plan-checker",
+    "gsd-integration-checker",
+    "gsd-nyquist-auditor",
+    "gsd-pattern-mapper",
+    "gsd-ui-researcher",
+    "gsd-ui-checker",
+    "gsd-ui-auditor",
+    "gsd-doc-writer",
+    "gsd-doc-verifier",
+    "gsd-advisor-researcher",
+    "gsd-ai-researcher",
+    "gsd-assumptions-analyzer",
+    "gsd-code-fixer",
+    "gsd-code-reviewer",
+    "gsd-debug-session-manager",
+    "gsd-doc-classifier",
+    "gsd-doc-synthesizer",
+    "gsd-domain-researcher",
+    "gsd-eval-auditor",
+    "gsd-eval-planner",
+    "gsd-framework-selector",
+    "gsd-intel-updater",
+    "gsd-mempalace-curator",
+    "gsd-security-auditor",
+    "gsd-user-profiler"
+  ],
+  "profilePersistenceShape": {
+    "entity": "ordinary-project-config",
+    "fields": [
+      "model_overrides",
+      "models",
+      "model_profile_overrides",
+      "model_policy"
+    ],
+    "forbiddenSerializedFields": [
+      "profiles",
+      "active_profile",
+      "profile_id",
+      "profile_description",
+      "profile_assignments",
+      "model_profile_name"
+    ],
+    "customFlow": "copy-built-in-assignment-set-into-project-draft"
+  },
+  "precedence": [
+    "model_overrides",
+    "model_policy.runtime_tiers",
+    "model_profile_overrides",
+    "models",
+    "model_profile",
+    "runtime-default"
+  ],
+  "sensitivePaths": [
+    "brave_search",
+    "firecrawl",
+    "exa_search",
+    "tavily_search",
+    "ref_search",
+    "perplexity",
+    "jina"
+  ],
+  "descriptors": [
+    {
+      "id": "model_overrides.<agent-id>",
+      "evidence": {
+        "path": "docs/CONFIGURATION.md",
+        "url": "https://raw.githubusercontent.com/open-gsd/gsd-core/36a311c5bb5fa1a475cfbb685a845cd2d5bf88fe/docs/CONFIGURATION.md",
+        "anchor": "model_overrides"
+      }
+    },
+    {
+      "id": "models.<phase_type>",
+      "evidence": {
+        "path": "docs/CONFIGURATION.md",
+        "url": "https://raw.githubusercontent.com/open-gsd/gsd-core/36a311c5bb5fa1a475cfbb685a845cd2d5bf88fe/docs/CONFIGURATION.md",
+        "anchor": "models.<phase_type>"
+      }
+    },
+    {
+      "id": "effort.agent_overrides.<agent-id>",
+      "evidence": {
+        "path": "docs/CONFIGURATION.md",
+        "url": "https://raw.githubusercontent.com/open-gsd/gsd-core/36a311c5bb5fa1a475cfbb685a845cd2d5bf88fe/docs/CONFIGURATION.md",
+        "anchor": "agent_overrides"
+      }
+    },
+    {
+      "id": "fast_mode.agent_overrides.<agent-id>",
+      "evidence": {
+        "path": "docs/CONFIGURATION.md",
+        "url": "https://raw.githubusercontent.com/open-gsd/gsd-core/36a311c5bb5fa1a475cfbb685a845cd2d5bf88fe/docs/CONFIGURATION.md",
+        "anchor": "fast_mode.agent_overrides"
+      }
+    },
+    {
+      "id": "model_profile_overrides.<runtime>.<tier>",
+      "evidence": {
+        "path": "docs/CONFIGURATION.md",
+        "url": "https://raw.githubusercontent.com/open-gsd/gsd-core/36a311c5bb5fa1a475cfbb685a845cd2d5bf88fe/docs/CONFIGURATION.md",
+        "anchor": "model_profile_overrides.<runtime>.<tier>"
+      }
+    },
+    {
+      "id": "model_policy.runtime_tiers.<runtime>.<tier>",
+      "evidence": {
+        "path": "docs/CONFIGURATION.md",
+        "url": "https://raw.githubusercontent.com/open-gsd/gsd-core/36a311c5bb5fa1a475cfbb685a845cd2d5bf88fe/docs/CONFIGURATION.md",
+        "anchor": "model_policy.runtime_tiers"
+      }
+    },
+    {
+      "id": "review.reviewer_instances.<name>",
+      "evidence": {
+        "path": "docs/CONFIGURATION.md",
+        "url": "https://raw.githubusercontent.com/open-gsd/gsd-core/36a311c5bb5fa1a475cfbb685a845cd2d5bf88fe/docs/CONFIGURATION.md",
+        "anchor": "reviewer_instances.<name>.cli"
+      }
+    },
+    {
+      "id": "search-api-key",
+      "evidence": {
+        "path": "docs/CONFIGURATION.md",
+        "url": "https://raw.githubusercontent.com/open-gsd/gsd-core/36a311c5bb5fa1a475cfbb685a845cd2d5bf88fe/docs/CONFIGURATION.md",
+        "anchor": "Masked in display"
+      }
+    }
+  ],
+  "unsupported": [
+    {
+      "path": "review.reviewer_instances.<name>",
+      "reason": "bundled schema has no matching validation shape; preserve read-only"
+    }
+  ],
+  "runtimeInstallMatrix": [
+    {
+      "runtime": "codex",
+      "path": "model_overrides.gsd-executor",
+      "matches": true,
+      "install": "gsd install codex"
+    },
+    {
+      "runtime": "opencode",
+      "path": "model_overrides.gsd-executor",
+      "matches": true,
+      "install": "gsd install opencode"
+    },
+    {
+      "runtime": "claude",
+      "path": "model_overrides.gsd-executor",
+      "matches": false,
+      "install": null
+    },
+    {
+      "runtime": "codex",
+      "path": "models.execution",
+      "matches": true,
+      "install": "gsd install codex"
+    },
+    {
+      "runtime": "opencode",
+      "path": "model_profile_overrides.opencode.sonnet",
+      "matches": true,
+      "install": "gsd install opencode"
+    },
+    {
+      "runtime": "codex",
+      "path": "model_profile_overrides.codex.sonnet",
+      "matches": true,
+      "install": "gsd install codex"
+    },
+    {
+      "runtime": "claude",
+      "path": "model_profile_overrides.claude.sonnet",
+      "matches": false,
+      "install": null
+    },
+    {
+      "runtime": "codex",
+      "path": "model_overrides.gsd-executr",
+      "matches": false,
+      "install": null
+    },
+    {
+      "runtime": "codex",
+      "path": "review.models.codex",
+      "matches": false,
+      "install": null
+    },
+    {
+      "runtime": null,
+      "path": "model_overrides.gsd-executor",
+      "matches": false,
+      "install": null
+    },
+    {
+      "runtime": "unsupported-runtime",
+      "path": "model_overrides.gsd-executor",
+      "matches": false,
+      "install": null
+    }
+  ],
+  "decisions": {
+    "noCustomProfileEntity": true,
+    "reviewerInstances": {
+      "cli": "required",
+      "model": "optional",
+      "agent": "optional"
+    },
+    "unknownSelectorFallback": "balanced",
+    "codexOpenCodeInstallSensitive": true
+  }
+}

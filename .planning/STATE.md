@@ -5,16 +5,15 @@ milestone_name: milestone
 current_phase: 4
 current_phase_name: Pool Editors & Model Profile Specialization
 status: executing
-stopped_at: Phase 4 UI-SPEC approved
-last_updated: "2026-07-18T19:27:05.039Z"
+stopped_at: Completed 04-01-PLAN.md
+last_updated: "2026-07-18T20:38:39.885Z"
 last_activity: 2026-07-17
 last_activity_desc: Phase 03 complete, transitioned to Phase 4
 progress:
-  total_phases: 6
+  total_phases: 4
   completed_phases: 3
-  total_plans: 20
-  completed_plans: 20
-  percent: 50
+  total_plans: 25
+  completed_plans: 21
 ---
 
 # Project State
@@ -33,7 +32,7 @@ Plan: Not started
 Status: Ready to execute
 Last activity: 2026-07-17 — Phase 03 complete, transitioned to Phase 4
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [████████░░] 84%
 
 ## Performance Metrics
 
@@ -71,6 +70,11 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 02 P05 | 20min | 3 tasks | 8 files |
 | Phase 02 P06 | 20min | 3 tasks | 7 files |
 | Phase 02 P07 | 25min | 4 tasks | 4 files |
+**Per-Plan Metrics:**
+
+| Plan | Duration | Tasks | Files |
+|------|----------|-------|-------|
+| Phase 04 P01 | 8min | 3 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -110,6 +114,9 @@ Recent decisions affecting current work:
 - [Phase ?]: [Phase 02-07]: Build order is a safety invariant — build:cli (tsup, cleans all of dist/) MUST run before build:client (cleans only dist/client); reversing them ships a blank page to every npx user
 - [Phase ?]: [Phase 02-07]: Rule-1 fix — bootstrap.ts's defaultClientRoot() used from-source __dirname math (3 levels up), which misresolves once tsup inlines it into dist/cli.js (__dirname is then dist/, dist/client a direct sibling); invisible to every from-source test, caught only by the extracted-tarball smoke run
 - [Phase ?]: [Phase 02-07]: DIST-04 real-Ctrl-C ground truth closed by human checkpoint sign-off, retiring the outstanding human-verification item 02-06's IPC-fallback deviation left open
+- [Phase ?]: Live source equality is required for every evidence gate mode; cached evidence cannot bypass source drift.
+- [Phase ?]: Reviewer instances remain source-backed but read-only when the bundled validation schema lacks a matching shape.
+- [Phase ?]: Copy-first custom model configuration persists ordinary project fields without a profile entity.
 
 ### Pending Todos
 
@@ -131,6 +138,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-07-18T10:18:32.476Z
-Stopped at: Phase 4 UI-SPEC approved
-Resume file: .planning/phases/04-pool-editors-model-profile-specialization/04-UI-SPEC.md
+Last session: 2026-07-18T20:38:39.803Z
+Stopped at: Completed 04-01-PLAN.md
+Resume file: None
