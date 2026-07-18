@@ -21,6 +21,17 @@ describe('Phase 4 catalog evidence contract', () => {
     expect(evidence.descriptors.every((descriptor: any) => descriptor.evidence.url && descriptor.evidence.path && descriptor.evidence.anchor)).toBe(true);
   });
 
+  it('rejects artifact writes outside the repository-owned fixture', () => {
+    for (const path of ['/tmp/phase4-evidence-outside-repo.json', 'test/fixtures/unrelated-evidence.json']) {
+      try {
+        runGate('--write-artifact', path);
+        throw new Error('expected artifact path rejection');
+      } catch (error) {
+        expect(String(error)).toContain('only permits');
+      }
+    }
+  });
+
   it('records the complete source-confirmed profile, phase, and agent catalogs', () => {
     expect(catalog.profiles).toEqual(['quality', 'balanced', 'budget', 'adaptive', 'inherit']);
     expect(catalog.phaseTypes).toEqual(['planning', 'discuss', 'research', 'execution', 'verification', 'completion']);

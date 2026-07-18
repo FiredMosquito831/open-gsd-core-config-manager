@@ -1,7 +1,31 @@
 #!/usr/bin/env node
 import { createHash } from 'node:crypto';
-import { mkdir, writeFile, readFile } from 'node:fs/promises';
-import { dirname } from 'node:path';
+import { mkdir, mkdtemp, readFile, rename, rm, writeFile } from 'node:fs/promises';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const REPOSITORY_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
+const EXPECTED_ARTIFACT_PATH = resolve(REPOSITORY_ROOT, 'test/fixtures/phase4-gsd-core-source-evidence.json');
+
+function assertArtifactPath(path) {
+  const resolvedPath = resolve(REPOSITORY_ROOT, path);
+  if (resolvedPath !== EXPECTED_ARTIFACT_PATH) {
+    fail(`--write-artifact only permits ${EXPECTED_ARTIFACT_PATH}`);
+  }
+  return resolvedPath;
+}
+
+async function writeArtifactAtomically(path, contents) {
+  const directory = dirname(path);
+  const temporaryDirectory = await mkdtemp(resolve(directory, '.phase4-evidence-'));
+  const temporaryPath = resolve(temporaryDirectory, 'artifact.json');
+  try {
+    await writeFile(temporaryPath, contents, 'utf8');
+    await rename(temporaryPath, path);
+  } finally {
+    await rm(temporaryDirectory, { recursive: true, force: true });
+  }
+}
 
 const REVISION = '36a311c5bb5fa1a475cfbb685a845cd2d5bf88fe';
 const API_REF = 'https://api.github.com/repos/open-gsd/gsd-core/git/refs/heads/next';
@@ -106,6 +130,7 @@ async function main() {
   const mode = args[0];
   const artifactPath = args[1];
   if (!['--verify-only', '--write-artifact', '--verify-artifact'].includes(mode)) { console.error('usage: --verify-only | --write-artifact <path> | --verify-artifact <path>'); process.exit(2); }
+  const outputPath = mode === '--write-artifact' ? assertArtifactPath(artifactPath ?? '') : undefined;
   const retrieved = await retrieve();
   const artifact = buildArtifact(retrieved);
   if (mode === '--verify-artifact') {
@@ -116,8 +141,9 @@ async function main() {
     if (stored.descriptors?.length !== DESCRIPTORS.length || stored.runtimeInstallMatrix?.length !== MATRIX.length) fail('artifact evidence is incomplete');
   } else if (mode === '--write-artifact') {
     if (!artifactPath) fail('artifact path is required');
-    await mkdir(dirname(artifactPath), { recursive: true });
-    await writeFile(artifactPath, JSON.stringify(artifact, null, 2) + '\n');
+    const outputPath = assertArtifactPath(artifactPath);
+    await mkdir(dirname(outputPath), { recursive: true });
+    await writeArtifactAtomically(outputPath, JSON.stringify(artifact, null, 2) + '\n');
   }
   console.log(`verified immutable gsd-core source ${REVISION}`);
 }
