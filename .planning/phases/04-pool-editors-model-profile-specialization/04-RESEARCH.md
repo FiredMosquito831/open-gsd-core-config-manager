@@ -548,7 +548,7 @@ rg -n 'model_profile|model_profile_overrides|model_policy|models\\.<phase_type>|
 rg -n 'model_profile|model_overrides|dynamic|models|model_policy|model_profile_overrides|runtime default' \
   "/tmp/gsd-core-$REV-src__model-resolver.cts" \
   "/tmp/gsd-core-$REV-src__model-catalog.cts"
-node -e 'const x=require("/tmp/gsd-core-36a311c5bb5fa1a475cfbb685a845cd2d5bf88fe-gsd-core__bin__shared__model-catalog.json"); if(JSON.stringify(x.profiles)!==JSON.stringify(["quality","balanced","budget","adaptive","inherit"])||Object.keys(x.agents).length!==33) process.exit(1)'
+node -e 'const x=require("/tmp/gsd-core-36a311c5bb5fa1a475cfbb685a845cd2d5bf88fe-gsd-core__bin__shared__model-catalog.json"); if(JSON.stringify(x.profiles)!==JSON.stringify(["quality","balanced","budget","adaptive","inherit"])||Object.keys(x.agents).length!==34) process.exit(1)'
 <!-- planner-discipline-allow: profiles.<name> -->
 # Fail closed unless docs/source establish the five values, ordinary supported persistence fields,
 # unknown-selector fallback, documented precedence, Codex/OpenCode reinstall behavior, and read-only reviewer_instances disposition.
