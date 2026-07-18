@@ -239,7 +239,7 @@ Extend types additively. Preserve `LoadResult.raw.project`, `raw.global`, `effec
 
 **Analog:** existing flattened schema artifact and `SchemaEntry` contract.
 
-Add only additive, versioned specialized metadata for confirmed canonical shapes and profile/runtime catalog information. Keep defaults/enums/descriptions in the canonical artifact and test metadata completeness. Do not fabricate metadata for absent keys such as a possibly missing `review.reviewer_instances`; preserve such values as unknown/read-only until canonical source is confirmed. No live reconciliation belongs in Phase 4.
+Add only additive, versioned specialized metadata for canonical shapes and profile/runtime catalog information confirmed by the immutable `next` SHA `36a311c5bb5fa1a475cfbb685a845cd2d5bf88fe` evidence gate. Keep defaults/enums/descriptions in the canonical artifact and test metadata completeness. For `review.reviewer_instances`, require both source-confirmed entry constraints and a matching bundled validation shape before enabling an editable descriptor; otherwise preserve it as visible/read-only. No live reconciliation belongs in Phase 4.
 
 ### `web/src/styles.css` (styling/config, UI presentation)
 
