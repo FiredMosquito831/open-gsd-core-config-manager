@@ -19,7 +19,13 @@ export function StructuredPoolEditor({ descriptor, value, onChange }: Structured
   const update = (field: SpecializedField, next: unknown) => onChange({ ...objectValue, [field.path]: next });
 
   if (descriptor.editor === 'read-only-unsupported' || !descriptor.editable) {
-    return <div className="gsd-specialized-readonly" role="status"><strong>Read-only value</strong><p>{descriptor.reason ?? 'This shape is not confirmed by the bundled validation schema.'}</p><pre>{JSON.stringify(value, null, 2)}</pre></div>;
+    const redact = (input: unknown, key = ''): unknown => {
+      if (typeof input === 'string' && /(token|secret|password|api[_-]?key|credential)/i.test(key)) return '[redacted]';
+      if (Array.isArray(input)) return input.map((item) => redact(item));
+      if (input && typeof input === 'object') return Object.fromEntries(Object.entries(input).map(([childKey, childValue]) => [childKey, redact(childValue, childKey)]));
+      return input;
+    };
+    return <div className="gsd-specialized-readonly" role="status"><strong>Read-only value</strong><p>{descriptor.reason ?? 'This shape is not confirmed by the bundled validation schema.'}</p><pre>{JSON.stringify(redact(value), null, 2)}</pre></div>;
   }
 
   return (
