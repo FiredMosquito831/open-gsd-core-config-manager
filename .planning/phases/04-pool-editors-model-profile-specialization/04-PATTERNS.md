@@ -134,7 +134,7 @@ Derive cards from bundled/additive profile metadata and the current effective/pr
 
 **Analog:** `ConfigEditor.tsx`, lines 73-115, and `FieldCard.tsx`, lines 27-45.
 
-Open an existing profile in the same focused-workspace shell. Custom creation starts by deep-copying a selected built-in/existing profile into the project draft, then requires a distinct new name before assignment edits. Use the shared agent/value map primitive, preserve runtime-resolution explanation separately from file-layer provenance, and save through the normal full-candidate mutation. Do not make a second profile API or write an empty arbitrary object.
+Open the current project model configuration in the same focused-workspace shell. Per D-11, `Create custom profile` copies a selected built-in assignment set into ordinary supported project fields, may use a transient session label, and then permits constrained assignment edits; no label/name becomes durable profile data. Use the shared agent/value map primitive, preserve the documented runtime-resolution precedence separately from file-layer provenance, and save through the normal full-candidate mutation. Do not make a second profile API, serialize named-profile metadata, or write an empty arbitrary object.
 
 ### `web/src/components/specialized/LayerSummary.tsx` (component, read/transform)
 
@@ -309,8 +309,8 @@ Mask the DOM value by default, omit clipboard/copy flows, do not log candidate/v
 - **`test/web/structured-pool-editor.test.tsx`:** per-field controls; required-field inline error; invalid non-selected row badge; all-entry validation blocks Save; no synthetic RHF id persisted.
 - **`test/web/agent-value-map-editor.test.tsx`:** existing agent keys excluded; supported value choices only; duplicate prevented with `That agent already has an override. Choose another agent.`; unknown entries preserved/read-only.
 - **`test/web/profile-cards.test.tsx`:** Profiles chapter, card name/description/assignment summary, selected/open behavior, and documented empty state.
-- **`test/web/profile-editor.test.tsx`:** existing profile assignment edit uses project draft and normal save; file provenance and runtime-resolution explanation remain distinct.
-- **`test/web/profile-create.test.tsx`:** copy built-in/existing profile, require a new name, reject duplicate/empty primary path, then edit assignments.
+- **`test/web/profile-editor.test.tsx`:** project model configuration edit uses only supported fields and normal save; file provenance and documented runtime precedence remain distinct.
+- **`test/web/profile-create.test.tsx`:** copy a built-in assignment set, show the UI-SPEC clarification, optionally session-label the editing session, reject empty arbitrary creation, prove no named-profile metadata serializes, then edit assignments and verify copied assignments survive reload.
 - **`test/web/secret-field.test.tsx`:** masked initial DOM; deliberate reveal/hide; blur re-mask; fake-timer inactivity re-mask; focus returning does not expose without a new reveal.
 - **`test/web/layer-summary.test.tsx` and `specialized-draft.test.tsx`:** three expandable layers/effective marker and inherited edit materializing only a project override while retaining source values.
 - **`test/web/runtime-install-notice.test.tsx`:** changed runtime-baked path shows persistent named notice and literal `gsd install`; unrelated save does not; dismissal and loading another config clear it.

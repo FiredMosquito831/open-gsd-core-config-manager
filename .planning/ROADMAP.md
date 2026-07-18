@@ -127,7 +127,7 @@ Plans:
   1. Array-valued and dynamic-map keys (e.g. `ship.pr_body_sections`, `review.reviewer_instances`, `model_overrides`, `effort.agent_overrides`) are added, configured, reordered, and removed through guided per-entry controls, never raw JSON.
   2. Agent-keyed maps are edited via an agent picker plus a value picker, and structured-object pools present a dedicated per-field editor for each entry matching their real validation constraints.
   3. Each field shows its effective resolved value and which resolution layer (canonical default → global defaults → project config) set it, not just the raw override in isolation.
-  4. User can view existing GSD model profiles and their per-agent/per-role tier assignments, edit an existing profile, and create a new custom profile per gsd-core's documented shape.
+  4. User can view the five built-in GSD model-profile selectors and their assignments, then create a copy-first custom project model configuration using supported model fields; no durable named custom-profile entity is invented.
   5. Saving a change to a runtime-baked setting (e.g. `model_overrides` on a Codex/OpenCode-style install) surfaces a clear "requires `gsd install` to take effect" notice; integration/API-key fields are masked by default in the UI and never logged.
 
 **Plans**: 5 plans

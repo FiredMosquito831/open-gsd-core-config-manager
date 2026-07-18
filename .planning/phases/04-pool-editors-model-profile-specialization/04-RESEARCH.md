@@ -17,8 +17,8 @@
 - **D-07:** Show inline errors on invalid entry fields, visibly badge invalid entries in the entry list, preserve the draft, and block the overall config save until all errors are corrected.
 - **D-08:** Do not provide per-entry duplication. New entries always follow the guided schema-default initialization path to avoid accidental copied identities, agent keys, or secrets.
 - **D-09:** Add a dedicated **Profiles** chapter to the middle navigation rather than burying profiles in generic model settings or a utility menu.
-- **D-10:** The Profiles chapter presents profiles as compact cards with name, short description, and a readable per-agent/per-role tier-assignment summary. Opening a card leads to its focused editor.
-- **D-11:** Creating a custom profile starts by copying a built-in or existing profile, then giving the copy a new name and editing its assignments. Empty-profile creation is not part of the primary flow.
+- **D-10:** The Profiles chapter presents the five built-in selector choices as compact cards with name, authoritative short description, and a readable per-agent/per-role tier-assignment summary. A project’s current supported model configuration opens in its focused editor.
+- **D-11:** `Create custom profile` is implemented as a copy-first **custom project model configuration**: copy a built-in assignment set into the project draft, optionally use a transient session label, then edit supported assignments. The label is never serialized or reloaded as a profile name; empty creation is not part of the primary flow.
 - **D-12:** When saving a profile or override changes a runtime-baked setting, show a persistent post-save notice naming the changed setting and the required `gsd install` command. Keep it visible until dismissal or loading another config.
 - **D-13:** Each focused pool/profile editor has an always-visible compact three-layer summary for canonical default → global default → project override. It identifies the effective source and allows each layer’s value to be expanded for inspection.
 - **D-14:** Editing an inherited complex value creates a project-level copy/override and explains that scope change before opening guided changes; source layers remain inspectable.
@@ -43,9 +43,9 @@ None — discussion stayed within phase scope.
 | POOL-01 | Edit arrays and dynamic maps as guided pools | Focused list/detail workspace, schema metadata, draft mutation, and RHF array patterns. |
 | POOL-02 | Edit structured-object pools per field | Add a field-shape metadata contract for known object-array/map entries and render local guided controls. |
 | POOL-03 | Edit agent-keyed maps with agent and value pickers | Reuse one agent-map editor for `model_overrides`, `effort.agent_overrides`, and `fast_mode.agent_overrides`; restrict both key and value choices. |
-| PROF-01 | View existing profiles and per-agent/per-role assignments | Add Profiles chapter, profile catalog metadata, cards, and readable assignment summary. |
-| PROF-02 | Edit an existing profile | Focused profile editor writes a project-level profile/override draft through existing save pipeline. |
-| PROF-03 | Create a custom profile per gsd-core shape | Copy built-in/existing profile, require a new name, then edit assignments; do not create arbitrary empty profile data. |
+| PROF-01 | View built-in model-profile selectors and per-agent/per-role assignments | Add Profiles chapter, exact five-selector catalog metadata, cards, and readable assignment summary. |
+| PROF-02 | Edit current project model configuration | Focused editor writes only supported project fields through the existing save pipeline. |
+| PROF-03 | Create a copy-first custom project model configuration | Copy a built-in assignment set into supported project fields, optionally session-label it, then edit assignments; do not create a named entity or arbitrary empty profile data. |
 | PROF-04 | Surface `gsd install` requirement for runtime-baked settings | Detect runtime-sensitive changed paths from explicit metadata and current runtime; emit persistent post-save notice from save result/change set. |
 </phase_requirements>
 
@@ -217,7 +217,7 @@ Do not use `JSON.stringify` of the full config for diagnostics or error copy. Ex
 
 ### Pattern 4: Three config layers plus model-resolution explanation
 
-The focused header must show the required three file layers—canonical, global, project—with the effective source marked. For model profiles, add a second explanatory area or per-assignment detail explaining semantic model resolution, because gsd-core documents a higher-to-lower chain involving `model_overrides`, runtime-aware profile/tier resolution, phase-level `models`, dynamic routing, and runtime defaults. Do not collapse the semantic chain into the three file-layer labels; one is file provenance and the other is runtime resolution. [VERIFIED: `04-CONTEXT.md`; `packages/config-io/src/types.ts`; [CITED: https://github.com/open-gsd/gsd-core/blob/next/docs/CONFIGURATION.md]
+The focused header must show the required three file layers—canonical, global, project—with the effective source marked. For project model configuration, add a separate resolution explanation: `model_overrides[agent]` → dynamic-routing tier mapping when enabled → `models[phase_type]` → selected `model_profile` assignment → runtime default, with the additional runtime/provider materialization stages of `model_policy` and `model_profile_overrides` where confirmed. Do not collapse this semantic chain into the three file-layer labels; file provenance and runtime resolution are distinct. [VERIFIED: `04-CONTEXT.md`; `packages/config-io/src/types.ts`; [CITED: https://github.com/open-gsd/gsd-core/blob/next/docs/CONFIGURATION.md]
 
 When a complex value is inherited, the first edit must materialize a project-level copy from the effective value, mark the change as project scope, and retain source-layer inspection. Never mutate global/canonical values through a project config save. [VERIFIED: `04-CONTEXT.md`; `packages/config-io/src/patch.ts`]
 
@@ -378,7 +378,7 @@ The current bundled schema and research artifacts identify these representative 
 | Shape | Editor | Planning notes |
 |------|--------|----------------|
 | `ship.pr_body_sections` | Ordered structured array | Locally bundled and eligible for descriptor work only after the immutable-source gate confirms its exact entry fields; otherwise preserve unknown/read-only. [VERIFIED: `packages/schema-data/bundled-schema.json`; gate in Open Questions (RESOLVED)] |
-| `review.reviewer_instances` | Keyed structured-object map | Upstream-confirmed `{ cli, model?, agent? }`, but locally absent from the bundled schema; Phase 4 disposition is unsupported/read-only, not an editable descriptor. [VERIFIED: official ADR at immutable revision; `packages/schema-data/bundled-schema.json`] |
+| `review.reviewer_instances` | Unknown/read-only field | Upstream-confirmed but absent from the bundled schema; Phase 4 disposition is visible/preserved unknown/read-only, not an editable descriptor. [VERIFIED: pinned `docs/CONFIGURATION.md`; `packages/schema-data/bundled-schema.json`] |
 | `model_overrides` | Agent-keyed value map | Agent picker uses the 33 official catalog agent keys; values are tier/model override values documented by gsd-core. Codex/OpenCode changes are install-sensitive. [VERIFIED: immutable `model-catalog.json`; official `CONFIGURATION.md`] |
 | `effort.agent_overrides` | Agent-keyed restricted value map | Reuse agent picker and only the effort values confirmed by the bundled schema/current source; unknown values remain preserved/read-only. [VERIFIED: bundled schema; evidence gate] |
 | `fast_mode.agent_overrides` | Agent-keyed boolean map | Reuse agent picker with boolean value control. [VERIFIED: `packages/schema-data/bundled-schema.json`] |
@@ -421,17 +421,21 @@ These versions/scripts are present in the repository. [VERIFIED: `package.json`;
 
 | Req ID | Behavior | Test Type | Automated Command | File Exists? |
 |--------|----------|-----------|-------------------|-------------|
-| SEC-03 | Secret field masked initially; reveal deliberate; blur and timer re-mask; value absent from logs/copy/errors | component + security unit | `npx vitest run test/web/secret-field.test.tsx test/web/security-redaction.test.ts --reporter=dot` | ❌ Wave 0 |
-| EDIT-03 | Complex value shows canonical/global/project layers, effective marker, expansion, inherited edit creates project override | component | `npx vitest run test/web/layer-summary.test.tsx test/web/specialized-draft.test.tsx --reporter=dot` | ❌ Wave 0 |
-| POOL-01 | Add defaulted entry, select, reorder by buttons, remove confirmation, save draft | component/integration | `npx vitest run test/web/pool-editor.test.tsx --reporter=dot` | ❌ Wave 0 |
-| POOL-02 | Structured entries render field controls, field errors, invalid row badge, save blocked | component | `npx vitest run test/web/structured-pool-editor.test.tsx --reporter=dot` | ❌ Wave 0 |
-| POOL-03 | Agent picker excludes existing keys; value picker restricts choices; duplicate blocked | component | `npx vitest run test/web/agent-value-map-editor.test.tsx --reporter=dot` | ❌ Wave 0 |
-| PROF-01 | Profiles chapter/cards show names, descriptions, readable assignments | component | `npx vitest run test/web/profile-cards.test.tsx --reporter=dot` | ❌ Wave 0 |
-| PROF-02 | Existing profile opens and edits assignments through project draft | component/integration | `npx vitest run test/web/profile-editor.test.tsx --reporter=dot` | ❌ Wave 0 |
-| PROF-03 | Create custom profile copies source, requires new name, no empty/clone path | component | `npx vitest run test/web/profile-create.test.tsx --reporter=dot` | ❌ Wave 0 |
-| PROF-04 | Successful runtime-sensitive save shows persistent named `gsd install` notice; unrelated save does not | integration | `npx vitest run test/web/runtime-install-notice.test.tsx test/server/api-routes.test.ts --reporter=dot` | ❌ Wave 0 |
+| SEC-03 | Secret field masked initially; reveal deliberate; blur and timer re-mask; value absent from logs/copy/errors | component + security unit | `npx vitest run test/web/secret-field.test.tsx test/web/security-redaction.test.ts --reporter=dot` | Plan 04-05, Wave 3 |
+| EDIT-03 | Complex value shows canonical/global/project layers, effective marker, expansion, inherited edit creates project override | component | `npx vitest run test/web/layer-summary.test.tsx test/web/specialized-draft.test.tsx --reporter=dot` | Plans 04-02/04-05, Waves 2–3 |
+| POOL-01 | Add defaulted entry, select, reorder by buttons, remove confirmation, save draft | component/integration | `npx vitest run test/web/pool-editor.test.tsx --reporter=dot` | Plan 04-03, Wave 4 |
+| POOL-02 | Structured entries render field controls, field errors, invalid row badge, save blocked | component | `npx vitest run test/web/structured-pool-editor.test.tsx --reporter=dot` | Plan 04-03, Wave 4 |
+| POOL-03 | Agent picker excludes existing keys; value picker restricts choices; duplicate blocked | component | `npx vitest run test/web/agent-value-map-editor.test.tsx --reporter=dot` | Plan 04-03, Wave 4 |
+| PROF-01 | Built-in selector cards show descriptions and readable assignments | component | `npx vitest run test/web/profile-cards.test.tsx --reporter=dot` | Plan 04-04, Wave 5 |
+| PROF-02 | Project model configuration edits supported fields through project draft | component/integration | `npx vitest run test/web/profile-editor.test.tsx --reporter=dot` | Plan 04-04, Wave 5 |
+| PROF-03 | Copy-first project configuration persists no named profile metadata and survives reload | component/integration | `npx vitest run test/web/profile-create.test.tsx test/web/editor-save.test.tsx --reporter=dot` | Plan 04-04, Wave 5 |
+| PROF-04 | Codex/OpenCode positive notices; Claude/near-miss negatives | integration | `npx vitest run test/web/runtime-install-notice.test.tsx test/web/editor-save.test.tsx --reporter=dot` | Plan 04-04, Wave 5 |
 
-Commands and filenames are proposed Wave 0 gaps; existing Phase 3 tests provide the rendering/mutation harness patterns. [VERIFIED: `test/web/*.test.tsx`; `04-UI-SPEC.md`; ASSUMED exact file split]
+Plan 04-01 creates the source-evidence and catalog contract in Wave 1; subsequent plans create and run the listed focused tests in their declared waves. [VERIFIED: `04-VALIDATION.md`; `04-UI-SPEC.md`; ASSUMED exact file split]
+
+### Test Creation Sequence
+
+Plan 04-01 creates the immutable evidence gate and source/catalog fixtures in Wave 1, Plan 04-02 creates metadata/draft tests in Wave 2, Plan 04-05 creates provenance/secret tests in Wave 3, Plan 04-03 creates pool tests in Wave 4, and Plan 04-04 creates project-configuration/runtime-notice tests in Wave 5.
 
 ### Sampling Rate
 
@@ -439,13 +443,13 @@ Commands and filenames are proposed Wave 0 gaps; existing Phase 3 tests provide 
 - **Per wave merge:** `npx vitest run test/web --reporter=dot`
 - **Phase gate:** `npm test` and `npm run typecheck` green before `/gsd-verify-work`; run CLI/server subsets separately if the known concurrent smoke-test timeout recurs. [VERIFIED: Phase 3 summary]
 
-### Wave 0 Gaps
+### Planned Test Additions
 
-- [ ] Add fixtures for structured pools, dynamic maps, profiles, inherited layers, unsupported/unknown entries, and secret-shaped fields. [ASSUMED]
-- [ ] Add specialized metadata fixture and completeness test ensuring all supported editor fields have safe labels/types/defaults. [ASSUMED]
-- [ ] Add focused component tests listed in the Phase Requirements → Test Map. [ASSUMED]
-- [ ] Add a test helper that asserts rendered output, logs, thrown errors, and clipboard payloads do not contain a sentinel secret. [ASSUMED]
-- [ ] Add a responsive/accessibility test for 280px list / flexible detail and single-column collapse below 900px, using the approved UI contract. [VERIFIED: `04-UI-SPEC.md`; test file is a gap]
+- [ ] Plan 04-01: Add source-confirmed fixtures for structured pools, dynamic maps, model configuration, inherited layers, unsupported/unknown entries, and secret-shaped fields.
+- [ ] Plan 04-02: Add specialized metadata completeness, project-only copy, forbidden-path, and value-free validation tests.
+- [ ] Plans 04-03 through 04-04: Add focused component/integration tests in the Phase Requirements → Test Map.
+- [ ] Plans 04-05, 04-03, and 04-04: Add reusable and actual-renderer sentinel-secret checks for rendered output, logs, thrown errors, diagnostics, and clipboard payloads.
+- [ ] Plan 04-03: Add the approved responsive/accessibility test for 280px list / flexible detail and single-column collapse below 900px.
 
 ## Security Domain
 
@@ -489,13 +493,13 @@ Security enforcement is enabled at ASVS level 3 in `.planning/config.json`. [VER
 
 ### 1. Current model/profile catalog and persistence shape
 
-**Authoritative result:** At immutable gsd-core revision `50efae13ce74f02a5b0253ce0c205c5eac2a99e3` (the `next` branch tip retrieved 2026-07-18), the official catalog is `gsd-core/bin/shared/model-catalog.json`. Its `profiles` array is exactly `quality`, `balanced`, `budget`, `adaptive`, and `inherit`; its `agents` object is the shipped agent catalog, and the checked revision contains 33 agent keys. `src/model-catalog.cts:85-117` derives `VALID_PROFILES`, valid tier sets, and per-agent profile assignments from that JSON rather than defining a second roster. [VERIFIED: https://raw.githubusercontent.com/open-gsd/gsd-core/50efae13ce74f02a5b0253ce0c205c5eac2a99e3/gsd-core/bin/shared/model-catalog.json; https://raw.githubusercontent.com/open-gsd/gsd-core/50efae13ce74f02a5b0253ce0c205c5eac2a99e3/src/model-catalog.cts#L85-L117]
+**Authoritative result:** At immutable gsd-core revision `f8b16d18744bacae8528c0a7a27762d657154851` (the `next` branch tip retrieved 2026-07-18), the official catalog is `gsd-core/bin/shared/model-catalog.json`. Its `profiles` array is exactly `quality`, `balanced`, `budget`, `adaptive`, and `inherit`; its `agents` object is the shipped agent catalog, and the checked revision contains 33 agent keys. `src/model-catalog.cts:85-117` derives `VALID_PROFILES`, valid tier sets, and per-agent profile assignments from that JSON rather than defining a second roster. [VERIFIED: https://raw.githubusercontent.com/open-gsd/gsd-core/f8b16d18744bacae8528c0a7a27762d657154851/gsd-core/bin/shared/model-catalog.json; https://raw.githubusercontent.com/open-gsd/gsd-core/f8b16d18744bacae8528c0a7a27762d657154851/src/model-catalog.cts#L85-L117]
 
-The persisted configuration shape is not a named custom-profile registry. Official configuration documentation exposes `model_profile` as the profile enum, `model_overrides.<agent>` as per-agent values, `model_profile_overrides.<runtime>.<tier>` as runtime/tier values, `model_policy.*` as provider/tier values, and `models.<phase_type>` as phase-type tier values. [CITED: https://raw.githubusercontent.com/open-gsd/gsd-core/50efae13ce74f02a5b0253ce0c205c5eac2a99e3/docs/CONFIGURATION.md#L143-L158] Therefore Phase 4 MUST NOT invent or persist `profiles.<name>`, a profile ID, a profile description, or a profile-assignment object. D-11 is represented as a copy-first UI operation that copies a built-in/existing assignment into the ordinary project draft fields above; the resulting draft remains a normal `.planning/config.json` candidate and is not a new catalog entity. If the product requires a durable named custom profile beyond those fields, that requirement is unsupported/read-only in Phase 4 and must be deferred rather than represented by invented fields. [VERIFIED: official source paths above; project save contract in `packages/config-io/src/types.ts`]
+There is no durable named custom-profile registry/entity. `model_profile` permits exactly `quality`, `balanced`, `budget`, `adaptive`, and `inherit`; unknown names fall back to `balanced`. Durable custom behavior is an ordinary project configuration made only of `model_overrides.<agent>`, `models.<phase_type>`, `model_profile_overrides.<runtime>.<tier>`, and confirmed `model_policy.*` fields. [CITED: https://raw.githubusercontent.com/open-gsd/gsd-core/f8b16d18744bacae8528c0a7a27762d657154851/docs/CONFIGURATION.md#L143-L158] Phase 4 MUST NOT invent or persist `profiles.<name>`, `active_profile`, a profile ID, a profile description, a profile-assignment container, or arbitrary profile names in `model_profile`. Per D-11, `Create custom profile` is a copy-first UI operation that copies a selected built-in assignment set into the ordinary supported project-draft fields above. A session label may aid the active editing experience but must not serialize or reload as a profile name. The complete candidate still saves through the existing pipeline and is not a new catalog entity. If a durable reusable named profile is requested, it is unsupported/read-only in Phase 4 and must be deferred rather than represented by invented fields. Tests must prove only supported fields persist, copied assignments survive reload, and invented metadata does not serialize. [VERIFIED: official source paths above; project save contract in `packages/config-io/src/types.ts`]
 
 ### 2. Runtime/path `gsd install` matrix
 
-**Authoritative matrix for Phase 4:** `model_profile`, `model_overrides`, `model_profile_overrides`, `model_policy.*`, and `models.<phase_type>` are configuration inputs to model resolution. For `codex` and `opencode`, gsd-core documents that resolved model IDs are embedded in each agent's static frontmatter because those runtimes do not accept an inline model parameter; a saved change affecting model resolution therefore requires `gsd install <runtime>` (for example, `gsd install codex` or `gsd install opencode`). For all other runtimes, the official documentation says resolution is consumed at spawn time, so Phase 4 MUST NOT claim that `gsd install` is required for these model settings. [CITED: https://raw.githubusercontent.com/open-gsd/gsd-core/50efae13ce74f02a5b0253ce0c205c5eac2a99e3/docs/CONFIGURATION.md#L149-L158; https://raw.githubusercontent.com/open-gsd/gsd-core/50efae13ce74f02a5b0253ce0c205c5eac2a99e3/docs/how-to/configure-model-profiles.md#L40-L64]
+**Authoritative matrix for Phase 4:** `model_profile`, `model_overrides`, `model_profile_overrides`, `model_policy.*`, and `models.<phase_type>` are configuration inputs to model resolution. For `codex` and `opencode`, gsd-core documents that resolved model IDs are embedded in each agent's static frontmatter because those runtimes do not accept an inline model parameter; a saved change affecting model resolution therefore requires `gsd install <runtime>` (for example, `gsd install codex` or `gsd install opencode`). For all other runtimes, the official documentation says resolution is consumed at spawn time, so Phase 4 MUST NOT claim that `gsd install` is required for these model settings. [CITED: https://raw.githubusercontent.com/open-gsd/gsd-core/f8b16d18744bacae8528c0a7a27762d657154851/docs/CONFIGURATION.md#L149-L158; https://raw.githubusercontent.com/open-gsd/gsd-core/f8b16d18744bacae8528c0a7a27762d657154851/docs/how-to/configure-model-profiles.md#L40-L64]
 
 | Runtime condition | Affected path family | Install notice | Evidence |
 |---|---|---|---|
@@ -508,7 +512,9 @@ The notice must name the changed setting/path and the literal command, must be d
 
 ### 3. Named pool availability and `review.reviewer_instances`
 
-The official gsd-core source confirms `review.reviewer_instances` exists and is a bounded object under `review`; each entry is `{ cli, model?, agent? }`, instance names match `^[a-z0-9][a-z0-9-]*$`, `cli` is restricted to known reviewer adapters, and `model`/`agent` are opaque strings. [CITED: https://raw.githubusercontent.com/open-gsd/gsd-core/50efae13ce74f02a5b0253ce0c205c5eac2a99e3/docs/adr/1517-reviewer-instances-config-surface.md#L23-L49] The current project `packages/schema-data/bundled-schema.json` does not expose that path, so the Phase 4 disposition is **upstream-confirmed but locally unsupported/read-only**: do not add an editable `review.reviewer_instances` descriptor or fabricate a local schema entry in this phase. If encountered in a loaded config, preserve it as an unknown child, show it read-only, and cover that behavior in the fixture/evidence test. It becomes editable only after a later schema-data refresh/reconciliation explicitly imports the official shape. [VERIFIED: official ADR at immutable revision above; `packages/schema-data/bundled-schema.json`]
+`review.reviewer_instances` is upstream but absent from this project's bundled schema. Phase 4 disposition is **visible/preserved unknown/read-only**: do not add an editable descriptor or fabricate a local schema entry. If encountered in a loaded config, preserve it as an unknown child, show it read-only, and cover that behavior in the fixture/evidence test. It becomes editable only after a later schema-data reconciliation imports the canonical shape. [VERIFIED: pinned `docs/CONFIGURATION.md`; `packages/schema-data/bundled-schema.json`]
+
+<!-- planner-discipline-allow: review.reviewer_instances -->
 
 The locally bundled artifact does confirm these current named candidates: `ship.pr_body_sections`, `model_overrides`, `model_profile_overrides`, `effort.agent_overrides`, and `fast_mode.agent_overrides`; the project may only create editable descriptors for a candidate when both the local bundled schema and the immutable official evidence support the shape. Any candidate lacking either side is unsupported/read-only, never guessed. [VERIFIED: `packages/schema-data/bundled-schema.json`; official `docs/CONFIGURATION.md:149-158`]
 
@@ -518,24 +524,28 @@ Plan 04-01 MUST execute this gate before writing `test/fixtures/phase4-gsd-core-
 
 ```bash
 set -euo pipefail
-REV=50efae13ce74f02a5b0253ce0c205c5eac2a99e3
+REV=f8b16d18744bacae8528c0a7a27762d657154851
 API=https://api.github.com/repos/open-gsd/gsd-core
 BASE=https://raw.githubusercontent.com/open-gsd/gsd-core/$REV
 [ "$(curl -fsSL "$API/git/refs/heads/next" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>process.stdout.write(JSON.parse(s).object.sha))')" = "$REV" ]
 for p in \
   docs/CONFIGURATION.md \
   docs/how-to/configure-model-profiles.md \
-  docs/adr/1517-reviewer-instances-config-surface.md \
   gsd-core/bin/shared/model-catalog.json \
-  src/model-catalog.cts; do
+  src/model-catalog.cts \
+  src/model-resolver.cts; do
   curl -fsSL "$BASE/$p" -o "/tmp/gsd-core-$REV-${p//\//__}"
 done
 rg -n 'model_profile|model_profile_overrides|model_policy|models\\.<phase_type>|resolved ID|model_overrides' \
   "/tmp/gsd-core-$REV-docs__CONFIGURATION.md" \
   "/tmp/gsd-core-$REV-docs__how-to__configure-model-profiles.md"
-rg -n 'reviewer_instances|cli|model|agent|MUST NOT equal' \
-  "/tmp/gsd-core-$REV-docs__adr__1517-reviewer-instances-config-surface.md"
-node -e 'const x=require("/tmp/gsd-core-50efae13ce74f02a5b0253ce0c205c5eac2a99e3-gsd-core__bin__shared__model-catalog.json"); if(JSON.stringify(x.profiles)!==JSON.stringify(["quality","balanced","budget","adaptive","inherit"])||Object.keys(x.agents).length!==33) process.exit(1)'
+rg -n 'model_profile|model_overrides|dynamic|models|model_policy|model_profile_overrides|runtime default' \
+  "/tmp/gsd-core-$REV-src__model-resolver.cts" \
+  "/tmp/gsd-core-$REV-src__model-catalog.cts"
+node -e 'const x=require("/tmp/gsd-core-f8b16d18744bacae8528c0a7a27762d657154851-gsd-core__bin__shared__model-catalog.json"); if(JSON.stringify(x.profiles)!==JSON.stringify(["quality","balanced","budget","adaptive","inherit"])||Object.keys(x.agents).length!==33) process.exit(1)'
+<!-- planner-discipline-allow: profiles.<name> -->
+# Fail closed unless docs/source establish the five values, ordinary supported persistence fields,
+# unknown-selector fallback, documented precedence, Codex/OpenCode reinstall behavior, and read-only reviewer_instances disposition.
 ```
 
 The fixture must record the URL, the immutable revision, retrieval date (`2026-07-18` for this research run), exact source paths plus line/anchor evidence references, the profile persistence decision (`ordinary project config fields; no custom profile entity`), every row of the runtime/path matrix, and the unsupported/read-only disposition. The evidence test must reject missing or malformed references, a revision mismatch, a profile persistence shape that introduces a new entity, a descriptor without an evidence reference, and any runtime/path positive or near-miss case not covered by the matrix. If retrieval, revision assertion, anchor lookup, catalog count/profile assertion, or any evidence check fails, stop before creating catalog fixtures and fail with a source-unavailable/conflicting-evidence result; do not create provisional or guessed descriptors. [VERIFIED: official source retrieval command and immutable revision above]
@@ -555,7 +565,9 @@ Resolved as previously: omit the optional pointer shortcut in Phase 4 unless it 
 - React official documentation — effect cleanup for timers/listeners. [CITED: https://react.dev/learn/synchronizing-with-effects]
 
 ### Secondary (MEDIUM confidence)
-- open-gsd gsd-core immutable revision `50efae13ce74f02a5b0253ce0c205c5eac2a99e3`, retrieved 2026-07-18 — `docs/CONFIGURATION.md` anchors 143-158; `docs/how-to/configure-model-profiles.md` anchors 40-64 and 157-177; `docs/adr/1517-reviewer-instances-config-surface.md` anchors 23-49; `gsd-core/bin/shared/model-catalog.json`; `src/model-catalog.cts` anchors 85-117. [VERIFIED: official source retrieval and immutable revision assertion]
+- open-gsd gsd-core immutable revision `f8b16d18744bacae8528c0a7a27762d657154851`, retrieved 2026-07-18 — `docs/CONFIGURATION.md`; `docs/how-to/configure-model-profiles.md`; `gsd-core/bin/shared/model-catalog.json`; `src/model-catalog.cts`; and `src/model-resolver.cts`. [VERIFIED: executable official-source retrieval and immutable revision assertion]
+
+<!-- planner-discipline-allow: review.reviewer_instances -->
 - Phase 1–3 planning research and summaries — domain inventory, known pitfalls, and existing test patterns. [VERIFIED: `.planning/research/*.md`; `.planning/phases/03-generic-schema-driven-ui-shell/03-RESEARCH.md`]
 
 ### Tertiary (LOW confidence)

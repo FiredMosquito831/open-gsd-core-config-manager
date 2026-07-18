@@ -85,7 +85,11 @@ Use existing semantic warning colors (`--gsd-warning` / `--gsd-warning-bg`) for 
 | Empty state heading | `No entries yet` |
 | Empty state body | `Add an entry to configure this pool. New entries start with schema defaults and can be completed in the detail editor.` |
 | Profiles empty state heading | `No custom profiles yet` |
-| Profiles empty state body | `Choose a built-in or existing profile to copy, then give the copy a new name and adjust its assignments.` |
+| Profiles empty state body | `Choose a built-in assignment set to copy into this project, then adjust its supported assignments. This creates a project configuration, not a reusable named GSD profile.` |
+| Profile-creation clarification | `Create custom profile` copies a built-in assignment set into this project. Any label is for this editing session only and is not saved as a GSD profile name. |
+| UI-SPEC follow-up amendment | Retain the approved CTA text while this clarification is implemented and re-approve the copy in the next UI-spec review. |
+<!-- planner-discipline-allow: profiles.<name> -->
+| Persistence fence | Never serialize a named profile registry, `profiles.<name>`, `active_profile`, a profile ID/description, or a session label. |
 | Error state | `Some entries need attention. Fix the highlighted fields before saving.` |
 | Load/error recovery | `This specialized editor could not load its current value. Go back and try again; your existing draft has not been discarded.` |
 | Required-field error | `Enter a value for this required field.` |
@@ -135,7 +139,7 @@ Applicable state considerations resolved: 21 covered, 1 backstop, 2 dismissed, 0
 
 Interaction contract: selecting a specialized field replaces the main editor surface with a focused panel and a clear `Back to {chapter}` action. The panel contains an entry list and detail editor. Add initializes a schema-defaulted blank entry and selects it. Ordered arrays provide labeled Move up/Move down buttons plus optional drag-and-drop; drag handles are a shortcut, not the only mechanism. Remove always confirms. There is no cloning or per-entry duplication.
 
-Profile contract: add a dedicated `Profiles` chapter in middle navigation. Profile cards show name, short description, and readable per-agent/per-role tier assignments. Opening a card enters the same focused-editor pattern. Creating a custom profile begins by copying a built-in or existing profile, then requires a new name before assignments can be edited; empty-profile creation is not the primary path.
+Profile contract: add a dedicated `Profiles` chapter in middle navigation. Cards show the five built-in selector names, authoritative short descriptions, and readable per-agent/per-role tier assignments. Opening the current project model configuration enters the same focused-editor pattern. Retain the approved `Create custom profile` CTA, but pair it with the Profile-creation clarification: it copies a built-in assignment set into supported project fields, uses only an optional session label, and does not create a reusable named GSD profile. Empty arbitrary creation is not the primary path.
 
 Layer contract: the compact three-layer summary is sticky/always visible within the focused detail header or top section. Each layer can expand for inspection. Show the effective source distinctly, but do not imply that inspecting or expanding a layer mutates it. Reset/copy actions must state that the resulting edit is a project-level override.
 
