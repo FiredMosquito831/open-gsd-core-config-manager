@@ -20,7 +20,12 @@ const VENDOR_KEYWORDS = [
   'x-provenance',
   'x-options',
   'x-dynamic-key-hint',
+  'x-specialized',
 ];
+
+function dotPathFromInstancePath(instancePath: string): string {
+  return instancePath || '/';
+}
 
 export function createClientValidator(schema: Record<string, SchemaEntry>) {
   const ajv = new Ajv({
@@ -37,15 +42,36 @@ export function createClientValidator(schema: Record<string, SchemaEntry>) {
   const ajvSchema = buildAjvSchema(schema);
   const validateFn = ajv.compile(ajvSchema);
 
+  const enumByPath = new Map(
+    Object.entries(schema)
+      .filter(([, entry]) => entry.enum)
+      .map(([path, entry]) => [path, entry.enum!] as const),
+  );
+
   return (data: unknown): ClientValidationResult => {
     const valid = validateFn(data) as boolean;
-    if (valid) return { valid: true, errors: [] };
+    const enumErrors: ClientValidationError[] = [];
+    for (const [path, allowed] of enumByPath) {
+      const segments = path.split('.');
+      let value: unknown = data;
+      for (const segment of segments) {
+        if (value === null || typeof value !== 'object') { value = undefined; break; }
+        value = (value as Record<string, unknown>)[segment];
+      }
+      if (value !== undefined && !allowed.includes(value)) {
+        enumErrors.push({ path: `/${path.replaceAll('.', '/')}`, message: 'must be an allowed option' });
+      }
+    }
+    if (valid && enumErrors.length === 0) return { valid: true, errors: [] };
+    if (valid) return { valid: false, errors: enumErrors };
+    const ajvErrors = (validateFn.errors ?? []).map((err: ErrorObject) => ({
+      message: err.message ?? 'invalid',
+      path: dotPathFromInstancePath(err.instancePath || '/'),
+    }));
+    if (enumErrors.length > 0) ajvErrors.push(...enumErrors);
     return {
       valid: false,
-      errors: (validateFn.errors ?? []).map((err: ErrorObject) => ({
-        message: err.message ?? 'invalid',
-        path: err.instancePath || '/',
-      })),
+      errors: ajvErrors,
     };
   };
 }

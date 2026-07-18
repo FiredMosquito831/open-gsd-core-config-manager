@@ -1,0 +1,20 @@
+{
+  "profiles": ["quality", "balanced", "budget", "adaptive", "inherit"],
+  "sensitivePaths": ["brave_search", "firecrawl", "exa_search", "tavily_search", "ref_search", "perplexity", "jina"],
+  "evidence": {
+    "ship.pr_body_sections": "docs/CONFIGURATION.md#ship.pr_body_sections",
+    "model_overrides": "docs/CONFIGURATION.md#model_overrides",
+    "effort.agent_overrides": "docs/CONFIGURATION.md#effort.agent_overrides",
+    "fast_mode.agent_overrides": "docs/CONFIGURATION.md#fast_mode.agent_overrides",
+    "model_profile_overrides": "docs/CONFIGURATION.md#model_profile_overrides.<runtime>.<tier>",
+    "model_policy.runtime_tiers": "docs/CONFIGURATION.md#model_policy.runtime_tiers.<runtime>.<tier>",
+    "model_profile": "docs/CONFIGURATION.md#model_profile",
+    "models": "docs/CONFIGURATION.md#models"
+  },
+  "runtimeInstallMatrix": [
+    { "runtime": "codex", "path": "model_overrides.<agent-id>", "command": "gsd install codex" },
+    { "runtime": "opencode", "path": "model_overrides.<agent-id>", "command": "gsd install opencode" },
+    { "runtime": "codex", "path": "model_profile_overrides.<runtime>.<tier>", "command": "gsd install codex" },
+    { "runtime": "opencode", "path": "model_profile_overrides.<runtime>.<tier>", "command": "gsd install opencode" }
+  ]
+}
