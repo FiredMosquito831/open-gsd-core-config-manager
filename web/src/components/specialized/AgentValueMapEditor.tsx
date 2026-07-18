@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import type { SpecializedDescriptor } from '../../schema/specializedMetadata';
+import { getAgentCatalog } from '../../schema/specializedMetadata';
 import { EnumCombobox } from '../fields/EnumCombobox';
 
 interface AgentValueMapEditorProps {
@@ -8,7 +9,7 @@ interface AgentValueMapEditorProps {
   onChange: (value: Record<string, unknown>) => void;
 }
 
-const KNOWN_AGENTS = ['gsd-planner', 'gsd-executor', 'gsd-verifier', 'gsd-researcher', 'gsd-code-reviewer'];
+const KNOWN_AGENTS = getAgentCatalog();
 
 export function AgentValueMapEditor({ descriptor, value, onChange }: AgentValueMapEditorProps) {
   const map = useMemo(() => value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {}, [value]);

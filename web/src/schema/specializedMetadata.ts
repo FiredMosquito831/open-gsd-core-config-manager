@@ -4,6 +4,7 @@ import type { SchemaEntry } from '../../../packages/config-io/src/types';
 
 interface SpecializedCatalog {
   profiles: string[];
+  agents: string[];
   sensitivePaths: string[];
   evidence: Record<string, string>;
   runtimeInstallMatrix: RuntimeInstallRule[];
@@ -145,6 +146,10 @@ const byPath = new Map(SPECIALIZED_METADATA.map((entry) => [entry.path, entry]))
 
 export function getSpecializedDescriptor(path: string): SpecializedDescriptor | undefined {
   return byPath.get(path);
+}
+
+export function getAgentCatalog(): string[] {
+  return specializedCatalog.agents;
 }
 
 export function isSpecializedEditable(path: string): boolean {

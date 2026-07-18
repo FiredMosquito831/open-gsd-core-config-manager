@@ -1,8 +1,9 @@
 import { useMemo } from 'react';
 import { EnumCombobox } from '../fields/EnumCombobox';
 import { Button } from '../common/Button';
+import { getAgentCatalog } from '../../schema/specializedMetadata';
 
-const AGENTS = ['gsd-planner', 'gsd-executor', 'gsd-verifier', 'gsd-researcher', 'gsd-code-reviewer'];
+const AGENTS = getAgentCatalog();
 const TIERS = ['opus', 'sonnet', 'haiku', 'inherit'];
 
 interface ProfileEditorProps {

@@ -14,14 +14,20 @@ import { useUiStore as uiStore } from '../../state/uiStore';
 import { ProfileCards } from '../specialized/ProfileCards';
 import { ProfileEditor } from '../specialized/ProfileEditor';
 import { useState } from 'react';
+import { getAgentCatalog } from '../../schema/specializedMetadata';
 
+const AGENTS = getAgentCatalog();
 const PROFILE_ASSIGNMENTS: Record<string, Record<string, string>> = {
-  quality: { 'gsd-planner': 'opus', 'gsd-executor': 'opus', 'gsd-verifier': 'sonnet', 'gsd-researcher': 'sonnet', 'gsd-code-reviewer': 'sonnet' },
-  balanced: { 'gsd-planner': 'sonnet', 'gsd-executor': 'sonnet', 'gsd-verifier': 'sonnet', 'gsd-researcher': 'sonnet', 'gsd-code-reviewer': 'sonnet' },
-  budget: { 'gsd-planner': 'haiku', 'gsd-executor': 'sonnet', 'gsd-verifier': 'haiku', 'gsd-researcher': 'haiku', 'gsd-code-reviewer': 'haiku' },
-  adaptive: { 'gsd-planner': 'inherit', 'gsd-executor': 'inherit', 'gsd-verifier': 'inherit', 'gsd-researcher': 'inherit', 'gsd-code-reviewer': 'inherit' },
+  quality: Object.fromEntries(AGENTS.map((agent) => [agent, ['gsd-planner', 'gsd-executor'].includes(agent) ? 'opus' : 'sonnet'])),
+  balanced: Object.fromEntries(AGENTS.map((agent) => [agent, 'sonnet'])),
+  budget: Object.fromEntries(AGENTS.map((agent) => [agent, agent === 'gsd-executor' ? 'sonnet' : 'haiku'])),
+  adaptive: Object.fromEntries(AGENTS.map((agent) => [agent, 'inherit'])),
   inherit: {},
 };
+
+function profileAssignmentsFor(profile: string): Record<string, string> {
+  return { ...(PROFILE_ASSIGNMENTS[profile] ?? PROFILE_ASSIGNMENTS.balanced) };
+}
 function objectValue(value: unknown): Record<string, unknown> { return value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {}; }
 function effectiveAt(loadResult: LoadResult, path: string): unknown { return getEffectiveLeaf(loadResult.effective, path)?.value; }
 
@@ -45,7 +51,7 @@ export function ChapterView({ loadResult, schema, control, onFieldChange, onRese
     if (profileEditorOpen) {
       return <ProfileEditor assignments={profileAssignments} sessionLabel={profileSessionLabel} onSessionLabelChange={setProfileSessionLabel} onChange={(next) => { setProfileAssignments(next); onFieldChange('model_overrides', next); }} onBack={() => setProfileEditorOpen(false)} />;
     }
-    return <ProfileCards value={profileValue} onSelect={(next) => onFieldChange('model_profile', next)} onCreate={(profile) => { setProfileAssignments({ ...(PROFILE_ASSIGNMENTS[profile] ?? {}) }); setProfileSessionLabel(''); setProfileEditorOpen(true); }} />;
+    return <ProfileCards value={profileValue} onSelect={(next) => onFieldChange('model_profile', next)} onCreate={(profile) => { setProfileAssignments(profileAssignmentsFor(profile)); setProfileSessionLabel(''); setProfileEditorOpen(true); }} />;
   }
 
   if (focusedDescriptor && activeChapter) {

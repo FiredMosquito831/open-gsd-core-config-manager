@@ -1,5 +1,6 @@
 {
   "profiles": ["quality", "balanced", "budget", "adaptive", "inherit"],
+  "agents": ["gsd-planner", "gsd-roadmapper", "gsd-executor", "gsd-phase-researcher", "gsd-project-researcher", "gsd-codebase-mapper", "gsd-ui-researcher", "gsd-research-synthesizer", "gsd-domain-researcher", "gsd-advisor-researcher", "gsd-ai-researcher", "gsd-discuss-phase", "gsd-plan-checker", "gsd-verifier", "gsd-security-auditor", "gsd-code-reviewer", "gsd-code-fixer", "gsd-debugger", "gsd-debug-session-manager", "gsd-assumptions-analyzer", "gsd-eval-auditor", "gsd-eval-planner", "gsd-framework-selector", "gsd-integration-checker", "gsd-nyquist-auditor", "gsd-doc-verifier", "gsd-doc-writer", "gsd-doc-classifier", "gsd-doc-synthesizer", "gsd-mempalace-curator", "gsd-intel-updater", "gsd-pattern-mapper", "gsd-user-profiler", "gsd-ui-checker"],
   "sensitivePaths": ["brave_search", "firecrawl", "exa_search", "tavily_search", "ref_search", "perplexity", "jina"],
   "evidence": {
     "ship.pr_body_sections": "docs/CONFIGURATION.md#ship.pr_body_sections",
