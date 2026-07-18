@@ -134,7 +134,7 @@ Derive cards from bundled/additive profile metadata and the current effective/pr
 
 **Analog:** `ConfigEditor.tsx`, lines 73-115, and `FieldCard.tsx`, lines 27-45.
 
-Open the current project model configuration in the same focused-workspace shell. Per D-11, `Create custom profile` copies a selected built-in assignment set into ordinary supported project fields, may use a transient session label, and then permits constrained assignment edits; no label/name becomes durable profile data. Use the shared agent/value map primitive, preserve the documented runtime-resolution precedence separately from file-layer provenance, and save through the normal full-candidate mutation. Do not make a second profile API, serialize named-profile metadata, or write an empty arbitrary object.
+Open the current project model configuration in the same focused-workspace shell. Per D-11 and the approved UI-SPEC amendment, `Create custom project configuration` copies a selected built-in assignment set into ordinary supported project fields and then permits constrained assignment edits. An optional session label is local UI state only: it is not serialized, reloaded, or uniquely validated as profile identity, and it cannot affect `model_profile`. Use the shared agent/value map primitive, preserve the documented runtime-resolution precedence separately from file-layer provenance, and save through the normal full-candidate mutation. Do not make a second profile API, serialize named-profile metadata, create durable profile naming, or write an empty arbitrary object.
 
 ### `web/src/components/specialized/LayerSummary.tsx` (component, read/transform)
 
@@ -170,7 +170,7 @@ useEffect(() => {
 
 **Analog:** `web/src/components/editor/SaveBar.tsx`, lines 10-33, for compact save-status presentation.
 
-Render only after successful save when explicit runtime-baked metadata and changed paths match. Show the setting name and literal `gsd install`, never the value. Keep it persistent until dismissal or loading another config; unrelated saves must not show it. Use warning tokens and wrapping copy from `04-UI-SPEC.md`.
+Render only after a successful save when explicit runtime-baked metadata and changed paths match. For Codex render the setting name plus exact `gsd install codex`; for OpenCode render the setting name plus exact `gsd install opencode`; never include values. Claude Code, other/unset/unknown runtimes, unrelated paths, and near misses must render no notice. Keep a positive notice persistent until dismissal or loading another config. Use warning tokens and wrapping copy from `04-UI-SPEC.md`.
 
 ### `web/src/schema/specializedMetadata.ts` (schema utility, transform/catalog lookup)
 
@@ -310,10 +310,10 @@ Mask the DOM value by default, omit clipboard/copy flows, do not log candidate/v
 - **`test/web/agent-value-map-editor.test.tsx`:** existing agent keys excluded; supported value choices only; duplicate prevented with `That agent already has an override. Choose another agent.`; unknown entries preserved/read-only.
 - **`test/web/profile-cards.test.tsx`:** Profiles chapter, card name/description/assignment summary, selected/open behavior, and documented empty state.
 - **`test/web/profile-editor.test.tsx`:** project model configuration edit uses only supported fields and normal save; file provenance and documented runtime precedence remain distinct.
-- **`test/web/profile-create.test.tsx`:** copy a built-in assignment set, show the UI-SPEC clarification, optionally session-label the editing session, reject empty arbitrary creation, prove no named-profile metadata serializes, then edit assignments and verify copied assignments survive reload.
+- **`test/web/profile-create.test.tsx`:** copy a built-in assignment set, show the approved UI-SPEC project-configuration clarification, optionally session-label the local editing session without serializing, reloading, or uniquely validating it as profile identity, prove it cannot affect `model_profile` and no named-profile metadata serializes, reject empty arbitrary creation, then edit assignments and verify copied assignments survive reload.
 - **`test/web/secret-field.test.tsx`:** masked initial DOM; deliberate reveal/hide; blur re-mask; fake-timer inactivity re-mask; focus returning does not expose without a new reveal.
 - **`test/web/layer-summary.test.tsx` and `specialized-draft.test.tsx`:** three expandable layers/effective marker and inherited edit materializing only a project override while retaining source values.
-- **`test/web/runtime-install-notice.test.tsx`:** changed runtime-baked path shows persistent named notice and literal `gsd install`; unrelated save does not; dismissal and loading another config clear it.
+- **`test/web/runtime-install-notice.test.tsx`:** a confirmed Codex path renders exact `gsd install codex`; an equivalent OpenCode path renders exact `gsd install opencode`; Claude Code, other/unset/unknown runtimes, unrelated paths, and near misses render no notice; dismissal and loading another config clear a positive notice; notices never disclose model or secret values.
 - **`test/web/security-redaction.test.ts`:** sentinel secret absent from rendered output, logs, errors, diagnostics, and clipboard payloads. Assert path-only error formatting.
 - **`test/web/specialized-metadata.test.ts`:** supported descriptors have safe labels/types/defaults; agent/value catalogs are constrained; unknown or unconfirmed shapes do not gain editable fabricated metadata.
 - **`test/web/accessible-responsive-specialized.test.tsx`:** labeled list/detail regions, keyboard Move controls, 44px action targets where applicable, 280px list/flexible detail layout, and single-column behavior below 900px.

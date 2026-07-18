@@ -69,7 +69,7 @@ Use only weights 400 and 600 in this phase. Entry names and profile names use 16
 | Accent (10%) | `#2563eb` light / `#60a5fa` dark (`--gsd-accent`) | Active entry/profile selection, Back navigation emphasis, primary Add/Create/Save actions, focused form controls, effective-source marker, and install-notice link/action |
 | Destructive | `#dc2626` light / `#f87171` dark (`--gsd-danger`) | Remove entry, discard/cancel destructive confirmation, invalid-entry badges, and unrecoverable save error only |
 
-Accent reserved for: the selected entry row, selected profile card, primary `Add entry` and `Create custom profile` actions, `Save changes`, focused controls, the effective provenance source indicator, and the actionable `gsd install` remediation link/button. Do not use accent for every link, helper label, border, or decorative element.
+Accent reserved for: the selected entry row, selected profile card, primary `Add entry` and `Create custom project configuration` actions, `Save changes`, focused controls, the effective provenance source indicator, and the actionable runtime-specific `gsd install codex` or `gsd install opencode` remediation link/button. Do not use accent for every link, helper label, border, or decorative element.
 
 Use existing semantic warning colors (`--gsd-warning` / `--gsd-warning-bg`) for runtime-baked notices and inherited-value scope-change explanations; use success colors only for saved/install-state confirmation. Preserve the existing light/dark theme mapping and maintain readable contrast for text, borders, focus rings, and status badges.
 
@@ -81,22 +81,25 @@ Use existing semantic warning colors (`--gsd-warning` / `--gsd-warning-bg`) for 
 |---------|------|
 | Primary CTA | `Save changes` |
 | Pool add CTA | `Add entry` |
-| Profile creation CTA | `Create custom profile` |
+| Project-configuration creation CTA | `Create custom project configuration` |
 | Empty state heading | `No entries yet` |
 | Empty state body | `Add an entry to configure this pool. New entries start with schema defaults and can be completed in the detail editor.` |
-| Profiles empty state heading | `No custom profiles yet` |
-| Profiles empty state body | `Choose a built-in assignment set to copy into this project, then adjust its supported assignments. This creates a project configuration, not a reusable named GSD profile.` |
-| Profile-creation clarification | `Create custom profile` copies a built-in assignment set into this project. Any label is for this editing session only and is not saved as a GSD profile name. |
-| UI-SPEC follow-up amendment | Retain the approved CTA text while this clarification is implemented and re-approve the copy in the next UI-spec review. |
+| Project-configuration empty state heading | `No custom project model configurations yet` |
+| Project-configuration empty state body | `Choose a built-in assignment set to copy into this project, then adjust its supported assignments. This creates a project configuration, not a reusable named GSD profile.` |
+| Project-configuration clarification | `Create custom project configuration` copies a built-in assignment set into this project. An optional session label is local UI state for the active editing session only; it is never serialized, reloaded, or validated as a profile identity and cannot affect `model_profile`. |
 <!-- planner-discipline-allow: profiles.<name> -->
-| Persistence fence | Never serialize a named profile registry, `profiles.<name>`, `active_profile`, a profile ID/description, or a session label. |
+| Persistence fence | Never serialize a named profile registry, `profiles.<name>`, `active_profile`, a profile ID/description, an assignment-container identity, or a session label; durable behavior is limited to supported ordinary project fields. |
+| Certification amendment (2026-07-18) | Approved correction to the prior focused-card/copy-first wording: use the project-configuration copy above, not durable/custom-profile naming; this amendment supersedes the earlier CTA/empty-state/clarification wording without changing the interaction model. |
+| Runtime notice amendment (2026-07-18) | Approved correction: only a successful Codex model-resolution save says `Saved “{setting}”. Run `gsd install codex` for the change to take effect.`; only a successful OpenCode model-resolution save says `Saved “{setting}”. Run `gsd install opencode` for the change to take effect.` No notice appears for Claude Code, other/unset/unknown runtimes, unrelated paths, or near misses. |
+| Session-label amendment (2026-07-18) | An optional session label is temporary local UI state, never a profile identity: it is not serialized, reloaded, or uniquely validated and cannot alter `model_profile`. |
+| UI-SPEC amendment approval | Approved 2026-07-18 as a certification correction; retain the focused-card/copy-first UX and use these corrected terms and runtime-specific notice conditions in implementation and tests. |
+| Runtime-baked notice | Runtime-specific copy is defined by the Runtime notice amendment; do not render a generic `gsd install` notice. |
 | Error state | `Some entries need attention. Fix the highlighted fields before saving.` |
 | Load/error recovery | `This specialized editor could not load its current value. Go back and try again; your existing draft has not been discarded.` |
 | Required-field error | `Enter a value for this required field.` |
 | Agent-map duplicate error | `That agent already has an override. Choose another agent.` |
 | Destructive confirmation | `Remove “{entry name}”? This removes the entry from the unsaved project draft. Keep entry / Remove entry` |
 | Inherited-value scope notice | `This value comes from {source layer}. Editing it will create a project override; the inherited source remains unchanged.` |
-| Runtime-baked notice | `Saved “{setting}”. This setting is baked into the installed GSD runtime; run `gsd install` for the change to take effect.` |
 | Secret reveal control | `Reveal value` / `Hide value`; helper text: `Re-hides when this field loses focus or after a short period of inactivity.` |
 
 Use specific nouns in all destructive confirmations: identify the entry key/name, agent, or profile name. Never use generic labels such as `Cancel`, `Confirm`, `Delete`, or `Continue` as an action; the non-destructive action is `Keep entry` (or an equally specific equivalent). The persistent runtime notice remains until dismissal or loading another config, per D-12.
@@ -119,7 +122,7 @@ Applicable state considerations resolved: 21 covered, 1 backstop, 2 dismissed, 0
 | overflow | Focused pool workspace | ✅ covered | Keep large entry lists independently scrollable, preserve selection and scroll position, wrap long names/paths, reserve action space, and never clip controls. |
 | zero-one-many | Focused pool workspace | ✅ covered | Zero entries use the empty state; one entry disables the irrelevant reorder direction; many entries expose applicable Move up/Move down controls. Agent pickers exclude existing keys and disable Add with an explanation when all supported agents are assigned. |
 | long-text | Focused pool workspace | ✅ covered | Long entry names, paths, descriptions, and control labels wrap rather than push actions off-screen; full text remains accessible. |
-| empty | Profiles chapter | ✅ covered | Render `No custom profiles yet` with copy-from-built-in/existing guidance and `Create custom profile`. |
+| empty | Profiles chapter | ✅ covered | Render `No custom project model configurations yet` with copy-from-built-in/existing guidance and `Create custom project configuration`. |
 | loading | Profiles chapter | ✅ covered | Keep Back visible and show labeled loading state for cards and the assignment editor without partially initialized controls. |
 | error | Profiles chapter | ✅ covered | Preserve the profile draft, state the recovery problem, and provide `Back` rather than resetting assignments. |
 | populated | Profiles chapter | ✅ covered | Show profile cards with name, short description, and readable per-agent/per-role tier assignments; opening a card uses the focused-editor pattern. |
@@ -139,13 +142,13 @@ Applicable state considerations resolved: 21 covered, 1 backstop, 2 dismissed, 0
 
 Interaction contract: selecting a specialized field replaces the main editor surface with a focused panel and a clear `Back to {chapter}` action. The panel contains an entry list and detail editor. Add initializes a schema-defaulted blank entry and selects it. Ordered arrays provide labeled Move up/Move down buttons plus optional drag-and-drop; drag handles are a shortcut, not the only mechanism. Remove always confirms. There is no cloning or per-entry duplication.
 
-Profile contract: add a dedicated `Profiles` chapter in middle navigation. Cards show the five built-in selector names, authoritative short descriptions, and readable per-agent/per-role tier assignments. Opening the current project model configuration enters the same focused-editor pattern. Retain the approved `Create custom profile` CTA, but pair it with the Profile-creation clarification: it copies a built-in assignment set into supported project fields, uses only an optional session label, and does not create a reusable named GSD profile. Empty arbitrary creation is not the primary path.
+Profile contract: add a dedicated `Profiles` chapter in middle navigation. Cards show the five built-in selector names, authoritative short descriptions, and readable per-agent/per-role tier assignments. Opening the current project model configuration enters the same focused-editor pattern. Per the approved certification amendment, use `Create custom project configuration`: it copies a built-in assignment set into supported project fields and may use an optional session label that exists only as local UI state for the active session. The label is neither serialized, reloaded, nor uniquely validated as profile identity and cannot affect `model_profile`; no reusable named GSD profile is created. Empty arbitrary creation is not the primary path.
 
 Layer contract: the compact three-layer summary is sticky/always visible within the focused detail header or top section. Each layer can expand for inspection. Show the effective source distinctly, but do not imply that inspecting or expanding a layer mutates it. Reset/copy actions must state that the resulting edit is a project-level override.
 
 Security interaction contract: integration/API-key values are masked by default. Reveal is per field, requires a deliberate `Reveal value` action, re-masks on blur and after a short inactivity timeout, and never enters logs, diagnostics, or normal copy flows. Tests must verify automatic re-masking after blur and inactivity timeout, including focus returning to the field.
 
-Runtime-baked setting contract: after a successful save, show the documented persistent warning naming each affected setting and the exact `gsd install` command until the user dismisses it or loads another config.
+Runtime-baked setting contract: after a successful matching model-resolution save, show the documented persistent warning naming each affected setting and the exact runtime command: Codex uses `gsd install codex`; OpenCode uses `gsd install opencode`. The notice stays until dismissal or another config load. Claude Code, other/unset/unknown runtimes, unrelated paths, and path near misses show no notice. The setting name is the only config-derived content: never include model IDs, secret values, or other changed values.
 
 ---
 
@@ -168,4 +171,4 @@ No third-party component blocks are specified. The implementation must use exist
 - [x] Dimension 5 Spacing: PASS
 - [x] Dimension 6 Registry Safety: PASS
 
-**Approval:** approved 2026-07-18 after checker verification; UI consideration probe classifications and resolutions confirmed.
+**Approval:** approved 2026-07-18 after checker verification; UI consideration probe classifications and resolutions confirmed. The 2026-07-18 certification amendment above is explicitly approved: it corrects project-configuration naming, local-session-label persistence semantics, and Codex/OpenCode-specific notice copy/negative conditions while preserving the approved focused-card/copy-first UX.
