@@ -24,7 +24,7 @@ const VENDOR_KEYWORDS = [
 ];
 
 function dotPathFromInstancePath(instancePath: string): string {
-  return instancePath.replace(/^\//, '').replaceAll('/', '.');
+  return instancePath || '/';
 }
 
 export function createClientValidator(schema: Record<string, SchemaEntry>) {
