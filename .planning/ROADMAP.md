@@ -130,7 +130,20 @@ Plans:
   4. User can view existing GSD model profiles and their per-agent/per-role tier assignments, edit an existing profile, and create a new custom profile per gsd-core's documented shape.
   5. Saving a change to a runtime-baked setting (e.g. `model_overrides` on a Codex/OpenCode-style install) surfaces a clear "requires `gsd install` to take effect" notice; integration/API-key fields are masked by default in the UI and never logged.
 
-**Plans**: TBD
+**Plans**: 4 plans
+Plans:
+**Wave 1**
+- [ ] 04-01-PLAN.md — Confirm current gsd-core pool/profile/runtime catalog and establish Wave-0 behavior fixtures/tests
+
+**Wave 2** *(blocked on Wave 1)*
+- [ ] 04-02-PLAN.md — Source-confirmed specialized metadata, layer summary, and secret masking primitives
+
+**Wave 3** *(blocked on Wave 2)*
+- [ ] 04-03-PLAN.md — Focused accessible structured-pool and constrained agent-map editors
+
+**Wave 4** *(blocked on Wave 3)*
+- [ ] 04-04-PLAN.md — Profiles chapter, copy/edit flow, and runtime-baked install notices
+
 **UI hint**: yes
 
 ### Phase 5: Version History UI
