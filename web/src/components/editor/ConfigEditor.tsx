@@ -14,6 +14,7 @@ import { ChapterView } from '../chapters/ChapterView';
 import { SearchView } from '../search/SearchView';
 import { SaveBar } from './SaveBar';
 import { ValidationSummary, type ValidationSummaryError } from './ValidationSummary';
+import { RuntimeInstallNotice } from '../specialized/RuntimeInstallNotice';
 import type { LoadResult, SchemaEntry } from '../../../../packages/config-io/src/types';
 
 function collectEffectiveDefaults(loadResult: LoadResult, schema: Record<string, SchemaEntry>) {
@@ -54,6 +55,7 @@ export function ConfigEditor() {
   const [resets, setResets] = useState<Set<string>>(() => new Set());
   const [serverErrors, setServerErrors] = useState<ValidationSummaryError[]>([]);
   const [snapshotId, setSnapshotId] = useState<string | undefined>();
+  const [runtimeNotice, setRuntimeNotice] = useState<{ runtime: 'codex' | 'opencode'; settings: string[] } | null>(null);
 
   const { data: loadResult, isLoading: isLoadingConfig, error: configError } = useQuery({
     queryKey: ['config', activeConfigId],
@@ -105,6 +107,10 @@ export function ConfigEditor() {
       return saveConfig(activeConfigId, candidate);
     },
     onSuccess: async (result) => {
+      const changedPaths = Object.keys(changes);
+      const matching = changedPaths.filter((path) => /^(?:model_overrides|model_profile_overrides)\.(codex|opencode)\.(?:opus|sonnet|haiku)$/.test(path));
+      const runtime = matching.map((path) => path.match(/^(?:model_overrides|model_profile_overrides)\.(codex|opencode)\./)?.[1]).find((item): item is 'codex' | 'opencode' => item === 'codex' || item === 'opencode');
+      if (runtime) setRuntimeNotice({ runtime, settings: matching });
       setSnapshotId(result?.snapshotId);
       setChanges({});
       setResets(new Set());
@@ -147,6 +153,7 @@ export function ConfigEditor() {
           )}
         </div>
         <ValidationSummary errors={serverErrors} kind="server" />
+        {runtimeNotice && <RuntimeInstallNotice runtime={runtimeNotice.runtime} settings={runtimeNotice.settings} onDismiss={() => setRuntimeNotice(null)} />}
         {searchOpen && searchQuery.trim() ? (
           <SearchView
             loadResult={loadResult}
