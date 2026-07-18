@@ -377,14 +377,14 @@ The current bundled schema and research artifacts identify these representative 
 
 | Shape | Editor | Planning notes |
 |------|--------|----------------|
-| `ship.pr_body_sections` | Ordered structured array | Requires per-field controls for heading/enabled/source/template/fallback; source/template/fallback constraints must be checked against current gsd-core source rather than inferred from prose. [ASSUMED pending source verification] |
-| `review.reviewer_instances` | Keyed structured-object map | Needs named-key add/remove and per-entry `cli`, `model`, `agent` controls; preserve unknown entries read-only if not catalogued. [ASSUMED pending source verification] |
-| `model_overrides` | Agent-keyed value map | Agent picker plus supported tier/model picker; documented as highest agent-specific override. [CITED: https://github.com/open-gsd/gsd-core/blob/next/docs/CONFIGURATION.md] |
-| `effort.agent_overrides` | Agent-keyed restricted value map | Reuse agent picker; values must be supported effort levels from current metadata. [VERIFIED: bundled schema shape; ASSUMED catalog values pending source verification] |
+| `ship.pr_body_sections` | Ordered structured array | Locally bundled and eligible for descriptor work only after the immutable-source gate confirms its exact entry fields; otherwise preserve unknown/read-only. [VERIFIED: `packages/schema-data/bundled-schema.json`; gate in Open Questions (RESOLVED)] |
+| `review.reviewer_instances` | Keyed structured-object map | Upstream-confirmed `{ cli, model?, agent? }`, but locally absent from the bundled schema; Phase 4 disposition is unsupported/read-only, not an editable descriptor. [VERIFIED: official ADR at immutable revision; `packages/schema-data/bundled-schema.json`] |
+| `model_overrides` | Agent-keyed value map | Agent picker uses the 33 official catalog agent keys; values are tier/model override values documented by gsd-core. Codex/OpenCode changes are install-sensitive. [VERIFIED: immutable `model-catalog.json`; official `CONFIGURATION.md`] |
+| `effort.agent_overrides` | Agent-keyed restricted value map | Reuse agent picker and only the effort values confirmed by the bundled schema/current source; unknown values remain preserved/read-only. [VERIFIED: bundled schema; evidence gate] |
 | `fast_mode.agent_overrides` | Agent-keyed boolean map | Reuse agent picker with boolean value control. [VERIFIED: `packages/schema-data/bundled-schema.json`] |
-| `model_profile_overrides` | Runtime + tier map | Runtime and tier are constrained key segments; value may be string or object with model/reasoning fields in current gsd-core docs. [CITED: https://github.com/open-gsd/gsd-core/blob/next/docs/CONFIGURATION.md] |
-| `agent_skills` | Agent-keyed array/map editor | May require a nested list of skill references; do not treat arbitrary unknown agent keys as editable supported agents. [VERIFIED: bundled schema shape; ASSUMED exact Phase 4 coverage must be decided in plan] |
-| `planning.sub_repos` | Ordered scalar array | A straightforward pool candidate, but path-specific validation and unsafe path display need explicit tests. [VERIFIED: `.planning/research/FEATURES.md`; ASSUMED exact current schema constraints] |
+| `model_profile_overrides` | Runtime + tier map | Runtime and tier are constrained key segments; value may be string or `{ model, reasoning_effort? }`; install notice follows only the Codex/OpenCode matrix. [CITED: immutable `CONFIGURATION.md:150-151`] |
+| `agent_skills` | Agent-keyed array/map editor | Locally bundled shape is present, but exact nested skill assignment semantics are outside the confirmed model/profile catalog; keep unsupported children read-only unless the evidence gate confirms them. [VERIFIED: bundled schema; scope-safe decision] |
+| `planning.sub_repos` | Ordered scalar array | A straightforward pool candidate, but it is not part of the model/profile evidence gate; use existing bundled-schema validation and preserve unsupported values. [VERIFIED: `packages/schema-data/bundled-schema.json`] |
 
 ## Runtime State Inventory
 
@@ -478,34 +478,71 @@ Security enforcement is enabled at ASVS level 3 in `.planning/config.json`. [VER
 |---|-------|---------|---------------|
 | A1 | Additive `x-*` specialized metadata is the preferred Phase 4 schema extension shape. | Architecture Pattern 1 | Planner may need a separate metadata artifact or server-provided catalog; implementation shape changes. |
 | A2 | Specialized editor values should use ephemeral RHF IDs and never persist synthetic IDs. | Architecture Pattern 2 | Persisting IDs could alter config shape and break gsd-core compatibility. |
-| A3 | Exact `ship.pr_body_sections`, `review.reviewer_instances`, and effort/profile field constraints need current canonical-source confirmation. | Common GSD Shapes | Incorrect constraints could block valid existing configs or permit invalid ones. |
+| A3 | Exact `ship.pr_body_sections` and effort/profile field constraints remain evidence-gated; `review.reviewer_instances` is upstream-confirmed but locally unsupported/read-only because it is absent from the bundled schema. | Common GSD Shapes / Open Questions (RESOLVED) | Prevents fabricated local descriptors while preserving encountered data. |
 | A4 | Unknown supported-looking pool entries should be preserved read-only rather than deleted or free-edited. | Pitfall 5 | A different explicit UX policy may be needed for future keys. |
-| A5 | Runtime-baked metadata can be represented as path patterns plus runtime predicates in the bundled artifact. | Pattern 6 / PROF-04 | Incorrect classification can produce misleading notices. |
-| A6 | A fixed bundled model/agent catalog is acceptable until Phase 6. | Environment / Standard Stack | Profiles may be incomplete if gsd-core changes before Phase 6. |
+| A5 | Runtime-baked metadata can be represented as path patterns plus runtime predicates in the bundled artifact, but only the confirmed Codex/OpenCode matrix may be implemented. | Pattern 6 / PROF-04 | Incorrect classification can produce misleading notices. |
+| A6 | The immutable official catalog snapshot is acceptable as the Phase 4 fixture source until Phase 6 reconciliation. | Open Questions (RESOLVED) | The fixture must record revision/date and fail closed when evidence is stale or unavailable. |
 | A7 | The exact secret-field test surfaces include DOM, logs, errors, and clipboard handlers. | Validation/Security | Tests may need to adapt to the final component/API boundaries. |
 | A8 | `@tanstack/react-query` legitimacy gate’s “too-new” signal should not trigger a dependency change because it is already locked and installed. | Package audit | A new install/upgrade would require human verification. |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **What is the authoritative current model/profile catalog and exact profile file shape?**
-   - What we know: gsd-core docs describe `model_profile` tiers and runtime-aware mappings, and the repository’s research identifies a roughly 33-agent catalog. [CITED: https://github.com/open-gsd/gsd-core/blob/next/docs/CONFIGURATION.md; `.planning/research/FEATURES.md`]
-   - What’s unclear: exact shipped profile names/descriptions, every agent/role, and whether custom profile persistence is a config key or a runtime catalog concept. [ASSUMED]
-   - Recommendation: make the first planning task inspect the current gsd-core source/catalog and add a human checkpoint if it cannot be fetched; do not lock JSX around the research roster.
+### 1. Current model/profile catalog and persistence shape
 
-2. **Which exact fields require `gsd install` for each runtime?**
-   - What we know: official docs explicitly state resolved IDs are embedded at install time on Codex and OpenCode-style paths, and other runtimes consume resolution differently. [CITED: https://github.com/open-gsd/gsd-core/blob/next/docs/CONFIGURATION.md]
-   - What’s unclear: the complete path/runtime matrix for this current gsd-core version, including profile mappings and model policy fields. [ASSUMED]
-   - Recommendation: encode an explicit tested matrix, starting with documented `model_overrides` behavior, and keep unknown runtime cases conservative (notice rather than false claim).
+**Authoritative result:** At immutable gsd-core revision `50efae13ce74f02a5b0253ce0c205c5eac2a99e3` (the `next` branch tip retrieved 2026-07-18), the official catalog is `gsd-core/bin/shared/model-catalog.json`. Its `profiles` array is exactly `quality`, `balanced`, `budget`, `adaptive`, and `inherit`; its `agents` object is the shipped agent catalog, and the checked revision contains 33 agent keys. `src/model-catalog.cts:85-117` derives `VALID_PROFILES`, valid tier sets, and per-agent profile assignments from that JSON rather than defining a second roster. [VERIFIED: https://raw.githubusercontent.com/open-gsd/gsd-core/50efae13ce74f02a5b0253ce0c205c5eac2a99e3/gsd-core/bin/shared/model-catalog.json; https://raw.githubusercontent.com/open-gsd/gsd-core/50efae13ce74f02a5b0253ce0c205c5eac2a99e3/src/model-catalog.cts#L85-L117]
 
-3. **Do all named pool examples exist in the current bundled schema?**
-   - What we know: `ship.pr_body_sections`, `model_overrides`, `model_profile_overrides`, and `effort.agent_overrides` are present; `review.reviewer_instances` is referenced by requirements/research but was not found in the initial grep of the current bundled artifact. [VERIFIED: `packages/schema-data/bundled-schema.json`; `.planning/research/FEATURES.md`]
-   - What’s unclear: whether the missing shape is a schema build gap, a version-specific key, or an intentionally deferred key. [ASSUMED]
-   - Recommendation: resolve before implementation; do not fabricate metadata for an absent canonical key. Preserve it as unknown if encountered.
+The persisted configuration shape is not a named custom-profile registry. Official configuration documentation exposes `model_profile` as the profile enum, `model_overrides.<agent>` as per-agent values, `model_profile_overrides.<runtime>.<tier>` as runtime/tier values, `model_policy.*` as provider/tier values, and `models.<phase_type>` as phase-type tier values. [CITED: https://raw.githubusercontent.com/open-gsd/gsd-core/50efae13ce74f02a5b0253ce0c205c5eac2a99e3/docs/CONFIGURATION.md#L143-L158] Therefore Phase 4 MUST NOT invent or persist `profiles.<name>`, a profile ID, a profile description, or a profile-assignment object. D-11 is represented as a copy-first UI operation that copies a built-in/existing assignment into the ordinary project draft fields above; the resulting draft remains a normal `.planning/config.json` candidate and is not a new catalog entity. If the product requires a durable named custom profile beyond those fields, that requirement is unsupported/read-only in Phase 4 and must be deferred rather than represented by invented fields. [VERIFIED: official source paths above; project save contract in `packages/config-io/src/types.ts`]
 
-4. **Should optional drag-and-drop be included?**
-   - What we know: buttons are mandatory and no DnD package is installed. [VERIFIED: `04-CONTEXT.md`; `package.json`]
-   - What’s unclear: whether pointer DnD materially improves this release enough to justify a new dependency. [ASSUMED]
-   - Recommendation: omit it in the first plan unless a native implementation can be tested without compromising keyboard behavior.
+### 2. Runtime/path `gsd install` matrix
+
+**Authoritative matrix for Phase 4:** `model_profile`, `model_overrides`, `model_profile_overrides`, `model_policy.*`, and `models.<phase_type>` are configuration inputs to model resolution. For `codex` and `opencode`, gsd-core documents that resolved model IDs are embedded in each agent's static frontmatter because those runtimes do not accept an inline model parameter; a saved change affecting model resolution therefore requires `gsd install <runtime>` (for example, `gsd install codex` or `gsd install opencode`). For all other runtimes, the official documentation says resolution is consumed at spawn time, so Phase 4 MUST NOT claim that `gsd install` is required for these model settings. [CITED: https://raw.githubusercontent.com/open-gsd/gsd-core/50efae13ce74f02a5b0253ce0c205c5eac2a99e3/docs/CONFIGURATION.md#L149-L158; https://raw.githubusercontent.com/open-gsd/gsd-core/50efae13ce74f02a5b0253ce0c205c5eac2a99e3/docs/how-to/configure-model-profiles.md#L40-L64]
+
+| Runtime condition | Affected path family | Install notice | Evidence |
+|---|---|---|---|
+| `runtime` is `codex` | model resolution inputs listed above, especially `model_overrides` | Yes: `gsd install codex` | `docs/CONFIGURATION.md:150`; `docs/how-to/configure-model-profiles.md:58-64` |
+| `runtime` is `opencode` | model resolution inputs listed above, especially `model_overrides` | Yes: `gsd install opencode` | `docs/CONFIGURATION.md:150`; `docs/how-to/configure-model-profiles.md:58-64` |
+| Any other runtime, or unset runtime | same path family | No Phase-4 install notice; resolution is runtime/spawn-time | `docs/CONFIGURATION.md:150`; `docs/how-to/configure-model-profiles.md:64,157-177` |
+| Unsupported/unknown runtime or path near-match | any | No affirmative claim; preserve the value and show no install notice | Scope-safe Phase 4 policy derived from the exhaustive official matrix above; do not infer from labels. [VERIFIED: official sources above] |
+
+The notice must name the changed setting/path and the literal command, must be derived from the confirmed runtime/path predicate after a successful save, and must never include the changed model ID or secret. `review.reviewer_instances` is not a model-resolution path and is never an install-notice trigger. [VERIFIED: official configuration paths above; `04-CONTEXT.md` D-12]
+
+### 3. Named pool availability and `review.reviewer_instances`
+
+The official gsd-core source confirms `review.reviewer_instances` exists and is a bounded object under `review`; each entry is `{ cli, model?, agent? }`, instance names match `^[a-z0-9][a-z0-9-]*$`, `cli` is restricted to known reviewer adapters, and `model`/`agent` are opaque strings. [CITED: https://raw.githubusercontent.com/open-gsd/gsd-core/50efae13ce74f02a5b0253ce0c205c5eac2a99e3/docs/adr/1517-reviewer-instances-config-surface.md#L23-L49] The current project `packages/schema-data/bundled-schema.json` does not expose that path, so the Phase 4 disposition is **upstream-confirmed but locally unsupported/read-only**: do not add an editable `review.reviewer_instances` descriptor or fabricate a local schema entry in this phase. If encountered in a loaded config, preserve it as an unknown child, show it read-only, and cover that behavior in the fixture/evidence test. It becomes editable only after a later schema-data refresh/reconciliation explicitly imports the official shape. [VERIFIED: official ADR at immutable revision above; `packages/schema-data/bundled-schema.json`]
+
+The locally bundled artifact does confirm these current named candidates: `ship.pr_body_sections`, `model_overrides`, `model_profile_overrides`, `effort.agent_overrides`, and `fast_mode.agent_overrides`; the project may only create editable descriptors for a candidate when both the local bundled schema and the immutable official evidence support the shape. Any candidate lacking either side is unsupported/read-only, never guessed. [VERIFIED: `packages/schema-data/bundled-schema.json`; official `docs/CONFIGURATION.md:149-158`]
+
+### 4. Immutable evidence gate before fixture/catalog creation
+
+Plan 04-01 MUST execute this gate before writing `test/fixtures/phase4-gsd-core-catalog.json` or any descriptor fixture. The gate is source retrieval, not a later test-only assertion:
+
+```bash
+set -euo pipefail
+REV=50efae13ce74f02a5b0253ce0c205c5eac2a99e3
+API=https://api.github.com/repos/open-gsd/gsd-core
+BASE=https://raw.githubusercontent.com/open-gsd/gsd-core/$REV
+[ "$(curl -fsSL "$API/git/refs/heads/next" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>process.stdout.write(JSON.parse(s).object.sha))')" = "$REV" ]
+for p in \
+  docs/CONFIGURATION.md \
+  docs/how-to/configure-model-profiles.md \
+  docs/adr/1517-reviewer-instances-config-surface.md \
+  gsd-core/bin/shared/model-catalog.json \
+  src/model-catalog.cts; do
+  curl -fsSL "$BASE/$p" -o "/tmp/gsd-core-$REV-${p//\//__}"
+done
+rg -n 'model_profile|model_profile_overrides|model_policy|models\\.<phase_type>|resolved ID|model_overrides' \
+  "/tmp/gsd-core-$REV-docs__CONFIGURATION.md" \
+  "/tmp/gsd-core-$REV-docs__how-to__configure-model-profiles.md"
+rg -n 'reviewer_instances|cli|model|agent|MUST NOT equal' \
+  "/tmp/gsd-core-$REV-docs__adr__1517-reviewer-instances-config-surface.md"
+node -e 'const x=require("/tmp/gsd-core-50efae13ce74f02a5b0253ce0c205c5eac2a99e3-gsd-core__bin__shared__model-catalog.json"); if(JSON.stringify(x.profiles)!==JSON.stringify(["quality","balanced","budget","adaptive","inherit"])||Object.keys(x.agents).length!==33) process.exit(1)'
+```
+
+The fixture must record the URL, the immutable revision, retrieval date (`2026-07-18` for this research run), exact source paths plus line/anchor evidence references, the profile persistence decision (`ordinary project config fields; no custom profile entity`), every row of the runtime/path matrix, and the unsupported/read-only disposition. The evidence test must reject missing or malformed references, a revision mismatch, a profile persistence shape that introduces a new entity, a descriptor without an evidence reference, and any runtime/path positive or near-miss case not covered by the matrix. If retrieval, revision assertion, anchor lookup, catalog count/profile assertion, or any evidence check fails, stop before creating catalog fixtures and fail with a source-unavailable/conflicting-evidence result; do not create provisional or guessed descriptors. [VERIFIED: official source retrieval command and immutable revision above]
+
+### 5. Optional drag-and-drop
+
+Resolved as previously: omit the optional pointer shortcut in Phase 4 unless it can be implemented without a new dependency and without weakening the mandatory labeled Move up/Move down controls. [VERIFIED: `04-CONTEXT.md` D-03; `package.json`]
 
 ## Sources
 
@@ -518,7 +555,7 @@ Security enforcement is enabled at ASVS level 3 in `.planning/config.json`. [VER
 - React official documentation — effect cleanup for timers/listeners. [CITED: https://react.dev/learn/synchronizing-with-effects]
 
 ### Secondary (MEDIUM confidence)
-- open-gsd gsd-core configuration documentation, `next` branch — model profiles, precedence, runtime-aware mappings, and install-time baking. [CITED: https://github.com/open-gsd/gsd-core/blob/next/docs/CONFIGURATION.md]
+- open-gsd gsd-core immutable revision `50efae13ce74f02a5b0253ce0c205c5eac2a99e3`, retrieved 2026-07-18 — `docs/CONFIGURATION.md` anchors 143-158; `docs/how-to/configure-model-profiles.md` anchors 40-64 and 157-177; `docs/adr/1517-reviewer-instances-config-surface.md` anchors 23-49; `gsd-core/bin/shared/model-catalog.json`; `src/model-catalog.cts` anchors 85-117. [VERIFIED: official source retrieval and immutable revision assertion]
 - Phase 1–3 planning research and summaries — domain inventory, known pitfalls, and existing test patterns. [VERIFIED: `.planning/research/*.md`; `.planning/phases/03-generic-schema-driven-ui-shell/03-RESEARCH.md`]
 
 ### Tertiary (LOW confidence)
@@ -529,7 +566,7 @@ Security enforcement is enabled at ASVS level 3 in `.planning/config.json`. [VER
 **Confidence breakdown:**
 - Standard stack: HIGH — packages are already installed, registry-checked, and official docs were queried; one existing TanStack Query package received a “too-new” legitimacy signal. [VERIFIED: npm registry; legitimacy gate]
 - Architecture: HIGH for reuse of existing project seams; MEDIUM for new specialized metadata/profile catalog shape. [VERIFIED: codebase; ASSUMED for additive metadata]
-- GSD-specific model/runtime behavior: MEDIUM — official current docs were found, but the exact source/catalog matrix still needs planning-time confirmation. [CITED: gsd-core docs]
+- GSD-specific model/runtime behavior: HIGH for the immutable snapshot and resolved model/install matrix; MEDIUM for future revisions because Phase 6 owns live reconciliation. [VERIFIED: official revision, source paths, and evidence gate in Open Questions (RESOLVED)]
 - Secret handling: MEDIUM — locked product contract and existing value-free error behavior are strong; exact browser-memory/DOM implementation remains a design choice. [VERIFIED: project contracts; ASSUMED implementation details]
 
 **Research date:** 2026-07-18  
