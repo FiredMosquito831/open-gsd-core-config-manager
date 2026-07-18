@@ -11,6 +11,7 @@ export function ChapterNav() {
     queryFn: getSchema,
   });
   const { activeConfigId, activeChapter, setActiveChapter } = useUiStore();
+  const profileChapter = 'Profiles';
   const { data: loadResult } = useQuery({
     queryKey: ['config', activeConfigId],
     queryFn: () => loadConfig(activeConfigId!),
@@ -18,7 +19,7 @@ export function ChapterNav() {
   });
   const index = useMemo(() => (schema ? indexSchema(schema) : null), [schema]);
   const categories = useMemo(
-    () => (index ? [...index.categories, ...(loadResult?.unknown.length ? ['Unrecognized'] : [])] : []),
+    () => (index ? [...index.categories, profileChapter, ...(loadResult?.unknown.length ? ['Unrecognized'] : [])] : []),
     [index, loadResult?.unknown.length],
   );
 
@@ -50,7 +51,7 @@ export function ChapterNav() {
             >
               {category}
               <span className="gsd-chapter-nav__count" aria-hidden="true">
-                {category === 'Unrecognized' ? loadResult?.unknown.length ?? 0 : index.fieldsByCategory.get(category)?.length ?? 0}
+                {category === profileChapter ? 5 : category === 'Unrecognized' ? loadResult?.unknown.length ?? 0 : index.fieldsByCategory.get(category)?.length ?? 0}
               </span>
             </button>
           </li>

@@ -10,6 +10,8 @@ interface UiState {
   highlightTarget: string | null;
   focusedPath: string | null;
   focusedOriginChapter: string | null;
+  profileEditorOpen: boolean;
+  profileSessionLabel: string;
   setActiveConfigId: (id: string | null) => void;
   setActiveChapter: (chapter: string | null) => void;
   toggleLeftPane: () => void;
@@ -18,6 +20,8 @@ interface UiState {
   setSearchOpen: (open: boolean) => void;
   setHighlightTarget: (target: string | null) => void;
   setFocusedPath: (path: string | null, chapter: string | null) => void;
+  setProfileEditorOpen: (open: boolean) => void;
+  setProfileSessionLabel: (label: string) => void;
   clearHighlight: () => void;
 }
 
@@ -31,7 +35,9 @@ export const useUiStore = create<UiState>((set) => ({
   highlightTarget: null,
   focusedPath: null,
   focusedOriginChapter: null,
-  setActiveConfigId: (activeConfigId) => set({ activeConfigId, focusedPath: null, focusedOriginChapter: null }),
+  profileEditorOpen: false,
+  profileSessionLabel: '',
+  setActiveConfigId: (activeConfigId) => set({ activeConfigId, focusedPath: null, focusedOriginChapter: null, profileEditorOpen: false, profileSessionLabel: '' }),
   setActiveChapter: (activeChapter) => set({ activeChapter }),
   toggleLeftPane: () => set((state) => ({ leftPaneOpen: !state.leftPaneOpen })),
   toggleMiddlePane: () => set((state) => ({ middlePaneOpen: !state.middlePaneOpen })),
@@ -39,5 +45,7 @@ export const useUiStore = create<UiState>((set) => ({
   setSearchOpen: (searchOpen) => set({ searchOpen }),
   setHighlightTarget: (highlightTarget) => set({ highlightTarget }),
   setFocusedPath: (focusedPath, focusedOriginChapter) => set({ focusedPath, focusedOriginChapter }),
+  setProfileEditorOpen: (profileEditorOpen) => set({ profileEditorOpen }),
+  setProfileSessionLabel: (profileSessionLabel) => set({ profileSessionLabel }),
   clearHighlight: () => set({ highlightTarget: null }),
 }));
