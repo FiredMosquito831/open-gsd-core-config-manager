@@ -130,7 +130,7 @@ Plans:
   4. User can view the five built-in GSD model-profile selectors and their assignments, then create a copy-first custom project model configuration using supported model fields; no durable named custom-profile entity is invented.
   5. Saving a change to a runtime-baked setting (e.g. `model_overrides` on a Codex/OpenCode-style install) surfaces a clear "requires `gsd install` to take effect" notice; integration/API-key fields are masked by default in the UI and never logged.
 
-**Plans**: 1/5 plans executed
+**Plans**: 2/5 plans executed
 Plans:
 **Wave 1**
 
@@ -138,7 +138,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1)*
 
-- [ ] 04-02-PLAN.md — Source-confirmed specialized metadata, sensitive descriptor catalog, and safe project-draft helpers
+- [x] 04-02-PLAN.md — Source-confirmed specialized metadata, sensitive descriptor catalog, and safe project-draft helpers
 
 **Wave 3** *(blocked on Wave 2)*
 
@@ -193,6 +193,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 1. Schema Foundation & Data-Layer Safety | 7/7 | Complete    | 2026-07-12 |
 | 2. Local Loopback Server, CLI & Security Hardening | 7/7 | Complete    | 2026-07-12 |
 | 3. Generic Schema-Driven UI Shell | 6/6 | Complete    | 2026-07-17 |
-| 4. Pool Editors & Model Profile Specialization | 1/5 | In Progress|  |
+| 4. Pool Editors & Model Profile Specialization | 2/5 | In Progress|  |
 | 5. Version History UI | 0/TBD | Not started | - |
 | 6. Live Schema Reconcile Against gsd-core | 0/TBD | Not started | - |
