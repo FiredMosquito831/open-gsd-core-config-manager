@@ -11,6 +11,7 @@ export interface IndexedField {
   isHandoff: boolean;
   handoffReason?: 'array' | 'object' | 'dynamic-map';
   searchableText: string;
+  specialized?: SchemaEntry['x-specialized'];
 }
 
 export interface ContentGap {
@@ -82,6 +83,7 @@ export function indexSchema(schema: Record<string, SchemaEntry>): SchemaIndex {
       isHandoff: handoff.isHandoff,
       handoffReason: handoff.isHandoff ? handoff.reason : undefined,
       searchableText: buildSearchableText(path, entry),
+      specialized: entry['x-specialized'],
     };
 
     if (!fieldsByCategory.has(category)) {

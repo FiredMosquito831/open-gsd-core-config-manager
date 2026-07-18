@@ -122,4 +122,13 @@ export interface SchemaEntry {
   'x-dynamic-key-hint'?: string;
   /** Per-enum-option metadata slot, reserved for Phase 3's per-option beginner prose (D-01). */
   'x-options'?: Record<string, { 'x-description': string }>;
+  /** Optional source-confirmed specialized editor metadata; validation remains schema-driven. */
+  'x-specialized'?: {
+    path: string;
+    editor: string;
+    editable: boolean;
+    sensitive: boolean;
+    sourceEvidence: string[];
+    [key: string]: unknown;
+  };
 }

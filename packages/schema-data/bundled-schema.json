@@ -36,7 +36,14 @@
     "title": "Brave Search",
     "x-category": "Discovery",
     "x-description": "Enable Brave web search for the research agent (requires a BRAVE_API_KEY).",
-    "x-provenance": "manifest"
+    "x-provenance": "manifest",
+    "x-specialized": {
+      "path": "brave_search",
+      "editor": "read-only-unsupported",
+      "editable": false,
+      "sensitive": true,
+      "sourceEvidence": []
+    }
   },
   "capabilities.auto_update": {
     "type": "boolean",
@@ -194,6 +201,15 @@
         "x-description": "See effort.agent_overrides — effort.agent_overrides.<agent-id>",
         "x-provenance": "dynamicKeyPattern:effort"
       }
+    },
+    "x-specialized": {
+      "path": "effort.agent_overrides",
+      "editor": "agent-map",
+      "editable": true,
+      "sensitive": false,
+      "sourceEvidence": [
+        "docs/CONFIGURATION.md#effort.agent_overrides"
+      ]
     }
   },
   "effort.default": {
@@ -230,7 +246,14 @@
     "title": "Exa Search",
     "x-category": "Discovery",
     "x-description": "Enable Exa semantic search for the research agent (requires an EXA_API_KEY).",
-    "x-provenance": "manifest"
+    "x-provenance": "manifest",
+    "x-specialized": {
+      "path": "exa_search",
+      "editor": "read-only-unsupported",
+      "editable": false,
+      "sensitive": true,
+      "sourceEvidence": []
+    }
   },
   "executor.stall_detect_interval_minutes": {
     "type": "number",
@@ -266,6 +289,15 @@
         "x-description": "See fast_mode.agent_overrides — fast_mode.agent_overrides.<agent-id>",
         "x-provenance": "dynamicKeyPattern:fast_mode"
       }
+    },
+    "x-specialized": {
+      "path": "fast_mode.agent_overrides",
+      "editor": "agent-map",
+      "editable": true,
+      "sensitive": false,
+      "sourceEvidence": [
+        "docs/CONFIGURATION.md#fast_mode.agent_overrides"
+      ]
     }
   },
   "fast_mode.enabled": {
@@ -338,7 +370,14 @@
     "title": "Firecrawl",
     "x-category": "Discovery",
     "x-description": "Enable Firecrawl page scraping for the research agent (requires a FIRECRAWL_API_KEY).",
-    "x-provenance": "manifest"
+    "x-provenance": "manifest",
+    "x-specialized": {
+      "path": "firecrawl",
+      "editor": "read-only-unsupported",
+      "editable": false,
+      "sensitive": true,
+      "sourceEvidence": []
+    }
   },
   "gates.confirm_breakdown": {
     "type": "boolean",
@@ -682,6 +721,15 @@
         "x-description": "See model_overrides — model_overrides.<agent-id>",
         "x-provenance": "dynamicKeyPattern:model_overrides"
       }
+    },
+    "x-specialized": {
+      "path": "model_overrides",
+      "editor": "agent-map",
+      "editable": true,
+      "sensitive": false,
+      "sourceEvidence": [
+        "docs/CONFIGURATION.md#model_overrides"
+      ]
     }
   },
   "model_policy.budget": {
@@ -757,6 +805,15 @@
         "x-description": "See model_policy.runtime_tiers — model_policy.runtime_tiers.<runtime>.<opus|sonnet|haiku>",
         "x-provenance": "dynamicKeyPattern:model_policy"
       }
+    },
+    "x-specialized": {
+      "path": "model_policy.runtime_tiers",
+      "editor": "runtime-tier-map",
+      "editable": true,
+      "sensitive": false,
+      "sourceEvidence": [
+        "docs/CONFIGURATION.md#model_policy.runtime_tiers.<runtime>.<tier>"
+      ]
     }
   },
   "model_profile": {
@@ -765,7 +822,23 @@
     "title": "Model Profile",
     "x-category": "Model & Routing",
     "x-description": "Model selection preset applied to all subagents: \"quality\", \"balanced\", \"budget\", \"adaptive\", or \"inherit\".",
-    "x-provenance": "manifest"
+    "x-provenance": "manifest",
+    "x-specialized": {
+      "path": "model_profile",
+      "editor": "profile-select",
+      "editable": true,
+      "sensitive": false,
+      "sourceEvidence": [
+        "docs/CONFIGURATION.md#model_profile"
+      ]
+    },
+    "enum": [
+      "quality",
+      "balanced",
+      "budget",
+      "adaptive",
+      "inherit"
+    ]
   },
   "model_profile_overrides": {
     "type": [
@@ -785,6 +858,15 @@
         "x-description": "See model_profile_overrides — model_profile_overrides.<runtime>.<opus|sonnet|haiku>",
         "x-provenance": "dynamicKeyPattern:model_profile_overrides"
       }
+    },
+    "x-specialized": {
+      "path": "model_profile_overrides",
+      "editor": "runtime-tier-map",
+      "editable": true,
+      "sensitive": false,
+      "sourceEvidence": [
+        "docs/CONFIGURATION.md#model_profile_overrides.<runtime>.<tier>"
+      ]
     }
   },
   "models": {
