@@ -46,6 +46,7 @@ requirements-completed: [EDIT-03, POOL-01, POOL-02, POOL-03, PROF-01, PROF-02, P
 ## Accomplishments
 
 - Added typed `x-specialized` schema metadata and a reusable descriptor catalog for structured arrays, agent maps, runtime-tier maps, profile selection, unsupported reviewer instances, and confirmed sensitive paths.
+- Moved runtime catalog inputs out of test fixtures into the shipped `packages/schema-data/specialized-catalog.json`; the frontend now imports only production-shipped schema/catalog artifacts.
 - Preserved generic indexing and handoff behavior while exposing specialized metadata to downstream renderers.
 - Added defensive layered lookup, project-draft extraction, and deep-copy inheritance materialization helpers based on existing `LoadResult` data.
 - Extended client validation metadata support without replacing the flat canonical schema or Ajv conversion path; profile values are now constrained by the evidence-backed profile catalog.
