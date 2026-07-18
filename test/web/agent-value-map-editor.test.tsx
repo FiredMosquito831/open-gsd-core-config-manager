@@ -8,6 +8,6 @@ describe('AgentValueMapEditor', () => {
     expect(screen.getByText('Unsupported value preserved: custom')).toBeTruthy();
     const select = screen.getByLabelText('Add supported agent');
     fireEvent.change(select, { target: { value: 'gsd-executor' } });
-    expect(screen.getByText('gsd-planner')).toBeInTheDocument();
+    expect(screen.getByText('gsd-planner')).toBeTruthy();
   });
 });
