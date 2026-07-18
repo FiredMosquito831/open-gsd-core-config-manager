@@ -5,7 +5,7 @@ import { StructuredPoolEditor } from '../../web/src/components/specialized/Struc
 describe('StructuredPoolEditor', () => {
   it('renders descriptor fields and required status', () => {
     render(<StructuredPoolEditor descriptor={{ path: 'ship.pr_body_sections', editor: 'structured-array', editable: true, sensitive: false, sourceEvidence: [], fields: [{ path: 'heading', type: 'string', required: true }] }} value={{ heading: '' }} onChange={() => undefined} />);
-    expect(screen.getByLabelText('heading')).toBeInTheDocument();
+    expect(screen.getByLabelText('heading')).toBeTruthy();
     expect(screen.getByText('heading is required.')).toBeInTheDocument();
   });
 });
