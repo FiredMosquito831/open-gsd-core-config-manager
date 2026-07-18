@@ -179,6 +179,7 @@ export function ConfigEditor() {
                 return next;
               });
               setChanges((prev) => ({ ...prev, [path]: value }));
+              form.setValue(path, value, { shouldDirty: true, shouldTouch: true, shouldValidate: true });
             }}
             onResetField={(path) => {
               setServerErrors([]);

@@ -20,11 +20,21 @@ function asEntries(value: unknown): unknown[] {
   return Array.isArray(value) ? value : [];
 }
 
+function asMap(value: unknown): Record<string, unknown> {
+  return value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {};
+}
+
 export function FocusedWorkspace({ descriptor, loadResult, chapter, value, onChange }: FocusedWorkspaceProps) {
   const { setFocusedPath } = useUiStore();
-  const [selectedIndex, setSelectedIndex] = useState<number | null>(asEntries(value).length ? 0 : null);
-  const [removingIndex, setRemovingIndex] = useState<number | null>(null);
   const entries = asEntries(value);
+  const map = asMap(value);
+  const mapKeys = Object.keys(map);
+  const isArray = descriptor.editor === 'structured-array';
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(isArray && entries.length ? 0 : null);
+  const [selectedKey, setSelectedKey] = useState<string | null>(!isArray && mapKeys.length ? mapKeys[0] : null);
+  const [removingIndex, setRemovingIndex] = useState<number | null>(null);
+  const [removingKey, setRemovingKey] = useState<string | null>(null);
+  const selectedMapValue = selectedKey === null ? undefined : map[selectedKey];
   const leaf = getEffectiveLeaf(loadResult.effective, descriptor.path);
   const layered = useMemo(() => getLayeredValue(loadResult, descriptor.path), [loadResult, descriptor.path]);
 
@@ -32,15 +42,28 @@ export function FocusedWorkspace({ descriptor, loadResult, chapter, value, onCha
   const addEntry = () => {
     const fields = descriptor.fields ?? [];
     const entry = Object.fromEntries(fields.map((field) => [field.path, field.type === 'string' ? '' : undefined]));
-    const next = descriptor.editor === 'structured-array' ? [...entries, entry] : { ...(value && typeof value === 'object' ? value : {}), [`entry-${entries.length + 1}`]: entry };
-    onChange(next);
-    if (descriptor.editor === 'structured-array') setSelectedIndex(entries.length);
+    if (isArray) {
+      const next = [...entries, entry];
+      onChange(next);
+      setSelectedIndex(entries.length);
+    } else {
+      const key = `entry-${mapKeys.length + 1}`;
+      onChange({ ...map, [key]: entry });
+      setSelectedKey(key);
+    }
   };
   const removeEntry = () => {
-    if (removingIndex === null) return;
-    onChange(entries.filter((_, index) => index !== removingIndex));
-    setSelectedIndex(entries.length <= 1 ? null : Math.min(removingIndex, entries.length - 2));
-    setRemovingIndex(null);
+    if (removingIndex !== null) {
+      onChange(entries.filter((_, index) => index !== removingIndex));
+      setSelectedIndex(entries.length <= 1 ? null : Math.min(removingIndex, entries.length - 2));
+      setRemovingIndex(null);
+    } else if (removingKey !== null) {
+      const next = { ...map };
+      delete next[removingKey];
+      onChange(next);
+      setSelectedKey(mapKeys.length <= 1 ? null : mapKeys.find((key) => key !== removingKey) ?? null);
+      setRemovingKey(null);
+    }
   };
   const moveEntry = (index: number, direction: -1 | 1) => {
     const next = [...entries];
@@ -50,6 +73,12 @@ export function FocusedWorkspace({ descriptor, loadResult, chapter, value, onCha
     onChange(next);
     setSelectedIndex(target);
   };
+  const updateMapValue = (next: unknown) => {
+    if (selectedKey !== null) onChange({ ...map, [selectedKey]: next });
+  };
+  const mapEntries = mapKeys.map((key) => ({ key, value: map[key] }));
+  const mapEditor = descriptor.editor === 'agent-map' || descriptor.editor === 'runtime-tier-map';
+  const selectedValue = isArray ? (selectedIndex === null ? undefined : entries[selectedIndex]) : selectedMapValue;
 
   return (
     <section className="gsd-focused-workspace" aria-label={`${descriptor.path} focused editor`}>
@@ -63,32 +92,31 @@ export function FocusedWorkspace({ descriptor, loadResult, chapter, value, onCha
       </div>
       <LayerSummary layers={layered} effectiveSource={leaf?.from ?? 'canonical'} />
       <div className="gsd-focused-workspace__body">
-        <PoolEntryList
+        {isArray ? <PoolEntryList
           entries={entries}
           selectedIndex={selectedIndex}
           onSelect={setSelectedIndex}
           onAdd={addEntry}
           onMove={moveEntry}
           onRemove={setRemovingIndex}
-        />
+        /> : <section className="gsd-pool-list" aria-label="Map entries">
+          <div className="gsd-pool-list__header"><div><h3>Entries</h3><p>{mapEntries.length} {mapEntries.length === 1 ? 'entry' : 'entries'}</p></div><button type="button" className="gsd-button gsd-button--primary gsd-button--sm" onClick={addEntry}>Add entry</button></div>
+          <div className="gsd-pool-list__items" role="listbox" aria-label="Select a map entry">{mapEntries.map(({ key }) => <div key={key} role="option" aria-selected={selectedKey === key} className={`gsd-pool-list__row ${selectedKey === key ? 'gsd-pool-list__row--selected' : ''}`}><button type="button" className="gsd-pool-list__select" onClick={() => setSelectedKey(key)}><span className="gsd-pool-list__name">{key}</span></button><button type="button" className="gsd-button gsd-button--danger gsd-button--sm" onClick={() => setRemovingKey(key)} aria-label={`Remove ${key}`}>Remove</button></div>)}</div>
+        </section>}
         <div className="gsd-focused-workspace__detail" aria-label="Entry details">
-          {selectedIndex === null ? (
+          {selectedValue === undefined ? (
             <div className="gsd-focused-workspace__empty"><h3>Choose an entry</h3><p>Add an entry or select one from the list to edit its details.</p></div>
           ) : descriptor.editor === 'agent-map' ? (
             <AgentValueMapEditor descriptor={descriptor} value={value} onChange={onChange} />
           ) : (
-            <StructuredPoolEditor descriptor={descriptor} value={descriptor.editor === 'structured-array' ? entries[selectedIndex] : value} onChange={(next) => {
-              if (descriptor.editor === 'structured-array') {
-                const updated = [...entries]; updated[selectedIndex] = next; onChange(updated);
-              } else onChange(next);
-            }} />
+            <StructuredPoolEditor descriptor={descriptor} value={selectedValue} onChange={(next) => isArray && selectedIndex !== null ? (() => { const updated = [...entries]; updated[selectedIndex] = next; onChange(updated); })() : updateMapValue(next)} />
           )}
         </div>
       </div>
-      {removingIndex !== null && (
+      {(removingIndex !== null || removingKey !== null) && (
         <div className="gsd-dialog-overlay" role="presentation">
           <div className="gsd-dialog" role="alertdialog" aria-modal="true" aria-labelledby="remove-entry-title">
-            <h2 id="remove-entry-title">Remove {`Entry ${removingIndex + 1}`}?</h2>
+            <h2 id="remove-entry-title">Remove {removingKey ?? `Entry ${removingIndex! + 1}`}?</h2>
             <p>This will remove the named entry from the draft. You can still discard the draft before saving.</p>
             <div className="gsd-dialog__actions"><button type="button" className="gsd-button gsd-button--ghost gsd-button--md" onClick={() => setRemovingIndex(null)}>Cancel</button><button type="button" className="gsd-button gsd-button--danger gsd-button--md" onClick={removeEntry}>Remove entry</button></div>
           </div>
