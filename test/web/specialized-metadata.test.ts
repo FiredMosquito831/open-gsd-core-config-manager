@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
+import bundledSchema from '../../packages/schema-data/bundled-schema.json' with { type: 'json' };
 import {
   SPECIALIZED_METADATA,
   getSpecializedDescriptor,
@@ -42,6 +43,11 @@ describe('specialized metadata', () => {
   it('keeps reviewer instances read-only because bundled validation has no shape', () => {
     const reviewer = SPECIALIZED_METADATA.find((item) => item.path === 'review.reviewer_instances');
     expect(reviewer).toMatchObject({ editor: 'read-only-unsupported', editable: false });
+  });
+
+  it('does not depend on test fixtures at runtime', () => {
+    expect(JSON.stringify(SPECIALIZED_METADATA)).not.toContain('phase4-gsd-core-catalog');
+    expect(bundledSchema.model_profile['x-specialized']?.sourceEvidence).toContain('docs/CONFIGURATION.md#model_profile');
   });
 
   it('uses typed descriptors so unsupported paths cannot masquerade as editors', () => {
