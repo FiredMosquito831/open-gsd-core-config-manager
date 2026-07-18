@@ -133,19 +133,19 @@ Plans:
 **Plans**: 5 plans
 Plans:
 **Wave 1**
-- [ ] 04-01-PLAN.md — Confirm current gsd-core pool/profile/runtime catalog and create executable evidence contracts
+- [ ] 04-01-PLAN.md — Gate on confirmed current gsd-core pool/profile/runtime evidence, then create executable catalog and sensitive-path contracts (stops on absent/conflicting evidence)
 
 **Wave 2** *(blocked on Wave 1)*
-- [ ] 04-02-PLAN.md — Source-confirmed specialized metadata and safe project-draft helpers
+- [ ] 04-02-PLAN.md — Source-confirmed specialized metadata, sensitive descriptor catalog, and safe project-draft helpers
 
 **Wave 3** *(blocked on Wave 2)*
-- [ ] 04-05-PLAN.md — Reusable provenance summary and temporary secret-reveal protection
+- [ ] 04-05-PLAN.md — Reusable provenance summary and descriptor-driven temporary secret-reveal protection
 
 **Wave 4** *(blocked on Waves 2–3)*
-- [ ] 04-03-PLAN.md — Focused accessible structured-pool and constrained agent-map editors
+- [ ] 04-03-PLAN.md — Focused accessible structured-pool and constrained agent-map editors with catalog-driven SecretField integration tests
 
 **Wave 5** *(blocked on Waves 3–4)*
-- [ ] 04-04-PLAN.md — Profiles chapter, copy/edit flow, and runtime-baked install notices
+- [ ] 04-04-PLAN.md — Profiles chapter, copy/edit flow, runtime-baked install notices, and catalog-driven SecretField integration tests
 
 **UI hint**: yes
 
