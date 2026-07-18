@@ -1167,3 +1167,41 @@ body {
   white-space: pre-wrap;
   word-break: break-word;
 }
+
+/* Focused pool workspace */
+.gsd-specialized-launch { display:flex; flex-direction:column; align-items:flex-start; gap:.25rem; min-height:2.75rem; padding:1rem; border:1px solid var(--gsd-border); border-radius:var(--gsd-radius); background:var(--gsd-surface-elevated); color:var(--gsd-text); text-align:left; cursor:pointer; box-shadow:var(--gsd-shadow); }
+.gsd-specialized-launch:hover { border-color:var(--gsd-accent); background:var(--gsd-accent-subtle); }
+.gsd-specialized-launch span:nth-child(2), .gsd-focused-workspace__eyebrow { color:var(--gsd-text-muted); font:.75rem ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+.gsd-specialized-launch small { color:var(--gsd-accent); }
+.gsd-focused-workspace { display:flex; flex-direction:column; gap:1rem; min-width:0; }
+.gsd-focused-workspace__header { display:flex; flex-direction:column; gap:.75rem; }
+.gsd-focused-workspace__header h2, .gsd-focused-workspace__header p { margin:0; overflow-wrap:anywhere; }
+.gsd-focused-workspace__body { display:grid; grid-template-columns:17.5rem minmax(0,1fr); gap:2rem; min-height:24rem; }
+.gsd-pool-list { min-width:0; display:flex; flex-direction:column; gap:.75rem; }
+.gsd-pool-list__header, .gsd-pool-list__row, .gsd-agent-map-editor__row { display:flex; align-items:center; justify-content:space-between; gap:.5rem; }
+.gsd-pool-list__header h3, .gsd-pool-list__header p, .gsd-focused-workspace__empty h3, .gsd-focused-workspace__empty p { margin:0; }
+.gsd-pool-list__header p, .gsd-specialized-editor__hint { color:var(--gsd-text-muted); font-size:.875rem; }
+.gsd-pool-list__items { min-height:0; max-height:28rem; overflow:auto; display:flex; flex-direction:column; gap:.5rem; }
+.gsd-pool-list__row { align-items:stretch; border:1px solid var(--gsd-border); border-radius:var(--gsd-radius-sm); overflow:hidden; }
+.gsd-pool-list__row--selected { border-color:var(--gsd-accent); background:var(--gsd-accent-subtle); }
+.gsd-pool-list__row--invalid { border-color:var(--gsd-danger); background:var(--gsd-danger-bg); }
+.gsd-pool-list__select { flex:1; min-width:0; min-height:2.75rem; padding:.625rem .75rem; border:0; background:transparent; color:var(--gsd-text); text-align:left; cursor:pointer; }
+.gsd-pool-list__name { display:block; overflow-wrap:anywhere; }
+.gsd-pool-list__status { display:block; color:var(--gsd-danger); font-size:.75rem; }
+.gsd-pool-list__actions { display:flex; align-items:center; flex-wrap:wrap; padding:.25rem; }
+.gsd-focused-workspace__detail { min-width:0; overflow:auto; }
+.gsd-structured-editor, .gsd-agent-map-editor { display:flex; flex-direction:column; gap:1rem; min-width:0; }
+.gsd-structured-editor h3, .gsd-agent-map-editor h3 { margin:0; }
+.gsd-specialized-field { display:flex; flex-direction:column; gap:.375rem; }
+.gsd-specialized-field label { font-weight:600; }
+.gsd-specialized-field input, .gsd-specialized-field select, .gsd-agent-map-editor select, .gsd-agent-map-editor__row select { min-height:2.75rem; padding:.5rem .625rem; border:1px solid var(--gsd-border-strong); border-radius:var(--gsd-radius-sm); background:var(--gsd-surface-elevated); color:var(--gsd-text); }
+.gsd-specialized-field--invalid input { border-color:var(--gsd-danger); }
+.gsd-agent-map-editor__row { justify-content:flex-start; flex-wrap:wrap; padding:.75rem; border:1px solid var(--gsd-border); border-radius:var(--gsd-radius-sm); }
+.gsd-agent-map-editor__row strong { min-width:12rem; overflow-wrap:anywhere; }
+.gsd-agent-map-editor__row--unsupported { border-color:var(--gsd-warning); background:var(--gsd-warning-bg); }
+.gsd-agent-map-editor__readonly { color:var(--gsd-warning); overflow-wrap:anywhere; }
+.gsd-agent-map-editor__add { display:flex; flex-direction:column; gap:.375rem; }
+.gsd-specialized-readonly { padding:1rem; border:1px solid var(--gsd-warning); border-radius:var(--gsd-radius); background:var(--gsd-warning-bg); }
+.gsd-specialized-readonly pre { max-width:100%; overflow:auto; white-space:pre-wrap; overflow-wrap:anywhere; }
+.gsd-dialog__actions { display:flex; justify-content:flex-end; gap:.5rem; flex-wrap:wrap; }
+@media (max-width:900px) { .gsd-focused-workspace__body { grid-template-columns:1fr; gap:1rem; } .gsd-pool-list__items { max-height:16rem; } }

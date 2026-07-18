@@ -8,6 +8,8 @@ interface UiState {
   searchQuery: string;
   searchOpen: boolean;
   highlightTarget: string | null;
+  focusedPath: string | null;
+  focusedOriginChapter: string | null;
   setActiveConfigId: (id: string | null) => void;
   setActiveChapter: (chapter: string | null) => void;
   toggleLeftPane: () => void;
@@ -15,6 +17,7 @@ interface UiState {
   setSearchQuery: (query: string) => void;
   setSearchOpen: (open: boolean) => void;
   setHighlightTarget: (target: string | null) => void;
+  setFocusedPath: (path: string | null, chapter: string | null) => void;
   clearHighlight: () => void;
 }
 
@@ -26,12 +29,15 @@ export const useUiStore = create<UiState>((set) => ({
   searchQuery: '',
   searchOpen: false,
   highlightTarget: null,
-  setActiveConfigId: (activeConfigId) => set({ activeConfigId }),
+  focusedPath: null,
+  focusedOriginChapter: null,
+  setActiveConfigId: (activeConfigId) => set({ activeConfigId, focusedPath: null, focusedOriginChapter: null }),
   setActiveChapter: (activeChapter) => set({ activeChapter }),
   toggleLeftPane: () => set((state) => ({ leftPaneOpen: !state.leftPaneOpen })),
   toggleMiddlePane: () => set((state) => ({ middlePaneOpen: !state.middlePaneOpen })),
   setSearchQuery: (searchQuery) => set({ searchQuery, searchOpen: searchQuery.trim().length > 0 }),
   setSearchOpen: (searchOpen) => set({ searchOpen }),
   setHighlightTarget: (highlightTarget) => set({ highlightTarget }),
+  setFocusedPath: (focusedPath, focusedOriginChapter) => set({ focusedPath, focusedOriginChapter }),
   clearHighlight: () => set({ highlightTarget: null }),
 }));
