@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "source": {
+    "revision": "36a311c5bb5fa1a475cfbb685a845cd2d5bf88fe",
+    "retrievedAt": "2026-07-18",
+    "evidenceArtifact": "test/fixtures/phase4-gsd-core-source-evidence.json"
+  },
+  "evidenceRefs": [
+    "docs/CONFIGURATION.md#model_profile",
+    "docs/CONFIGURATION.md#model_overrides",
+    "docs/CONFIGURATION.md#model_policy-runtime_tiers",
+    "docs/CONFIGURATION.md#review.reviewer_instances.<name>.cli",
+    "docs/how-to/configure-model-profiles.md#the-four-profiles",
+    "gsd-core/bin/shared/model-catalog.json#profiles",
+    "gsd-core/bin/shared/model-catalog.json#agents"
+  ],
+  "profiles": ["quality", "balanced", "budget", "adaptive", "inherit"],
+  "phaseTypes": ["planning", "discuss", "research", "execution", "verification", "completion"],
+  "adaptiveTierMap": {"heavy": "opus", "standard": "sonnet", "light": "haiku"},
+  "agents": ["gsd-planner", "gsd-roadmapper", "gsd-executor", "gsd-phase-researcher", "gsd-project-researcher", "gsd-codebase-mapper", "gsd-ui-researcher", "gsd-research-synthesizer", "gsd-domain-researcher", "gsd-advisor-researcher", "gsd-ai-researcher", "gsd-discuss-phase", "gsd-plan-checker", "gsd-verifier", "gsd-security-auditor", "gsd-code-reviewer", "gsd-code-fixer", "gsd-debugger", "gsd-debug-session-manager", "gsd-assumptions-analyzer", "gsd-eval-auditor", "gsd-eval-planner", "gsd-framework-selector", "gsd-integration-checker", "gsd-nyquist-auditor", "gsd-doc-verifier", "gsd-doc-writer", "gsd-doc-classifier", "gsd-doc-synthesizer", "gsd-mempalace-curator", "gsd-intel-updater", "gsd-pattern-mapper", "gsd-user-profiler", "gsd-ui-checker"],
+  "descriptors": {
+    "ship.pr_body_sections": {"editor": "structured-array", "type": "array", "entryFields": [{"path": "heading", "type": "string", "required": true}, {"path": "body", "type": "string", "required": true}], "evidence": "docs/CONFIGURATION.md#ship.pr_body_sections"},
+    "model_overrides": {"editor": "agent-map", "type": ["object", "null"], "value": {"type": "string", "allowed": ["opus", "sonnet", "haiku", "inherit"]}, "evidence": "docs/CONFIGURATION.md#model_overrides"},
+    "effort.agent_overrides": {"editor": "agent-map", "type": ["object", "null"], "value": {"type": "string", "allowed": ["low", "medium", "high"]}, "evidence": "docs/CONFIGURATION.md#effort.agent_overrides"},
+    "fast_mode.agent_overrides": {"editor": "agent-map", "type": ["object", "null"], "value": {"type": "boolean"}, "evidence": "docs/CONFIGURATION.md#fast_mode.agent_overrides"},
+    "model_profile_overrides": {"editor": "runtime-tier-map", "type": ["object", "null"], "key": "<runtime>.<opus|sonnet|haiku>", "value": {"type": ["string", "object"]}, "evidence": "docs/CONFIGURATION.md#model_profile_overrides.<runtime>.<tier>"},
+    "model_policy.runtime_tiers": {"editor": "runtime-tier-map", "type": ["object", "null"], "key": "<runtime>.<opus|sonnet|haiku>", "value": {"type": "object", "required": ["model"], "optional": ["reasoning_effort"]}, "evidence": "docs/CONFIGURATION.md#model_policy.runtime_tiers.<runtime>.<tier>"},
+    "review.reviewer_instances": {"editor": "read-only-unsupported", "type": "object", "entryFields": [{"path": "cli", "type": "string", "required": true}, {"path": "model", "type": "string", "required": false}, {"path": "agent", "type": "string", "required": false}], "evidence": "docs/CONFIGURATION.md#review.reviewer_instances.<name>.cli", "reason": "bundled schema has no matching validation shape"}
+  },
+  "unsupported": ["review.reviewer_instances.<name>"],
+  "sensitivePaths": ["brave_search", "firecrawl", "exa_search", "tavily_search", "ref_search", "perplexity", "jina"],
+  "profilePersistenceShape": {
+    "entity": "ordinary-project-config",
+    "editableFields": ["model_overrides", "models", "model_profile_overrides", "model_policy"],
+    "forbiddenSerializedFields": ["profiles", "active_profile", "profile_id", "profile_description", "profile_assignments", "model_profile_name"],
+    "copyFirst": true
+  },
+  "runtimeInstallMatrix": [{"runtime": "codex", "path": "model_overrides.<agent-id>", "command": "gsd install codex"}, {"runtime": "opencode", "path": "model_overrides.<agent-id>", "command": "gsd install opencode"}, {"runtime": "codex", "path": "model_profile_overrides.<runtime>.<tier>", "command": "gsd install codex"}, {"runtime": "opencode", "path": "model_profile_overrides.<runtime>.<tier>", "command": "gsd install opencode"}],
+  "runtimeNegativeMatrix": [{"runtime": "claude", "path": "model_overrides.<agent-id>"}, {"runtime": "unsupported-runtime", "path": "model_overrides.<agent-id>"}, {"runtime": "codex", "path": "model_overrides.<agent-id-with-typo>"}, {"runtime": null, "path": "model_overrides.<agent-id>"}],
+  "precedence": ["model_overrides", "model_policy.runtime_tiers", "model_profile_overrides", "models", "model_profile", "runtime-default"],
+  "unknownSelectorFallback": "balanced",
+  "noCustomProfileEntity": true
+}
