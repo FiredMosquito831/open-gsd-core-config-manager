@@ -1,6 +1,6 @@
 ---
 phase: 05-version-history-ui
-reviewed: 2026-07-19T11:59:52Z
+reviewed: 2026-07-19T13:15:29Z
 depth: deep
 files_reviewed: 25
 files_reviewed_list:
@@ -9,6 +9,7 @@ files_reviewed_list:
   - packages/server/src/app.ts
   - packages/server/src/routes/history.ts
   - packages/server/src/snapshot-store/index.ts
+  - test/server/helpers/snapshot-record-worker.ts
   - test/server/history-routes.test.ts
   - test/server/snapshot-store.test.ts
   - test/web/api-client.test.ts
@@ -29,80 +30,80 @@ files_reviewed_list:
   - web/src/state/uiStore.ts
   - web/src/styles.css
 findings:
-  critical: 3
+  critical: 2
   warning: 2
   info: 0
-  total: 5
+  total: 4
 status: issues_found
 ---
 
 # Phase 05: Code Review Report
 
-**Reviewed:** 2026-07-19T11:59:52Z
+**Reviewed:** 2026-07-19T13:15:29Z
 **Depth:** deep
 **Files Reviewed:** 25
 **Status:** issues_found
 
 ## Summary
 
-The history route and UI have broadly sensible token/opaque-ID boundaries, but the restore flow is not connected to the live editor draft and the persistence layer is only serialized inside one server process. Those flaws can overwrite a restored config later or lose history under concurrent helpers. The comparison implementation also does not use its declared structural differ result, producing incorrect array change summaries.
+The original draft-lifecycle fix is effective: `ConfigEditor` stays mounted across workspace modes and supplies its live draft controller to `HistoryWorkspace`. The direct snapshot-index lock and atomic index replacement also resolve the narrowly scoped duplicate-sequence/index-corruption defects, and the comparison now uses LCS alignment. The restore test now mocks the exports actually called and exercises the success path.
 
-Focused history tests passed (36 tests), but they do not exercise a real successful restore. The full suite and typecheck fail for additional repository issues; those results do not validate this phase.
+However, the production restore dialog makes its own ancestor inert, rendering the dialog non-interactive in browsers. Separately, history can still lose an intermediate state when two independent helpers save the same config: the new advisory lock protects only the snapshot index, not the required read-current → write-config → record-snapshot transaction. The focused suites passed (49 tests), but `npm run typecheck` fails, including a new Phase 5 test type error.
 
 ## Critical Issues
 
-### CR-01: Restore bypasses the actual editor draft and leaves it able to overwrite the restored file
+### CR-01 [BLOCKER]: Restore dialog is made inert along with the entire application
 
-**File:** `web/src/App.tsx:33`, `web/src/components/history/HistoryWorkspace.tsx:20-21,72-84`
+**File:** `web/src/components/history/RestoreDialogs.tsx:29-35,55-74`
 
-**Issue:** Entering history replaces (and unmounts) `ConfigEditor` with `HistoryWorkspace`; no `ConfigDraftController` is passed. Consequently `draft` is always `undefined` in the production call chain. The dirty-draft branch at line 72 is never reached, and successful restore cannot call `resetFromServer` at line 83. The global `useConfigDraft` entry therefore retains the previous unsaved changes. On returning to the editor, those stale changes can be saved and silently overwrite the just-restored snapshot.
+**Issue:** The dialog is rendered inside `#root`, then the effect sets `inert` on `#root`. Because `inert` applies to every descendant, it disables the dialog itself as well as the intended background. In a browser, the call at line 32 cannot focus Cancel and the review/dirty dialog controls cannot receive normal pointer or keyboard interaction. This blocks the destructive restore confirmation flow and violates the required modal keyboard/accessibility contract; jsdom does not implement `inert`, so the added test gives a false pass.
 
-**Fix:** Lift the draft lifecycle above the editor/history mode switch, or expose a store-backed controller that `HistoryWorkspace` receives in production. Do not permit restore while that controller is dirty until the user explicitly saves or discards it, and always reset it from the reloaded config after a restore.
+**Fix:** Render the dialog into a portal that is a sibling of the inert application subtree, or inert only the application content behind the dialog rather than `#root`. Add a browser-level accessibility test that opens the dialog and verifies its Cancel/Restore controls receive focus and can be activated.
 
 ```tsx
-// App-level owner must retain the same controller across workspace modes.
-<HistoryWorkspace draft={draft} />
+// Keep the portal outside the element made inert.
+return createPortal(dialog, document.body);
 
-// After restore:
-draft.resetFromServer(reloaded);
+// Inert only the application content, never an ancestor of `dialog`.
+appContentRef.current?.setAttribute('inert', '');
 ```
 
-### CR-02: Snapshot index updates can lose history across concurrently running helpers
+### CR-02 [BLOCKER]: Separate helpers can still drop an intermediate config version
 
-**File:** `packages/server/src/snapshot-store/index.ts:167-178`, `packages/server/src/routes/history.ts:97-100`
+**File:** `packages/server/src/snapshot-store/save-with-snapshot.ts:122-125,137-199`; `packages/server/src/snapshot-store/index.ts:35-43`
 
-**Issue:** `recordSnapshot` performs an unlocked read-modify-write of `index.json`. The mutex used by `saveWithSnapshot` is explicitly in-process only, while two independently launched local helpers can address the same tracked config and snapshot root. Each process can read the same index/sequence, write the same `<seq>.json`, then write competing index contents. One pre-write state and/or index entry is lost, defeating the required version-history data-safety guarantee. The overlapping-restore test only uses one Fastify instance, so it cannot detect this inter-process race.
+**Issue:** The new `withIndexLock` correctly serializes `recordSnapshot` index allocation across processes, but `saveWithSnapshot` serializes the full read-prior-content → write-config → snapshot sequence only with its process-local `pathLocks` map. Two local-helper processes can both read `{"a":0}` before either writes; after their independently locked writes, each records that same stale prior content. The final file contains one new value, both history entries contain the original value, and the other committed value is unrecoverably absent from history. This is the cross-helper data-safety failure identified by the original CR-02, merely moved outside the newly locked index section.
 
-**Fix:** Use an advisory lock shared by processes which covers the entire read-current-content → atomic config write → snapshot file/index update transaction, or at minimum lock the snapshot directory/index around sequence allocation and atomic index replacement. Re-read the index while holding that lock and use atomic write+rename for `index.json`.
+**Fix:** Acquire a process-shared lock keyed to the resolved config path before reading the prior bytes, keep it through `saveConfig` and `recordSnapshot`, and release it only after the history index has committed. Use a distinct lock file outside the target config path if necessary, and retain the in-process queue only as an optimization. Add a child-process test that calls `saveWithSnapshot` (not `recordSnapshot` directly) concurrently and asserts original, intermediate, and final states are all represented.
 
-### CR-03: A crash during direct index write can make all version history unavailable
-
-**File:** `packages/server/src/snapshot-store/index.ts:175-178`
-
-**Issue:** The snapshot document and then `index.json` are written with ordinary `writeFile`. A process/device failure while replacing `index.json` can leave it partial or empty. `readIndex` deliberately treats malformed indexes as unavailable, so every historical snapshot becomes inaccessible even when all `<seq>.json` files remain intact. This violates the project's atomic-write/snapshot-history data-safety constraint.
-
-**Fix:** Write a fully fsynced temporary index in the same directory and atomically rename it over `index.json` (using the project's atomic-write mechanism or equivalent). Only consider the snapshot committed after that replacement succeeds; optionally remove an orphaned snapshot file on index-write failure.
+```ts
+await withConfigTransactionLock(configPath, async () => {
+  const priorContent = await readPriorContent(configPath);
+  await saveConfig(configPath, nextConfig, validate);
+  await recordSnapshot(configPath, priorContent, deps.root);
+});
+```
 
 ## Warnings
 
-### WR-01: Array comparisons ignore the structural diff engine and report incorrect changes after insertions/reorders
+### WR-01 [WARNING]: The new restore-success test prevents the TypeScript validation gate from passing
 
-**File:** `web/src/history/compare.ts:81-87,107-112`
+**File:** `test/web/history-workspace.test.tsx:50`
 
-**Issue:** `Differ` is called at line 110 but its output is discarded. The rendered tree instead compares arrays by numeric index. For example, changing `['a', 'b']` to `['x', 'a', 'b']` is reported as two changed values plus one addition, rather than one added item. This makes the timeline counts and restore review summary materially misleading for pool-style config arrays; it contradicts the structural/LCS comparison intent.
+**Issue:** `restoreConfigSnapshot` resolves to `{ ok: true }`, but `HistoryRestoreResult` contains only optional `snapshotId` and `warning`; it does not have an `ok` member. Consequently `npm run typecheck` fails with TS2353 in this Phase 5 test. A failing project typecheck makes the declared test contract unreliable and can hide real regressions among the existing diagnostics.
 
-**Fix:** Adapt and render the `Differ(...).diff(before, after)` result, including its LCS array alignment, or implement equivalent LCS alignment before calling `buildNodes`. Add tests for insertion at the head, deletion in the middle, and reordering.
+**Fix:** Make the mock conform to the wrapper's actual return type, such as `vi.mocked(restoreConfigSnapshot).mockResolvedValue({})`, and keep the test assertions focused on the subsequent reload/reset behavior.
 
-### WR-02: Restore tests mock the wrong API exports and never test the destructive success path
+### WR-02 [WARNING]: Production markup contains nested `main` landmarks in history mode
 
-**File:** `test/web/history-workspace.test.tsx:9-15,144-146`
+**File:** `web/src/components/AppShell.tsx:95-112`; `web/src/components/history/HistoryWorkspace.tsx:110-130`
 
-**Issue:** The component imports `restoreConfigSnapshot` and `loadConfig`, but the mock exports `restoreHistorySnapshot` and no `loadConfig`. The only purported restore-state test merely asserts that a mock function exists. Thus confirmation, reload, draft reset, query invalidation, navigation, and failure recovery are all untested; the missing production draft integration in CR-01 was not caught.
+**Issue:** `AppShell` always renders a `main` element, and the history workspace renders another `main` inside it. Nested main landmarks are invalid landmark structure and leave assistive technology with an ambiguous primary-content region. The direct component test only sees the inner landmark, so it does not catch the production composition.
 
-**Fix:** Mock the exact exported names, provide a resolved `loadConfig`, click through the review/dirty dialogs, and assert the restore request arguments, reset/discard behavior, cache updates, history invalidation, and return to editor. Add a production-level App test proving the live draft is passed through.
+**Fix:** Have `HistoryWorkspace` render a `section`/`div` when hosted by `AppShell`, or let it own the sole history `main` while `AppShell` uses a non-landmark container in history mode. Add an App-level test asserting exactly one `main` landmark in both editor and history modes.
 
 ---
 
-_Reviewed: 2026-07-19T11:59:52Z_
+_Reviewed: 2026-07-19T13:15:29Z_
 _Reviewer: Claude (gsd-code-reviewer)_
 _Depth: deep_
