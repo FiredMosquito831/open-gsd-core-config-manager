@@ -101,4 +101,17 @@ describe('history timeline', () => {
     expect(formatSnapshotTime('invalid', { now, timeZone: 'UTC', locale: 'en-US' }))
       .toEqual({ relative: 'Unknown time', exact: 'Unknown date' });
   });
+
+  it('groups yesterday by local calendar date across a DST-shortened day', () => {
+    const groups = groupSnapshotsByLocalDate([
+      { seq: 2, timestamp: '2026-03-09T07:30:00.000Z' }, // Mar 9, 00:30 PDT
+      { seq: 1, timestamp: '2026-03-08T08:30:00.000Z' }, // Mar 8, 00:30 PST (23 hours earlier)
+    ], {
+      now: new Date('2026-03-09T07:30:00.000Z'),
+      timeZone: 'America/Los_Angeles',
+      locale: 'en-US',
+    });
+
+    expect(groups.map((group) => group.label)).toEqual(['Today', 'Yesterday']);
+  });
 });
