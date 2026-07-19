@@ -42,17 +42,21 @@ const snapshots = [
 ];
 
 beforeEach(() => {
+  const root = document.createElement('div');
+  root.id = 'root';
+  document.body.append(root);
   vi.mocked(listHistory).mockResolvedValue(snapshots);
   vi.mocked(getHistorySnapshot).mockResolvedValue({
     snapshot: { ...snapshots[0], document: snapshot.config },
     current,
   });
-  vi.mocked(restoreConfigSnapshot).mockResolvedValue({ ok: true });
+  vi.mocked(restoreConfigSnapshot).mockResolvedValue({});
   vi.mocked(loadConfig).mockResolvedValue({ raw: { project: current, global: null }, effective: {}, unknown: [], meta: { globalDefaultsFound: false, globalDefaultsPath: '' } });
 });
 
 afterEach(() => {
   cleanup();
+  document.getElementById('root')?.remove();
   vi.resetAllMocks();
   useUiStore.setState({
     activeConfigId: null,
