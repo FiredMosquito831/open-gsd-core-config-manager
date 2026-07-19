@@ -146,10 +146,45 @@ describe('History workspace contract (SAVE-05)', () => {
     expect(await screen.findByRole('alertdialog', { name: 'Restore snapshot' })).toBeTruthy();
   });
 
-  it('recovers when saving a dirty draft rejects before restore', async () => {
+  it('keeps the dirty-draft dialog usable after a deferred blocked save', async () => {
+    let resolveSave!: (outcome: 'blocked') => void;
+    const saveDraft = vi.fn(() => new Promise<'blocked'>((resolve) => { resolveSave = resolve; }));
+    renderWeb(<HistoryWorkspace configId="cfg-1" configName="project/config.json" draft={{ isDirty: true, saveDraft, resetFromServer: vi.fn() }} />);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Restore this snapshot' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Restore snapshot' }));
+    const dialog = await screen.findByRole('alertdialog', { name: 'Unsaved changes' });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Save draft first' }));
+    expect((within(dialog).getByRole('button', { name: 'Cancel' }) as HTMLButtonElement).disabled).toBe(true);
+
+    resolveSave('blocked');
+    await waitFor(() => expect((within(dialog).getByRole('button', { name: 'Cancel' }) as HTMLButtonElement).disabled).toBe(false));
+    expect(screen.getByRole('alertdialog', { name: 'Unsaved changes' })).toBe(dialog);
+  });
+
+  it('closes after a deferred saved draft and invalidates config and history', async () => {
+    let resolveSave!: (outcome: 'saved') => void;
+    const saveDraft = vi.fn(() => new Promise<'saved'>((resolve) => { resolveSave = resolve; }));
+    const { queryClient: testQueryClient } = renderWeb(<HistoryWorkspace configId="cfg-1" configName="project/config.json" draft={{ isDirty: true, saveDraft, resetFromServer: vi.fn() }} />);
+    const invalidateQueries = vi.spyOn(testQueryClient, 'invalidateQueries');
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Restore this snapshot' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Restore snapshot' }));
+    const dialog = await screen.findByRole('alertdialog', { name: 'Unsaved changes' });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Save draft first' }));
+    expect((within(dialog).getByRole('button', { name: 'Cancel' }) as HTMLButtonElement).disabled).toBe(true);
+
+    resolveSave('saved');
+    await waitFor(() => expect(screen.queryByRole('alertdialog')).toBeNull());
+    expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ['config', 'cfg-1'] });
+    expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ['history', 'cfg-1'] });
+  });
+
+  it('recovers when saving a dirty draft rejects before restore without exposing the thrown details', async () => {
+    const privateFailure = 'C:\\users\\private\\config.json save failed';
     renderWeb(<HistoryWorkspace configId="cfg-1" configName="project/config.json" draft={{
       isDirty: true,
-      saveDraft: vi.fn(async () => { throw new Error('save failed'); }),
+      saveDraft: vi.fn(async () => { throw new Error(privateFailure); }),
       resetFromServer: vi.fn(),
     }} />);
 
@@ -159,6 +194,7 @@ describe('History workspace contract (SAVE-05)', () => {
     fireEvent.click(within(dialog).getByRole('button', { name: 'Save draft first' }));
 
     expect(await screen.findByText(/The draft could not be saved\. Try again\./)).toBeTruthy();
+    expect(document.body.textContent).not.toContain(privateFailure);
     await waitFor(() => expect((within(dialog).getByRole('button', { name: 'Cancel' }) as HTMLButtonElement).disabled).toBe(false));
     fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }));
     expect(screen.queryByRole('alertdialog')).toBeNull();

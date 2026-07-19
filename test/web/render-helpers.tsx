@@ -12,9 +12,12 @@ export function renderWeb(ui: ReactElement) {
       },
     },
   });
-  return render(
-    <QueryClientProvider client={queryClient}>
-      {ui}
-    </QueryClientProvider>
-  );
+  return {
+    ...render(
+      <QueryClientProvider client={queryClient}>
+        {ui}
+      </QueryClientProvider>,
+    ),
+    queryClient,
+  };
 }
