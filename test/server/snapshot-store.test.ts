@@ -4,6 +4,7 @@ import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'no
 import { spawn } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import type { ValidationResult } from '../../packages/config-io/src/types.js';
 import { saveWithSnapshot } from '../../packages/server/src/snapshot-store/save-with-snapshot.js';
 import { readIndex, recordSnapshot } from '../../packages/server/src/snapshot-store/index.js';
@@ -223,9 +224,9 @@ describe('saveWithSnapshot — concurrent saves never lose a distinct historical
 });
 
 async function runSnapshotWorker(content: string): Promise<void> {
-  const worker = new URL('./helpers/snapshot-record-worker.ts', import.meta.url);
+  const workerPath = fileURLToPath(new URL('./helpers/snapshot-record-worker.ts', import.meta.url));
   await new Promise<void>((resolve, reject) => {
-    const child = spawn(process.execPath, ['--import', 'tsx', worker.pathname, configPath, appDataRoot, content], { stdio: ['ignore', 'ignore', 'pipe'] });
+    const child = spawn(process.execPath, ['--import', 'tsx', workerPath, configPath, appDataRoot, content], { stdio: ['ignore', 'ignore', 'pipe'] });
     let stderr = '';
     child.stderr.on('data', (chunk) => { stderr += chunk; });
     child.once('error', reject);
