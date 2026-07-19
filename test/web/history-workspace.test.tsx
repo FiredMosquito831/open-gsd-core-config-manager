@@ -251,6 +251,45 @@ describe('History workspace contract (SAVE-05)', () => {
     });
   });
 
+  it('reports partial success without retrying restore when authoritative reload fails', async () => {
+    const resetFromServer = vi.fn();
+    const backToEditor = vi.fn();
+    vi.mocked(loadConfig).mockRejectedValueOnce(new Error('private reload failure'));
+    useUiStore.setState({ activeConfigId: 'cfg-1', backToEditor });
+    renderWeb(<HistoryWorkspace configId="cfg-1" configName="project/config.json" draft={{ isDirty: true, saveDraft: vi.fn(async () => 'saved' as const), resetFromServer }} />);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Restore this snapshot' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Restore snapshot' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Discard draft and restore' }));
+
+    expect(await screen.findByText('The snapshot was restored, but the editor could not reload it. Return to the editor and reload.')).toBeTruthy();
+    expect(document.body.textContent).not.toContain('Your config was not changed');
+    expect(document.body.textContent).not.toContain('private reload failure');
+    expect(screen.queryByRole('button', { name: 'Try again' })).toBeNull();
+    expect(resetFromServer).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Return to editor' }));
+    expect(backToEditor).toHaveBeenCalledTimes(1);
+    expect(restoreConfigSnapshot).toHaveBeenCalledTimes(1);
+  });
+
+  it('reports partial success without retrying restore when history invalidation fails', async () => {
+    const resetFromServer = vi.fn();
+    useUiStore.setState({ activeConfigId: 'cfg-1' });
+    const { queryClient: testQueryClient } = renderWeb(<HistoryWorkspace configId="cfg-1" configName="project/config.json" draft={{ isDirty: true, saveDraft: vi.fn(async () => 'saved' as const), resetFromServer }} />);
+    vi.spyOn(testQueryClient, 'invalidateQueries').mockRejectedValueOnce(new Error('private invalidation failure'));
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Restore this snapshot' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Restore snapshot' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Discard draft and restore' }));
+
+    expect(await screen.findByText('The snapshot was restored, but the editor could not reload it. Return to the editor and reload.')).toBeTruthy();
+    expect(document.body.textContent).not.toContain('Your config was not changed');
+    expect(document.body.textContent).not.toContain('private invalidation failure');
+    expect(screen.queryByRole('button', { name: 'Try again' })).toBeNull();
+    expect(resetFromServer).toHaveBeenCalledTimes(1);
+    expect(restoreConfigSnapshot).toHaveBeenCalledTimes(1);
+  });
+
   it('progressive counts settle every returned row without truncating complete history', async () => {
     const many = [7, 6, 5, 4, 3].map((seq) => ({ seq, timestamp: new Date(Date.now() - seq * 60_000).toISOString(), contentHash: String(seq) }));
     vi.mocked(listHistory).mockResolvedValueOnce(many);

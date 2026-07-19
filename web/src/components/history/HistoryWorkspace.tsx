@@ -20,6 +20,11 @@ interface HistoryWorkspaceProps {
   viewportWidth?: number;
 }
 
+type RestoreError =
+  | { kind: 'restore-failed'; reason: string }
+  | { kind: 'draft-save-failed' }
+  | { kind: 'reconciliation-failed' };
+
 function safeRestoreReason(error: unknown) {
   if (error instanceof ApiError) {
     const message = error.message.toLowerCase();
@@ -49,7 +54,7 @@ export function HistoryWorkspace({ configId: suppliedId, configName: suppliedNam
   };
   const [dialogMode, setDialogMode] = useState<RestoreDialogMode | null>(null);
   const [summary, setSummary] = useState({ added: 0, removed: 0, changed: 0 });
-  const [restoreError, setRestoreError] = useState<string | null>(null);
+  const [restoreError, setRestoreError] = useState<RestoreError | null>(null);
   const [pending, setPending] = useState(false);
 
   useEffect(() => {
@@ -80,19 +85,26 @@ export function HistoryWorkspace({ configId: suppliedId, configName: suppliedNam
     setRestoreError(null);
     try {
       const result = await restoreConfigSnapshot(idAtStart, selectedAtStart);
-      const reloaded = await loadConfig(idAtStart);
-      if (useUiStore.getState().activeConfigId !== idAtStart) return;
-      queryClient.setQueryData(['config', idAtStart], reloaded);
-      draft?.resetFromServer(reloaded);
-      await queryClient.invalidateQueries({ queryKey: ['history', idAtStart] });
-      await queryClient.invalidateQueries({ queryKey: ['history', idAtStart, selectedAtStart] });
-      setDialogMode(null);
-      showRestoreNotice(idAtStart, selectedDetail.data?.snapshot.timestamp ?? new Date().toISOString(), Boolean(result.warning));
-      backToEditor();
+      try {
+        const reloaded = await loadConfig(idAtStart);
+        if (useUiStore.getState().activeConfigId !== idAtStart) return;
+        queryClient.setQueryData(['config', idAtStart], reloaded);
+        draft?.resetFromServer(reloaded);
+        await queryClient.invalidateQueries({ queryKey: ['history', idAtStart] });
+        await queryClient.invalidateQueries({ queryKey: ['history', idAtStart, selectedAtStart] });
+        setDialogMode(null);
+        showRestoreNotice(idAtStart, selectedDetail.data?.snapshot.timestamp ?? new Date().toISOString(), Boolean(result.warning));
+        backToEditor();
+      } catch {
+        if (useUiStore.getState().activeConfigId === idAtStart) {
+          setDialogMode(null);
+          setRestoreError({ kind: 'reconciliation-failed' });
+        }
+      }
     } catch (error) {
       if (useUiStore.getState().activeConfigId === idAtStart) {
         setDialogMode(null);
-        setRestoreError(safeRestoreReason(error));
+        setRestoreError({ kind: 'restore-failed', reason: safeRestoreReason(error) });
       }
     } finally { setPending(false); }
   };
@@ -106,7 +118,7 @@ export function HistoryWorkspace({ configId: suppliedId, configName: suppliedNam
       await queryClient.invalidateQueries({ queryKey: ['history', configId] });
       setDialogMode(null);
     } catch {
-      setRestoreError('The draft could not be saved. Try again.');
+      setRestoreError({ kind: 'draft-save-failed' });
     } finally {
       setPending(false);
     }
@@ -120,7 +132,9 @@ export function HistoryWorkspace({ configId: suppliedId, configName: suppliedNam
       <div><p className="gsd-history__eyebrow">Version history</p><h1>{configName}</h1>{configPath && <p className="gsd-history__path">{configPath}</p>}<p className="gsd-history__target">Current saved file</p></div>
       <button type="button" className="gsd-button gsd-button--secondary gsd-button--md" onClick={backToEditor}>Back to editor</button>
     </header>
-    {restoreError && <div className="gsd-history__state" role="alert"><p>Couldn’t restore this snapshot. Your config was not changed. {restoreError} Try again or return to the editor.</p><button type="button" className="gsd-button gsd-button--secondary gsd-button--md" onClick={() => setDialogMode('review')}>Try again</button><button type="button" className="gsd-button gsd-button--ghost gsd-button--md" onClick={backToEditor}>Back to editor</button></div>}
+    {restoreError?.kind === 'restore-failed' && <div className="gsd-history__state" role="alert"><p>Couldn’t restore this snapshot. Your config was not changed. {restoreError.reason} Try again or return to the editor.</p><button type="button" className="gsd-button gsd-button--secondary gsd-button--md" onClick={() => setDialogMode('review')}>Try again</button><button type="button" className="gsd-button gsd-button--ghost gsd-button--md" onClick={backToEditor}>Back to editor</button></div>}
+    {restoreError?.kind === 'draft-save-failed' && <div className="gsd-history__state" role="alert"><p>The draft could not be saved. Try again.</p></div>}
+    {restoreError?.kind === 'reconciliation-failed' && <div className="gsd-history__state" role="alert"><p>The snapshot was restored, but the editor could not reload it. Return to the editor and reload.</p><button type="button" className="gsd-button gsd-button--secondary gsd-button--md" onClick={backToEditor}>Return to editor</button></div>}
     <div className="gsd-history__body">
       <aside className="gsd-history__timeline-pane" aria-label="Saved versions">
         {historyQuery.isLoading && <div className="gsd-history__state" role="status">Loading saved versions…</div>}
