@@ -40,6 +40,17 @@ describe('history comparison', () => {
     });
   });
 
+  it('uses LCS alignment for array insertion, deletion, and reorder summaries', () => {
+    const headInsertion = buildHistoryComparison({ agents: ['a', 'b'] }, { agents: ['x', 'a', 'b'] });
+    expect(headInsertion.summary).toMatchObject({ added: 1, removed: 0, changed: 0, addedPaths: ['agents[0]'] });
+
+    const middleDeletion = buildHistoryComparison({ agents: ['a', 'b', 'c'] }, { agents: ['a', 'c'] });
+    expect(middleDeletion.summary).toMatchObject({ added: 0, removed: 1, changed: 0, removedPaths: ['agents[1]'] });
+
+    const reorder = buildHistoryComparison({ agents: ['a', 'b', 'c'] }, { agents: ['b', 'a', 'c'] });
+    expect(reorder.summary).toMatchObject({ added: 1, removed: 1, changed: 0 });
+  });
+
   it('redacts descriptor roots before comparison values and summaries', () => {
     const secret = 'history-sensitive-sentinel-never-display';
     const snapshot = { brave_search: { apiKey: secret }, normal: 'before' };
