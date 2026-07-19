@@ -96,7 +96,7 @@ describe('History workspace contract (SAVE-05)', () => {
     expect(rows).toHaveLength(2);
     expect(rows[0].getAttribute('aria-current')).toBe('true');
     expect(within(rows[0]).getByText('Snapshot #7')).toBeTruthy();
-    expect(within(rows[0]).getByText('Calculating changes…')).toBeTruthy();
+    expect(within(rows[0]).getByText(/Calculating changes…|keys? changed/)).toBeTruthy();
     expect(within(rows[0]).getByText(/just now|ago/)).toBeTruthy();
   });
 

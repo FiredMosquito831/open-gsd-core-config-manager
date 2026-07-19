@@ -16,6 +16,7 @@ interface ProgressiveHistoryCounts {
   counts: CountState;
   terminalErrors: Set<number>;
   retry: (sequence: number) => void;
+  clearTerminalError: (sequence: number) => void;
 }
 
 function countDetail(detail: HistorySnapshotDetail): SnapshotChangeCount {
@@ -41,6 +42,19 @@ export function useProgressiveHistoryCounts(
   selectedRef.current = selectedSeq;
 
   const identity = `${configId ?? ''}:${(snapshots ?? []).map((snapshot) => snapshot.seq).join(',')}`;
+
+  // Selection is deliberately excluded: it changes request ownership, not the
+  // authoritative config/list generation, so settled timeline facts stay visible.
+  useEffect(() => {
+    if (!configId || !selectedSeq || !selectedDetail) return;
+    const validSequences = new Set((snapshots ?? []).map((snapshot) => snapshot.seq));
+    if (!validSequences.has(selectedSeq)) return;
+    setCounts((previous) => new Map(previous).set(selectedSeq, countDetail(selectedDetail)));
+    setTerminalErrors((previous) => {
+      if (!previous.has(selectedSeq)) return previous;
+      const next = new Set(previous); next.delete(selectedSeq); return next;
+    });
+  }, [configId, identity, selectedDetail, selectedSeq, snapshots]);
 
   useEffect(() => {
     let active = true;
@@ -115,7 +129,7 @@ export function useProgressiveHistoryCounts(
       timers.forEach(clearTimeout);
       timers.clear();
     };
-  }, [configId, identity, queryClient, retryGeneration, selectedDetail, selectedSeq, snapshots]);
+  }, [configId, identity, queryClient, retryGeneration]);
 
   const retry = useCallback((sequence: number) => {
     retrySequence.current = sequence;
@@ -128,5 +142,12 @@ export function useProgressiveHistoryCounts(
     setRetryGeneration((generation) => generation + 1);
   }, []);
 
-  return { counts, terminalErrors, retry };
+  const clearTerminalError = useCallback((sequence: number) => {
+    setTerminalErrors((previous) => {
+      if (!previous.has(sequence)) return previous;
+      const next = new Set(previous); next.delete(sequence); return next;
+    });
+  }, []);
+
+  return { counts, terminalErrors, retry, clearTerminalError };
 }

@@ -38,7 +38,15 @@ export function HistoryWorkspace({ configId: suppliedId, configName: suppliedNam
   const configName = suppliedName ?? 'Selected configuration';
   const historyQuery = useQuery({ queryKey: ['history', configId], queryFn: () => listHistory(configId!), enabled: Boolean(configId) });
   const selectedDetail = useQuery({ queryKey: ['history', configId, selectedHistorySeq], queryFn: () => getHistorySnapshot(configId!, selectedHistorySeq!), enabled: Boolean(configId && selectedHistorySeq) });
-  const { counts, terminalErrors: countErrors, retry: retryCount } = useProgressiveHistoryCounts(configId, historyQuery.data, selectedHistorySeq, selectedDetail.data);
+  const { counts, terminalErrors: countErrors, retry: retryCount, clearTerminalError } = useProgressiveHistoryCounts(configId, historyQuery.data, selectedHistorySeq, selectedDetail.data);
+  const retryTimelineCount = (sequence: number) => {
+    if (sequence === selectedHistorySeq) {
+      clearTerminalError(sequence);
+      void selectedDetail.refetch();
+      return;
+    }
+    retryCount(sequence);
+  };
   const [dialogMode, setDialogMode] = useState<RestoreDialogMode | null>(null);
   const [summary, setSummary] = useState({ added: 0, removed: 0, changed: 0 });
   const [restoreError, setRestoreError] = useState<string | null>(null);
@@ -113,7 +121,7 @@ export function HistoryWorkspace({ configId: suppliedId, configName: suppliedNam
         {historyQuery.isLoading && <div className="gsd-history__state" role="status">Loading saved versions…</div>}
         {historyQuery.isError && <div className="gsd-history__state" role="alert"><p>Couldn’t load saved versions. Your config was not changed. Try again, or return to the editor.</p><button type="button" className="gsd-button gsd-button--secondary gsd-button--md" onClick={() => void historyQuery.refetch()}>Try again</button><button type="button" className="gsd-button gsd-button--ghost gsd-button--md" onClick={backToEditor}>Back to editor</button></div>}
         {historyQuery.data && historyQuery.data.length === 0 && <div className="gsd-history__state"><h2>No saved versions yet</h2><p>History starts after you change and successfully save this existing config. Your current file is not shown as a restorable version.</p><button type="button" className="gsd-button gsd-button--secondary gsd-button--md" onClick={backToEditor}>Back to editor</button></div>}
-        {historyQuery.data && historyQuery.data.length > 0 && <SnapshotTimeline snapshots={historyQuery.data} selectedSeq={selectedHistorySeq} counts={counts} errors={countErrors} onRetry={retryCount} onSelect={selectHistorySnapshot} />}
+        {historyQuery.data && historyQuery.data.length > 0 && <SnapshotTimeline snapshots={historyQuery.data} selectedSeq={selectedHistorySeq} counts={counts} errors={countErrors} onRetry={retryTimelineCount} onSelect={selectHistorySnapshot} />}
       </aside>
       <section className="gsd-history__comparison-pane" aria-label="Snapshot comparison">
         {selectedHistorySeq && <SnapshotDiff sequence={selectedHistorySeq} detail={selectedDetail.data} isLoading={selectedDetail.isLoading} isError={selectedDetail.isError} onRetry={() => void selectedDetail.refetch()} onRestore={startRestore} />}
