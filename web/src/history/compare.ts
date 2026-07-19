@@ -69,6 +69,37 @@ function sameValue(before: unknown, current: unknown): boolean {
   return JSON.stringify(before) === JSON.stringify(current);
 }
 
+type ArrayAlignment = { before?: unknown; current?: unknown };
+
+function alignArrays(before: unknown[], current: unknown[]): ArrayAlignment[] {
+  const common: boolean[][] = Array.from({ length: before.length + 1 }, () => Array(current.length + 1).fill(false));
+  for (let beforeIndex = before.length - 1; beforeIndex >= 0; beforeIndex -= 1) {
+    for (let currentIndex = current.length - 1; currentIndex >= 0; currentIndex -= 1) {
+      common[beforeIndex][currentIndex] = sameValue(before[beforeIndex], current[currentIndex])
+        ? common[beforeIndex + 1][currentIndex + 1] || true
+        : common[beforeIndex + 1][currentIndex] || common[beforeIndex][currentIndex + 1];
+    }
+  }
+
+  const alignment: ArrayAlignment[] = [];
+  let beforeIndex = 0;
+  let currentIndex = 0;
+  while (beforeIndex < before.length || currentIndex < current.length) {
+    if (beforeIndex < before.length && currentIndex < current.length && sameValue(before[beforeIndex], current[currentIndex])) {
+      alignment.push({ before: before[beforeIndex++], current: current[currentIndex++] });
+    } else if (beforeIndex < before.length && currentIndex < current.length && !common[beforeIndex][currentIndex + 1] && !common[beforeIndex + 1][currentIndex]) {
+      // Neither value aligns with a later element: this is a replacement,
+      // not an insertion followed by a deletion.
+      alignment.push({ before: before[beforeIndex++], current: current[currentIndex++] });
+    } else if (currentIndex < current.length && (beforeIndex === before.length || common[beforeIndex][currentIndex + 1])) {
+      alignment.push({ current: current[currentIndex++] });
+    } else {
+      alignment.push({ before: before[beforeIndex++] });
+    }
+  }
+  return alignment;
+}
+
 function buildNodes(before: unknown, current: unknown, path = '', parentPath?: string): HistoryDiffNode[] {
   if (before === undefined && current !== undefined) {
     return [{ path, parentPath, state: 'added', current: displayValue(current), children: [] }];
@@ -81,9 +112,10 @@ function buildNodes(before: unknown, current: unknown, path = '', parentPath?: s
   }
   if (Array.isArray(before) && Array.isArray(current)) {
     const children: HistoryDiffNode[] = [];
-    const maximum = Math.max(before.length, current.length);
-    for (let index = 0; index < maximum; index += 1) {
-      children.push(...buildNodes(before[index], current[index], joinPath(path, String(index), true), path));
+    // LCS alignment preserves unchanged elements across insertions, deletions,
+    // and reorders instead of treating their shifted numeric indexes as edits.
+    for (const [index, pair] of alignArrays(before, current).entries()) {
+      children.push(...buildNodes(pair.before, pair.current, joinPath(path, String(index), true), path));
     }
     return [{ path, parentPath, state: children.some((node) => node.state !== 'unchanged') ? 'changed' : 'unchanged', children }];
   }
