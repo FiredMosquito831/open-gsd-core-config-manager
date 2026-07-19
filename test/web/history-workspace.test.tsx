@@ -251,6 +251,51 @@ describe('History workspace contract (SAVE-05)', () => {
     });
   });
 
+  it('keeps a dirty draft after a redacted pre-commit failure and restores it exactly once on retry', async () => {
+    const privateFailure = 'C:\\private\\project\\config.json: history-secret-token';
+    let resolveRestore!: (value: {}) => void;
+    const resetFromServer = vi.fn();
+    const backToEditor = vi.fn();
+    const restore = vi.mocked(restoreConfigSnapshot)
+      .mockRejectedValueOnce(new Error(privateFailure))
+      .mockImplementationOnce(() => new Promise<{}>((resolve) => { resolveRestore = resolve; }));
+    const { queryClient: testQueryClient } = renderWeb(<HistoryWorkspace configId="cfg-1" configName="project/config.json" draft={{
+      isDirty: true,
+      saveDraft: vi.fn(async () => 'saved' as const),
+      resetFromServer,
+    }} />);
+    const invalidateQueries = vi.spyOn(testQueryClient, 'invalidateQueries');
+    useUiStore.setState({ activeConfigId: 'cfg-1', backToEditor });
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Restore this snapshot' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Restore snapshot' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Discard draft and restore' }));
+
+    expect(await screen.findByText(/Couldn’t restore this snapshot\. Your config was not changed\./)).toBeTruthy();
+    expect(document.body.textContent).not.toContain(privateFailure);
+    expect(resetFromServer).not.toHaveBeenCalled();
+    expect(screen.queryByRole('status', { name: /Restoring snapshot/ })).toBeNull();
+    expect((screen.getByRole('button', { name: 'Try again' }) as HTMLButtonElement).disabled).toBe(false);
+    expect(restore).toHaveBeenCalledTimes(1);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Restore snapshot' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Discard draft and restore' }));
+    expect(restore).toHaveBeenCalledTimes(2);
+    expect(screen.getByRole('status').textContent).toContain('Restoring snapshot…');
+
+    resolveRestore({});
+    await waitFor(() => {
+      expect(loadConfig).toHaveBeenCalledWith('cfg-1');
+      expect(resetFromServer).toHaveBeenCalledTimes(1);
+      expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ['history', 'cfg-1'] });
+      expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ['history', 'cfg-1', 7] });
+      expect(backToEditor).toHaveBeenCalledTimes(1);
+      expect(useUiStore.getState().restoreNotice).toEqual(expect.objectContaining({ configId: 'cfg-1' }));
+    });
+    expect(restore).toHaveBeenCalledTimes(2);
+  });
+
   it('reports partial success without retrying restore when authoritative reload fails', async () => {
     const resetFromServer = vi.fn();
     const backToEditor = vi.fn();
