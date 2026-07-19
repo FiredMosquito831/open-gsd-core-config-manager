@@ -153,6 +153,38 @@ describe('history comparison', () => {
     }
   });
 
+  it.each([
+    ['object to scalar', { replacement: { nested: true } }, { replacement: 'scalar' }],
+    ['scalar to object', { replacement: 'scalar' }, { replacement: { nested: true } }],
+    ['array to scalar', { replacement: [1, { nested: true }] }, { replacement: 'scalar' }],
+    ['scalar to array', { replacement: 'scalar' }, { replacement: [1, { nested: true }] }],
+    ['nested object to scalar', { outer: { replacement: { nested: true } } }, { outer: { replacement: 'scalar' } }],
+    ['nested scalar to array', { outer: { replacement: 'scalar' } }, { outer: { replacement: [1, { nested: true }] } }],
+  ])('adapts real Differ %s replacement spans as one changed member', (_label, snapshot, current) => {
+    const comparison = buildHistoryComparison(snapshot, current);
+    const expectedPath = 'outer' in snapshot ? 'outer.replacement' : 'replacement';
+
+    expect(comparison.summary).toMatchObject({ changed: 1, changedPaths: [expectedPath] });
+    const node = comparison.nodes[0]?.children
+      .flatMap((root) => [root, ...root.children])
+      .find((candidate) => candidate.path === expectedPath);
+    expect(node).toMatchObject({ state: 'changed' });
+    expect(node?.before).toEqual('outer' in snapshot ? snapshot.outer.replacement : snapshot.replacement);
+    expect(node?.current).toEqual('outer' in current ? current.outer.replacement : current.replacement);
+  });
+
+  it('keeps adversarial JSON keys distinct without using display paths as identity', () => {
+    const comparison = buildHistoryComparison(
+      { 'a.b': 1, a: { b: 2 }, 'items[0]': 3, items: [{ 'a.b': 4, '0': 5 }], 'a/b~c': 6, 'quote\\key': 7 },
+      { 'a.b': 11, a: { b: 12 }, 'items[0]': 13, items: [{ 'a.b': 14, '0': 15 }], 'a/b~c': 16, 'quote\\key': 17 },
+    );
+
+    expect(comparison.summary).toMatchObject({ changed: 7 });
+    expect(comparison.summary.changedPaths).toEqual(expect.arrayContaining([
+      '["a.b"]', 'a.b', '["items[0]"]', 'items[0]["a.b"]', 'items[0]["0"]', '["a/b~c"]', '["quote\\\\key"]',
+    ]));
+  });
+
   it('adapter rejects malformed DiffResult streams without disclosing values', () => {
     const malformed: readonly [DiffResult[], DiffResult[]][] = [
       [[{ level: 0, type: 'equal', text: '{' }], [{ level: 0, type: 'equal', text: '}' }]],
