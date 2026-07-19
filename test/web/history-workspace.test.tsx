@@ -80,7 +80,7 @@ describe('History workspace contract (SAVE-05)', () => {
   });
 
   it('renders a config-specific History landmark with no chapter or search navigation', async () => {
-    renderWeb(<HistoryWorkspace configId="cfg-1" configName="project/config.json" draft={{ mode: 'changed' }} />);
+    renderWeb(<HistoryWorkspace configId="cfg-1" configName="project/config.json" draft={null} />);
     expect(await screen.findByRole('main', { name: 'History for project/config.json' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Back to editor' })).toBeTruthy();
     expect(screen.queryByRole('navigation', { name: 'Chapters' })).toBeNull();

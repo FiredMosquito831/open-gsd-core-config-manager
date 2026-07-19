@@ -69,6 +69,9 @@ export interface ConfigDraftController {
   resetFromServer(reloaded: LoadResult): void;
 }
 
+/** The narrow draft boundary required by the History workspace. */
+export type HistoryDraftController = Pick<ConfigDraftController, 'isDirty' | 'saveDraft' | 'resetFromServer'>;
+
 export function useConfigDraft(activeConfigId: string, loadResult: LoadResult, schema: Record<string, SchemaEntry>): ConfigDraftController {
   const validator = useMemo(() => createClientValidator(schema), [schema]);
   const defaults = useMemo(() => collectEffectiveDefaults(loadResult, schema), [loadResult, schema]);

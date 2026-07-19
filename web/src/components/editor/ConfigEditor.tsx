@@ -44,7 +44,21 @@ export function ConfigEditor({ workspaceMode = 'editor' }: ConfigEditorProps) {
   return <EditorContents key={activeConfigId} configId={activeConfigId} loadResult={configQuery.data} schema={schemaQuery.data} workspaceMode={workspaceMode} onSaved={(refreshed: LoadResult) => queryClient.setQueryData(['config', activeConfigId], refreshed)} searchQuery={searchQuery} searchOpen={searchOpen} setActiveChapter={setActiveChapter} setHighlightTarget={setHighlightTarget} setSearchOpen={setSearchOpen} openHistory={openHistory} />;
 }
 
-function EditorContents({ configId, loadResult, schema, workspaceMode, onSaved, searchQuery, searchOpen, setActiveChapter, setHighlightTarget, setSearchOpen, openHistory }: any) {
+interface EditorContentsProps {
+  configId: string;
+  loadResult: LoadResult;
+  schema: Record<string, SchemaEntry>;
+  workspaceMode: 'editor' | 'history';
+  onSaved(refreshed: LoadResult): void;
+  searchQuery: string;
+  searchOpen: boolean;
+  setActiveChapter(chapter: string): void;
+  setHighlightTarget(path: string | null): void;
+  setSearchOpen(open: boolean): void;
+  openHistory(): void;
+}
+
+function EditorContents({ configId, loadResult, schema, workspaceMode, onSaved, searchQuery, searchOpen, setActiveChapter, setHighlightTarget, setSearchOpen, openHistory }: EditorContentsProps) {
   const draft = useConfigDraft(configId, loadResult, schema);
   if (workspaceMode === 'history') {
     return <HistoryWorkspace configId={configId} draft={draft} embedded />;

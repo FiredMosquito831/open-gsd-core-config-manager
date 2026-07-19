@@ -3,22 +3,17 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ApiError } from '../../api/client';
 import { getHistorySnapshot, listHistory, loadConfig, restoreConfigSnapshot } from '../../api/configs';
 import { useUiStore } from '../../state/uiStore';
+import type { HistoryDraftController } from '../../editor/useConfigDraft';
 import { SnapshotTimeline, type SnapshotChangeCount } from './SnapshotTimeline';
 import { buildComparison, SnapshotDiff } from './SnapshotDiff';
 import { RestoreDialogs, type RestoreDialogMode } from './RestoreDialogs';
-
-type DraftController = {
-  isDirty: boolean;
-  saveDraft(): Promise<'saved' | 'blocked'>;
-  resetFromServer(reloaded: Awaited<ReturnType<typeof loadConfig>>): void;
-};
 
 interface HistoryWorkspaceProps {
   configId?: string;
   configName?: string;
   configPath?: string;
   /** Optional seam for the editor-owned draft lifecycle. */
-  draft?: Partial<DraftController> | object | null;
+  draft?: HistoryDraftController | null;
   /** Render inside AppShell's production main landmark rather than nesting one. */
   embedded?: boolean;
   viewportWidth?: number;
@@ -74,7 +69,7 @@ export function HistoryWorkspace({ configId: suppliedId, configName: suppliedNam
     if (!configId || !selectedHistorySeq || pending) return;
     const selectedAtStart = selectedHistorySeq;
     const idAtStart = configId;
-    if (dialogMode === 'review' && (draft as Partial<DraftController> | null)?.isDirty) {
+    if (dialogMode === 'review' && draft?.isDirty) {
       setDialogMode('dirty');
       return;
     }
@@ -85,7 +80,7 @@ export function HistoryWorkspace({ configId: suppliedId, configName: suppliedNam
       const reloaded = await loadConfig(idAtStart);
       if (useUiStore.getState().activeConfigId !== idAtStart) return;
       queryClient.setQueryData(['config', idAtStart], reloaded);
-      (draft as Partial<DraftController> | null)?.resetFromServer?.(reloaded);
+      draft?.resetFromServer(reloaded);
       await queryClient.invalidateQueries({ queryKey: ['history', idAtStart] });
       await queryClient.invalidateQueries({ queryKey: ['history', idAtStart, selectedAtStart] });
       setDialogMode(null);
@@ -99,10 +94,9 @@ export function HistoryWorkspace({ configId: suppliedId, configName: suppliedNam
     } finally { setPending(false); }
   };
   const saveDraftFirst = async () => {
-    const controller = draft as Partial<DraftController> | null;
-    if (!controller?.saveDraft || pending) return;
+    if (!draft || pending) return;
     setPending(true);
-    const outcome = await controller.saveDraft();
+    const outcome = await draft.saveDraft();
     setPending(false);
     if (outcome === 'blocked') return;
     await queryClient.invalidateQueries({ queryKey: ['config', configId] });
