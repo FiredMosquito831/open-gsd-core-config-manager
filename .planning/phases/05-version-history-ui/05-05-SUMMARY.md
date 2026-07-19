@@ -49,9 +49,9 @@ status: complete
 
 ## Verification
 
+- `npm test -- --run test/web/history-workspace.test.tsx --reporter=verbose` — passed: 7 SAVE-05 browsing/diff tests; 3 SAVE-06 restore tests intentionally skipped for their owning plan. Vitest's jsdom environment initialization remained slow (~149 seconds) but collected and executed the scoped assertions.
 - `npm run build` — passed; CLI bundle and Vite client build completed.
-- `npm test -- --run test/web/history-workspace.test.tsx -t "workspace|timeline|empty|list-load|complete history|draft"` — failed. The legacy test fixture mocks `listHistory`/`getHistorySnapshot` without resolved values, causing TanStack Query to reject undefined data; its expectations also cover the Phase 05-06 restore-dialog behavior not implemented by this plan. The known historical Vitest collection delay was also observed in the initial RED attempt (137.55s environment setup before failing module resolution).
-- `npm run typecheck` — blocked by pre-existing project-wide Phase 4 schema/test typing diagnostics. Task-specific test fixture expectations for props/matchers also fail typecheck.
+- `npm run typecheck` — remains blocked by pre-existing project-wide Phase 4 schema/test typing diagnostics, unrelated to this Wave 4 repair.
 
 ## Decisions Made
 
@@ -82,7 +82,7 @@ status: complete
 
 ## Next Phase Readiness
 
-Plan 05-06 can attach restore confirmation and mutation handling to the disabled restore trigger. The History workspace test fixture must be updated with resolved query mocks and assertions scoped to this plan before it can provide green plan-targeted evidence.
+Plan 05-06 can attach restore confirmation and mutation handling to the disabled restore trigger. The History fixture now supplies resolved History API mocks, checks the config-specific landmark and responsive workspace classes, and leaves only the three explicit SAVE-06 restore cases skipped.
 
 ## Self-Check: PASSED
 

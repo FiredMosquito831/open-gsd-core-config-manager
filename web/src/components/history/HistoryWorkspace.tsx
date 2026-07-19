@@ -14,7 +14,7 @@ interface HistoryWorkspaceProps {
   viewportWidth?: number;
 }
 
-export function HistoryWorkspace({ configId: suppliedId, configName: suppliedName, configPath }: HistoryWorkspaceProps) {
+export function HistoryWorkspace({ configId: suppliedId, configName: suppliedName, configPath, viewportWidth }: HistoryWorkspaceProps) {
   const { activeConfigId, selectedHistorySeq, selectHistorySnapshot, backToEditor } = useUiStore();
   const configId = suppliedId ?? activeConfigId;
   const configName = suppliedName ?? 'Selected configuration';
@@ -37,9 +37,11 @@ export function HistoryWorkspace({ configId: suppliedId, configName: suppliedNam
     setCounts((previous) => new Map(previous).set(selectedHistorySeq, comparison.summary));
   }, [selectedHistorySeq, selectedDetail.data]);
 
-  if (!configId) return <main className="gsd-history" aria-label="Version history"><p>Select a configuration to view its saved versions.</p></main>;
+  const responsiveClass = viewportWidth !== undefined ? viewportWidth <= 768 ? ' gsd-history--stacked' : viewportWidth <= 900 ? ' gsd-history--compact' : '' : '';
+  const landmarkName = `History for ${configName}`;
+  if (!configId) return <main className={`gsd-history${responsiveClass}`} aria-label={landmarkName}><p>Select a configuration to view its saved versions.</p></main>;
 
-  return <main className="gsd-history" aria-label="Version history">
+  return <main className={`gsd-history${responsiveClass}`} aria-label={landmarkName}>
     <header className="gsd-history__header">
       <div>
         <p className="gsd-history__eyebrow">Version history</p>
