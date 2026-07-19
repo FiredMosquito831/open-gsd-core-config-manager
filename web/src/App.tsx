@@ -31,7 +31,7 @@ export function App({ connected }: AppProps) {
       chapterNav={<ChapterNav />}
       editor={
         connected ? (
-          workspaceMode === 'history' ? <HistoryWorkspace /> : <ConfigEditor />
+          <ConfigEditor workspaceMode={workspaceMode} />
         ) : (
           <div className="gsd-connection-warning" role="alert">
             No launch token found. Open the URL printed by the CLI to connect.

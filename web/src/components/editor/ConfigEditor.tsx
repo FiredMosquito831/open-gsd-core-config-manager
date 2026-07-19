@@ -11,6 +11,7 @@ import { SearchView } from '../search/SearchView';
 import { SaveBar } from './SaveBar';
 import { ValidationSummary } from './ValidationSummary';
 import { RuntimeInstallNotice } from '../specialized/RuntimeInstallNotice';
+import { HistoryWorkspace } from '../history/HistoryWorkspace';
 import type { LoadResult, SchemaEntry } from '../../../../packages/config-io/src/types';
 
 function RestoreNotice() {
@@ -25,7 +26,11 @@ function RestoreNotice() {
   </div>;
 }
 
-export function ConfigEditor() {
+interface ConfigEditorProps {
+  workspaceMode?: 'editor' | 'history';
+}
+
+export function ConfigEditor({ workspaceMode = 'editor' }: ConfigEditorProps) {
   const { activeConfigId, searchQuery, searchOpen, setActiveChapter, setHighlightTarget, setSearchOpen, openHistory } = useUiStore();
   const queryClient = useQueryClient();
   const configQuery = useQuery({ queryKey: ['config', activeConfigId], queryFn: () => loadConfig(activeConfigId!), enabled: !!activeConfigId });
@@ -36,11 +41,14 @@ export function ConfigEditor() {
   if (configQuery.error || schemaQuery.error) return <div className="gsd-sidebar__error">Failed to load config.</div>;
   if (!configQuery.data || !schemaQuery.data) return <div className="gsd-sidebar__error">Config data unavailable.</div>;
 
-  return <EditorContents key={activeConfigId} configId={activeConfigId} loadResult={configQuery.data} schema={schemaQuery.data} onSaved={(refreshed: LoadResult) => queryClient.setQueryData(['config', activeConfigId], refreshed)} searchQuery={searchQuery} searchOpen={searchOpen} setActiveChapter={setActiveChapter} setHighlightTarget={setHighlightTarget} setSearchOpen={setSearchOpen} openHistory={openHistory} />;
+  return <EditorContents key={activeConfigId} configId={activeConfigId} loadResult={configQuery.data} schema={schemaQuery.data} workspaceMode={workspaceMode} onSaved={(refreshed: LoadResult) => queryClient.setQueryData(['config', activeConfigId], refreshed)} searchQuery={searchQuery} searchOpen={searchOpen} setActiveChapter={setActiveChapter} setHighlightTarget={setHighlightTarget} setSearchOpen={setSearchOpen} openHistory={openHistory} />;
 }
 
-function EditorContents({ configId, loadResult, schema, onSaved, searchQuery, searchOpen, setActiveChapter, setHighlightTarget, setSearchOpen, openHistory }: any) {
+function EditorContents({ configId, loadResult, schema, workspaceMode, onSaved, searchQuery, searchOpen, setActiveChapter, setHighlightTarget, setSearchOpen, openHistory }: any) {
   const draft = useConfigDraft(configId, loadResult, schema);
+  if (workspaceMode === 'history') {
+    return <HistoryWorkspace configId={configId} draft={draft} />;
+  }
   return <FormProvider {...draft.form}>
     <div className="gsd-config-editor">
       <div className="gsd-config-editor__header">
