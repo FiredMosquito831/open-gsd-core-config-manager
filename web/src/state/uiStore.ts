@@ -14,12 +14,12 @@ interface UiState {
   profileSessionLabel: string;
   workspaceMode: 'editor' | 'history';
   selectedHistorySeq: number | null;
-  restoreNotice: { configId: string; timestamp: string } | null;
+  restoreNotice: { configId: string; timestamp: string; warning?: boolean } | null;
   setActiveConfigId: (id: string | null) => void;
   openHistory: () => void;
   backToEditor: () => void;
   selectHistorySnapshot: (seq: number | null) => void;
-  showRestoreNotice: (configId: string, timestamp: string) => void;
+  showRestoreNotice: (configId: string, timestamp: string, warning?: boolean) => void;
   clearRestoreNotice: () => void;
   setActiveChapter: (chapter: string | null) => void;
   toggleLeftPane: () => void;
@@ -52,7 +52,7 @@ export const useUiStore = create<UiState>((set) => ({
   openHistory: () => set({ workspaceMode: 'history', selectedHistorySeq: null }),
   backToEditor: () => set({ workspaceMode: 'editor' }),
   selectHistorySnapshot: (selectedHistorySeq) => set({ selectedHistorySeq }),
-  showRestoreNotice: (configId, timestamp) => set({ restoreNotice: { configId, timestamp } }),
+  showRestoreNotice: (configId, timestamp, warning) => set({ restoreNotice: { configId, timestamp, warning } }),
   clearRestoreNotice: () => set({ restoreNotice: null }),
   setActiveChapter: (activeChapter) => set({ activeChapter }),
   toggleLeftPane: () => set((state) => ({ leftPaneOpen: !state.leftPaneOpen })),

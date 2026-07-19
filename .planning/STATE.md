@@ -5,15 +5,15 @@ milestone_name: milestone
 current_phase: 04
 current_phase_name: pool-editors-model-profile-specialization
 status: verifying
-stopped_at: Completed 05-05-PLAN.md
-last_updated: "2026-07-19T10:33:02.157Z"
+stopped_at: Completed 05-06-PLAN.md
+last_updated: "2026-07-19T11:40:00.795Z"
 last_activity: 2026-07-18
 last_activity_desc: Phase 04 execution resumed (wave continue)
 progress:
   total_phases: 5
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 31
-  completed_plans: 30
+  completed_plans: 31
 ---
 
 # Project State
@@ -32,7 +32,7 @@ Plan: 5 of 5
 Status: Phase complete — ready for verification
 Last activity: 2026-07-18 — Phase 04 execution resumed (wave continue)
 
-Progress: [██████████] 97%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -80,6 +80,7 @@ Progress: [██████████] 97%
 | Phase 05-version-history-ui P04 | 34min | 2 tasks | 3 files |
 | Phase 05 P03 | 3h17min | 2 tasks | 5 files |
 | Phase 05 P05 | 25min | 3 tasks | 7 files |
+| Phase 05 P06 | 29min | 3 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -132,6 +133,8 @@ Recent decisions affecting current work:
 - [Phase ?]: History comparison remains Snapshot → Current and projects descriptor-sensitive roots before structural diff, summaries, or display values.
 - [Phase ?]: History API wrappers accept only opaque IDs and positive safe-integer sequences through apiFetch.
 - [Phase ?]: History uses opaque config-and-sequence query keys and only renders the established redacted comparison model.
+- [Phase ?]: Restore review uses a project-owned inert focus-trapping alert dialog with Cancel as initial focus.
+- [Phase ?]: Restore clears drafts only after authoritative server reload; save-first requires fresh confirmation.
 
 ### Pending Todos
 
@@ -153,6 +156,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-07-19T10:33:01.986Z
-Stopped at: Completed 05-05-PLAN.md
+Last session: 2026-07-19T11:40:00.696Z
+Stopped at: Completed 05-06-PLAN.md
 Resume file: None

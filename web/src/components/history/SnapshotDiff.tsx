@@ -8,13 +8,14 @@ interface SnapshotDiffProps {
   isLoading: boolean;
   isError: boolean;
   onRetry: () => void;
+  onRestore: (summary: HistoryComparison['summary']) => void;
 }
 
 function countLabel(label: string, count: number): string {
   return `${label}: ${count}`;
 }
 
-export function SnapshotDiff({ sequence, detail, isLoading, isError, onRetry }: SnapshotDiffProps) {
+export function SnapshotDiff({ sequence, detail, isLoading, isError, onRetry, onRestore }: SnapshotDiffProps) {
   if (isLoading) return <div className="gsd-history__state" role="status">Loading comparison…</div>;
   if (isError || !detail) return <div className="gsd-history__state" role="alert"><p>We couldn’t load this comparison. Your config was not changed. Try again, or choose another saved version.</p><button type="button" className="gsd-button gsd-button--secondary gsd-button--md" onClick={onRetry}>Try again</button></div>;
   const comparison = buildComparison(detail);
@@ -24,7 +25,7 @@ export function SnapshotDiff({ sequence, detail, isLoading, isError, onRetry }: 
   return <div className="gsd-history-diff">
     <header className="gsd-history-diff__header">
       <div><h2>Snapshot #{sequence}</h2><p>{timestamp}</p><p>Snapshot → Current saved file</p></div>
-      <button type="button" className="gsd-button gsd-button--danger gsd-button--md" disabled>Restore this snapshot</button>
+      <button type="button" className="gsd-button gsd-button--secondary gsd-button--md" onClick={() => onRestore(comparison.summary)}>Restore this snapshot</button>
     </header>
     <section className="gsd-history-diff__summary" aria-label="Change summary">
       <div className="gsd-history-diff__counts"><span>{countLabel('Added', comparison.summary.added)}</span><span>{countLabel('Removed', comparison.summary.removed)}</span><span>{countLabel('Changed', comparison.summary.changed)}</span></div>

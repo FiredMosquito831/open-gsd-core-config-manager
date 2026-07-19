@@ -1,30 +1,54 @@
 import { useEffect, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { listHistory, getHistorySnapshot } from '../../api/configs';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { ApiError } from '../../api/client';
+import { getHistorySnapshot, listHistory, loadConfig, restoreConfigSnapshot } from '../../api/configs';
 import { useUiStore } from '../../state/uiStore';
 import { SnapshotTimeline, type SnapshotChangeCount } from './SnapshotTimeline';
 import { buildComparison, SnapshotDiff } from './SnapshotDiff';
+import { RestoreDialogs, type RestoreDialogMode } from './RestoreDialogs';
+
+type DraftController = {
+  isDirty: boolean;
+  saveDraft(): Promise<'saved' | 'blocked'>;
+  resetFromServer(reloaded: Awaited<ReturnType<typeof loadConfig>>): void;
+};
 
 interface HistoryWorkspaceProps {
   configId?: string;
   configName?: string;
   configPath?: string;
-  /** Compatibility seam for the forthcoming restore dialog; History never reads drafts. */
-  draft?: object | null;
+  /** Optional seam for the editor-owned draft lifecycle. */
+  draft?: Partial<DraftController> | object | null;
   viewportWidth?: number;
 }
 
-export function HistoryWorkspace({ configId: suppliedId, configName: suppliedName, configPath, viewportWidth }: HistoryWorkspaceProps) {
-  const { activeConfigId, selectedHistorySeq, selectHistorySnapshot, backToEditor } = useUiStore();
+function safeRestoreReason(error: unknown) {
+  if (error instanceof ApiError) {
+    const message = error.message.toLowerCase();
+    if (message.includes('validation')) return 'Fix the validation issue and try again.';
+    if (message.includes('atomic') || message.includes('write')) return 'The file could not be safely written. Try again.';
+  }
+  return 'The restore could not be completed. Try again.';
+}
+
+export function HistoryWorkspace({ configId: suppliedId, configName: suppliedName, configPath, draft, viewportWidth }: HistoryWorkspaceProps) {
+  const { activeConfigId, selectedHistorySeq, selectHistorySnapshot, backToEditor, showRestoreNotice } = useUiStore();
+  const queryClient = useQueryClient();
   const configId = suppliedId ?? activeConfigId;
   const configName = suppliedName ?? 'Selected configuration';
   const historyQuery = useQuery({ queryKey: ['history', configId], queryFn: () => listHistory(configId!), enabled: Boolean(configId) });
   const [counts, setCounts] = useState<Map<number, SnapshotChangeCount>>(new Map());
   const selectedDetail = useQuery({ queryKey: ['history', configId, selectedHistorySeq], queryFn: () => getHistorySnapshot(configId!, selectedHistorySeq!), enabled: Boolean(configId && selectedHistorySeq) });
+  const [dialogMode, setDialogMode] = useState<RestoreDialogMode | null>(null);
+  const [summary, setSummary] = useState({ added: 0, removed: 0, changed: 0 });
+  const [restoreError, setRestoreError] = useState<string | null>(null);
+  const [pending, setPending] = useState(false);
 
   useEffect(() => {
     setCounts(new Map());
     selectHistorySnapshot(null);
+    setDialogMode(null);
+    setRestoreError(null);
   }, [configId, selectHistorySnapshot]);
 
   useEffect(() => {
@@ -37,20 +61,61 @@ export function HistoryWorkspace({ configId: suppliedId, configName: suppliedNam
     setCounts((previous) => new Map(previous).set(selectedHistorySeq, comparison.summary));
   }, [selectedHistorySeq, selectedDetail.data]);
 
+  const startRestore = (nextSummary: typeof summary) => {
+    setSummary(nextSummary);
+    setRestoreError(null);
+    setDialogMode('review');
+  };
+  const confirmRestore = async () => {
+    if (!configId || !selectedHistorySeq || pending) return;
+    const selectedAtStart = selectedHistorySeq;
+    const idAtStart = configId;
+    if (dialogMode === 'review' && (draft as Partial<DraftController> | null)?.isDirty) {
+      setDialogMode('dirty');
+      return;
+    }
+    setPending(true);
+    setRestoreError(null);
+    try {
+      const result = await restoreConfigSnapshot(idAtStart, selectedAtStart);
+      const reloaded = await loadConfig(idAtStart);
+      if (useUiStore.getState().activeConfigId !== idAtStart) return;
+      queryClient.setQueryData(['config', idAtStart], reloaded);
+      (draft as Partial<DraftController> | null)?.resetFromServer?.(reloaded);
+      await queryClient.invalidateQueries({ queryKey: ['history', idAtStart] });
+      await queryClient.invalidateQueries({ queryKey: ['history', idAtStart, selectedAtStart] });
+      setDialogMode(null);
+      showRestoreNotice(idAtStart, selectedDetail.data?.snapshot.timestamp ?? new Date().toISOString(), Boolean(result.warning));
+      backToEditor();
+    } catch (error) {
+      if (useUiStore.getState().activeConfigId === idAtStart) {
+        setDialogMode(null);
+        setRestoreError(safeRestoreReason(error));
+      }
+    } finally { setPending(false); }
+  };
+  const saveDraftFirst = async () => {
+    const controller = draft as Partial<DraftController> | null;
+    if (!controller?.saveDraft || pending) return;
+    setPending(true);
+    const outcome = await controller.saveDraft();
+    setPending(false);
+    if (outcome === 'blocked') return;
+    await queryClient.invalidateQueries({ queryKey: ['config', configId] });
+    await queryClient.invalidateQueries({ queryKey: ['history', configId] });
+    setDialogMode(null);
+  };
+
   const responsiveClass = viewportWidth !== undefined ? viewportWidth <= 768 ? ' gsd-history--stacked' : viewportWidth <= 900 ? ' gsd-history--compact' : '' : '';
   const landmarkName = `History for ${configName}`;
   if (!configId) return <main className={`gsd-history${responsiveClass}`} aria-label={landmarkName}><p>Select a configuration to view its saved versions.</p></main>;
-
+  const timestamp = selectedDetail.data?.snapshot.timestamp ?? new Date().toISOString();
   return <main className={`gsd-history${responsiveClass}`} aria-label={landmarkName}>
     <header className="gsd-history__header">
-      <div>
-        <p className="gsd-history__eyebrow">Version history</p>
-        <h1>{configName}</h1>
-        {configPath && <p className="gsd-history__path">{configPath}</p>}
-        <p className="gsd-history__target">Current saved file</p>
-      </div>
+      <div><p className="gsd-history__eyebrow">Version history</p><h1>{configName}</h1>{configPath && <p className="gsd-history__path">{configPath}</p>}<p className="gsd-history__target">Current saved file</p></div>
       <button type="button" className="gsd-button gsd-button--secondary gsd-button--md" onClick={backToEditor}>Back to editor</button>
     </header>
+    {restoreError && <div className="gsd-history__state" role="alert"><p>Couldn’t restore this snapshot. Your config was not changed. {restoreError} Try again or return to the editor.</p><button type="button" className="gsd-button gsd-button--secondary gsd-button--md" onClick={() => setDialogMode('review')}>Try again</button><button type="button" className="gsd-button gsd-button--ghost gsd-button--md" onClick={backToEditor}>Back to editor</button></div>}
     <div className="gsd-history__body">
       <aside className="gsd-history__timeline-pane" aria-label="Saved versions">
         {historyQuery.isLoading && <div className="gsd-history__state" role="status">Loading saved versions…</div>}
@@ -59,8 +124,9 @@ export function HistoryWorkspace({ configId: suppliedId, configName: suppliedNam
         {historyQuery.data && historyQuery.data.length > 0 && <SnapshotTimeline snapshots={historyQuery.data} selectedSeq={selectedHistorySeq} counts={counts} onSelect={selectHistorySnapshot} />}
       </aside>
       <section className="gsd-history__comparison-pane" aria-label="Snapshot comparison">
-        {selectedHistorySeq && <SnapshotDiff sequence={selectedHistorySeq} detail={selectedDetail.data} isLoading={selectedDetail.isLoading} isError={selectedDetail.isError} onRetry={() => void selectedDetail.refetch()} />}
+        {selectedHistorySeq && <SnapshotDiff sequence={selectedHistorySeq} detail={selectedDetail.data} isLoading={selectedDetail.isLoading} isError={selectedDetail.isError} onRetry={() => void selectedDetail.refetch()} onRestore={startRestore} />}
       </section>
     </div>
+    <RestoreDialogs mode={dialogMode} configName={configName} timestamp={timestamp} summary={summary} pending={pending} onCancel={() => !pending && setDialogMode(null)} onConfirm={() => void confirmRestore()} onSaveDraft={() => void saveDraftFirst()} />
   </main>;
 }
