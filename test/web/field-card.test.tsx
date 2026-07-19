@@ -215,11 +215,11 @@ describe('SpecializedHandoffCard', () => {
 
     fireEvent.click(screen.getByRole('tab', { name: 'Ship' }));
     await waitFor(() => screen.getByTestId('handoff-ship.pr_body_sections'));
-    expect(screen.getByText('Phase 4')).toBeTruthy();
+    expect(screen.getByText('Open focused editor')).toBeTruthy();
 
     fireEvent.click(screen.getByRole('tab', { name: 'Model & Routing' }));
     await waitFor(() => screen.getByTestId('handoff-model_overrides'));
-    expect(screen.getByText('agent-id')).toBeTruthy();
+    expect(screen.getByText('model_overrides')).toBeTruthy();
   });
 
   it('does not render raw JSON textareas for handoff entries', async () => {

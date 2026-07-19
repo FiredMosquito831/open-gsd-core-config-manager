@@ -57,6 +57,7 @@ const CAPABILITY_REGISTRY_PATH = path.join(GSD_CORE_BIN, 'lib', 'capability-regi
 
 const CURATED_DOCS_PATH = path.join(SCHEMA_DATA_DIR, 'curated-docs.json');
 const OUTPUT_PATH = path.join(SCHEMA_DATA_DIR, 'bundled-schema.json');
+const EXISTING_SCHEMA_PATH = OUTPUT_PATH;
 
 const PROJECT_FIXTURE_PATH = path.join(REPO_ROOT, 'test', 'fixtures', 'project-config.json');
 const GLOBAL_FIXTURE_PATH = path.join(REPO_ROOT, 'test', 'fixtures', 'global-defaults.json');
@@ -84,6 +85,15 @@ interface Entry {
   patternProperties?: Record<string, Entry>;
   'x-dynamic-key-hint'?: string;
   'x-options'?: Record<string, { 'x-description': string }>;
+  'x-specialized'?: SpecializedMetadata;
+}
+
+interface SpecializedMetadata {
+  path: string;
+  editor: 'structured-array' | 'agent-map' | 'runtime-tier-map' | 'profile-select' | 'read-only-unsupported';
+  editable: boolean;
+  sensitive: boolean;
+  sourceEvidence: string[];
 }
 
 interface Manifest {
@@ -110,6 +120,29 @@ function readJson<T>(p: string): T {
 
 const manifest = readJson<Manifest>(MANIFEST_PATH);
 const configDefaults = readJson<Record<string, unknown>>(DEFAULTS_PATH);
+const existingSpecializedMetadata = fs.existsSync(EXISTING_SCHEMA_PATH)
+  ? Object.fromEntries(
+      Object.entries(readJson<Record<string, Entry>>(EXISTING_SCHEMA_PATH))
+        .filter(([, entry]) => entry['x-specialized'])
+        .map(([path, entry]) => [path, entry['x-specialized']!]),
+    ) as Record<string, SpecializedMetadata>
+  : {};
+
+// The source manifests describe config structure, while this separate map
+// records Phase 4's source-confirmed editor contracts. Keep it in the builder
+// so refreshing live schema sources cannot silently erase those contracts.
+const SOURCE_CONFIRMED_SPECIALIZED_METADATA: Record<string, SpecializedMetadata> = {
+  brave_search: { path: 'brave_search', editor: 'read-only-unsupported', editable: false, sensitive: true, sourceEvidence: [] },
+  'effort.agent_overrides': { path: 'effort.agent_overrides', editor: 'agent-map', editable: true, sensitive: false, sourceEvidence: ['docs/CONFIGURATION.md#effort.agent_overrides'] },
+  exa_search: { path: 'exa_search', editor: 'read-only-unsupported', editable: false, sensitive: true, sourceEvidence: [] },
+  'fast_mode.agent_overrides': { path: 'fast_mode.agent_overrides', editor: 'agent-map', editable: true, sensitive: false, sourceEvidence: ['docs/CONFIGURATION.md#fast_mode.agent_overrides'] },
+  firecrawl: { path: 'firecrawl', editor: 'read-only-unsupported', editable: false, sensitive: true, sourceEvidence: [] },
+  model_overrides: { path: 'model_overrides', editor: 'agent-map', editable: true, sensitive: false, sourceEvidence: ['docs/CONFIGURATION.md#model_overrides'] },
+  'model_policy.runtime_tiers': { path: 'model_policy.runtime_tiers', editor: 'runtime-tier-map', editable: true, sensitive: false, sourceEvidence: ['docs/CONFIGURATION.md#model_policy.runtime_tiers.<runtime>.<tier>'] },
+  model_profile: { path: 'model_profile', editor: 'profile-select', editable: true, sensitive: false, sourceEvidence: ['docs/CONFIGURATION.md#model_profile'] },
+  model_profile_overrides: { path: 'model_profile_overrides', editor: 'runtime-tier-map', editable: true, sensitive: false, sourceEvidence: ['docs/CONFIGURATION.md#model_profile_overrides.<runtime>.<tier>'] },
+};
+const specializedMetadata = { ...SOURCE_CONFIRMED_SPECIALIZED_METADATA, ...existingSpecializedMetadata };
 
 // The .cjs capability-registry is scoped-`require()`d — acceptable ONLY for
 // the locally-installed, trusted gsd-core copy (never remote content); see
@@ -445,6 +478,26 @@ for (const entry of entries.values()) {
     if (!(key in options)) options[key] = { 'x-description': '' };
   }
   entry['x-options'] = options;
+}
+
+// Preserve source-confirmed specialized editor metadata already stored in the
+// generated artifact. The four source inputs describe ordinary config shape,
+// not the Phase 4 editor contract, so regeneration must not erase that
+// independently verified metadata when upstream adds unrelated schema keys.
+for (const [path, metadata] of Object.entries(specializedMetadata)) {
+  const entry = entries.get(path);
+  if (entry) entry['x-specialized'] = metadata;
+}
+
+// Built-in model profiles are a source-confirmed constrained selector. They
+// are not represented as an enum in the general manifest, so retain this
+// validated editor contract when regenerating the structural schema.
+const modelProfile = entries.get('model_profile');
+if (modelProfile) {
+  modelProfile.enum = ['quality', 'balanced', 'budget', 'adaptive', 'inherit'];
+  modelProfile['x-options'] = Object.fromEntries(
+    modelProfile.enum.map((profile) => [profile, { 'x-description': '' }]),
+  );
 }
 
 // ---------------------------------------------------------------------------

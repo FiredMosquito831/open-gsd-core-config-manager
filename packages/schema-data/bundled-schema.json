@@ -99,6 +99,46 @@
     "x-description": "Relative path to this project's CLAUDE.md file that GSD reads for project-specific instructions.",
     "x-provenance": "manifest"
   },
+  "claude_orchestration.enabled": {
+    "type": "boolean",
+    "default": false,
+    "title": "Enabled",
+    "x-category": "General",
+    "x-description": "Master toggle for the Claude orchestration capability. Default-off + BETA: the Workflow-tool execution backend and the ultraplan plan-offload surface are inert unless this is true. When false, loop behaviour is byte-identical to a non-Claude runtime (inline/manual dispatch).",
+    "x-provenance": "capability-registry"
+  },
+  "claude_orchestration.execution_backend": {
+    "type": "string",
+    "default": "auto",
+    "title": "Execution Backend",
+    "x-category": "General",
+    "x-description": "Which execute-phase dispatch backend to use when the capability is enabled. 'auto' (default) activates the Workflow backend only when the runtime is Claude AND the Workflow tool is detected AND the Agent SDK meets claude_orchestration.min_agent_sdk_version; otherwise it falls back to inline. 'workflow' forces the Workflow backend when the tool is present AND the Agent SDK meets the floor (still fails closed to inline if the tool is absent or the SDK is too old — the floor applies in both modes). 'inline' forces today's manual one-agent-per-message dispatch regardless of tool availability.",
+    "x-provenance": "capability-registry",
+    "enum": [
+      "auto",
+      "workflow",
+      "inline"
+    ],
+    "x-options": {
+      "auto": {
+        "x-description": ""
+      },
+      "workflow": {
+        "x-description": ""
+      },
+      "inline": {
+        "x-description": ""
+      }
+    }
+  },
+  "claude_orchestration.min_agent_sdk_version": {
+    "type": "string",
+    "default": "0.3.149",
+    "title": "Min Agent Sdk Version",
+    "x-category": "General",
+    "x-description": "Minimum Agent SDK version required to activate the Workflow backend under execution_backend='auto'. Defaults to 0.3.149 (the release that introduced the Workflow tool). Raise to pin a higher floor; the detection seam fails closed to inline for any runtime reporting an older or unknown version.",
+    "x-provenance": "capability-registry"
+  },
   "code_quality.fallow.enabled": {
     "type": "boolean",
     "default": false,
@@ -270,6 +310,54 @@
     "x-category": "Workflow",
     "x-description": "Minutes of no progress before the executor treats a running task as stalled.",
     "x-provenance": "manifest"
+  },
+  "external_job.artifact_dir": {
+    "type": "string",
+    "default": "Artifacts/jobs",
+    "title": "Artifact Dir",
+    "x-category": "General",
+    "x-description": "Root for per-job artifact directories (e.g. Artifacts/jobs/<jobid>/). Avoids fixed log paths and hardcoding a cluster/project layout. Surfaced by the adapter (`slurm-adapter.cjs submit` prints the resolved value); override via GSD_EXTERNAL_JOB_ARTIFACT_DIR.",
+    "x-provenance": "capability-registry"
+  },
+  "external_job.backend": {
+    "type": "string",
+    "default": "slurm",
+    "title": "Backend",
+    "x-category": "General",
+    "x-description": "Scheduler backend. SLURM is the first adapter; the field is the pluggability seam for future backends (LSF, PBS, Kubernetes batch). Core never interprets this value.",
+    "x-provenance": "capability-registry",
+    "enum": [
+      "slurm"
+    ],
+    "x-options": {
+      "slurm": {
+        "x-description": ""
+      }
+    }
+  },
+  "external_job.enabled": {
+    "type": "boolean",
+    "default": false,
+    "title": "Enabled",
+    "x-category": "General",
+    "x-description": "Master toggle for the async external-job producer capability. Default-off: the core loop consumes manifests whether or not this is on, but no manifest is ever written unless an executor opts in here.",
+    "x-provenance": "capability-registry"
+  },
+  "external_job.poll_timeout_ms": {
+    "type": "number",
+    "default": 15000,
+    "title": "Poll Timeout Ms",
+    "x-category": "General",
+    "x-description": "Hard timeout (ms) for the scheduler poll subprocess (squeue, with sacct fallback). Read by the adapter (env GSD_SLURM_POLL_TIMEOUT_MS overrides).",
+    "x-provenance": "capability-registry"
+  },
+  "external_job.submit_timeout_ms": {
+    "type": "number",
+    "default": 30000,
+    "title": "Submit Timeout Ms",
+    "x-category": "General",
+    "x-description": "Hard timeout (ms) for the scheduler submit subprocess (e.g. sbatch). Bounded per CLAUDE.md unbounded-subprocess policy. Read by the adapter (env GSD_SLURM_SUBMIT_TIMEOUT_MS overrides).",
+    "x-provenance": "capability-registry"
   },
   "fast_mode.agent_overrides": {
     "type": [
@@ -546,6 +634,13 @@
     "x-description": "Enable the graphify knowledge-graph command + skill.",
     "x-provenance": "capability-registry"
   },
+  "graphify.graph_path": {
+    "type": "string",
+    "title": "Graph Path",
+    "x-category": "Workflow",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
   "hooks.context_warnings": {
     "type": "boolean",
     "default": true,
@@ -569,6 +664,13 @@
     "x-category": "Workflow",
     "x-description": "Enable the intel code-intelligence command.",
     "x-provenance": "capability-registry"
+  },
+  "jina": {
+    "type": "string",
+    "title": "Jina",
+    "x-category": "General",
+    "x-description": "",
+    "x-provenance": "manifest"
   },
   "learnings.max_inject": {
     "type": "number",
@@ -644,7 +746,7 @@
     "default": "augment",
     "title": "Memory Mode",
     "x-category": "Workflow",
-    "x-description": "How MemPalace relates to GSD native memory. Only 'augment' (additive) is implemented today; 'kg_backend' and 'replace' are forward-declared (routing seam not yet built) and currently behave as 'augment'.",
+    "x-description": "How MemPalace relates to GSD native memory during recall/capture. 'augment' (default): the palace is an additive layer alongside .planning/graphs/ — native memory stays authoritative. 'kg_backend': knowledge-graph queries resolve against the palace's temporal KG as the primary source, with .planning/graphs/ as fallback. 'replace': recall resolves through the palace as the source of truth, native memory as fallback. Every mode stays onError:skip and default-resilient — an unreachable palace degrades to native memory, and GSD keeps writing .planning/graphs/ so no memory is lost. Cross-mode migration of existing .planning/graphs/ into the palace is a separate, not-yet-implemented concern.",
     "x-provenance": "capability-registry",
     "enum": [
       "augment",
@@ -798,17 +900,8 @@
     "x-provenance": "dynamicKeyPattern:model_policy",
     "x-dynamic-key-hint": "model_policy.runtime_tiers.<runtime>.<opus|sonnet|haiku>",
     "patternProperties": {
-      "^model_policy\\.runtime_tiers\\.[a-zA-Z0-9_-]+$": {
-        "type": "object",
-        "patternProperties": {
-          "^(opus|sonnet|haiku)$": {
-            "type": "object",
-            "properties": {
-              "model": { "type": "string" },
-              "reasoning_effort": { "type": "string" }
-            }
-          }
-        },
+      "^model_policy\\.runtime_tiers\\.[a-zA-Z0-9_-]+\\.(opus|sonnet|haiku)$": {
+        "type": "string",
         "title": "Runtime Tiers Entry",
         "x-category": "Model & Routing",
         "x-description": "See model_policy.runtime_tiers — model_policy.runtime_tiers.<runtime>.<opus|sonnet|haiku>",
@@ -847,7 +940,24 @@
       "budget",
       "adaptive",
       "inherit"
-    ]
+    ],
+    "x-options": {
+      "quality": {
+        "x-description": ""
+      },
+      "balanced": {
+        "x-description": ""
+      },
+      "budget": {
+        "x-description": ""
+      },
+      "adaptive": {
+        "x-description": ""
+      },
+      "inherit": {
+        "x-description": ""
+      }
+    }
   },
   "model_profile_overrides": {
     "type": [
@@ -957,6 +1067,13 @@
     "x-description": "Allow independent tasks within the same plan to execute in parallel.",
     "x-provenance": "fixture-observed"
   },
+  "perplexity": {
+    "type": "string",
+    "title": "Perplexity",
+    "x-category": "General",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
   "phase_id_convention": {
     "type": [
       "string",
@@ -1033,6 +1150,13 @@
     "title": "Project Code",
     "x-category": "Workflow",
     "x-description": "Short prefix used in generated phase directory names (e.g. \"CK\" produces CK-01-foundation).",
+    "x-provenance": "manifest"
+  },
+  "ref_search": {
+    "type": "string",
+    "title": "Ref Search",
+    "x-category": "General",
+    "x-description": "",
     "x-provenance": "manifest"
   },
   "resolve_model_ids": {
@@ -1136,6 +1260,26 @@
     "x-description": "Host URL for a local Ollama server used as a review reviewer backend.",
     "x-provenance": "manifest"
   },
+  "review.reviewer_instances": {
+    "type": [
+      "object",
+      "null"
+    ],
+    "title": "Reviewer Instances",
+    "x-category": "Review",
+    "x-description": "",
+    "x-provenance": "dynamicKeyPattern:review",
+    "x-dynamic-key-hint": "review.reviewer_instances.<instance-name>.<cli|model|agent> (#1517)",
+    "patternProperties": {
+      "^review\\.reviewer_instances\\.[a-zA-Z0-9_-]+\\.(cli|model|agent)$": {
+        "type": "string",
+        "title": "Reviewer Instances Entry",
+        "x-category": "Review",
+        "x-description": "See review.reviewer_instances — review.reviewer_instances.<instance-name>.<cli|model|agent> (#1517)",
+        "x-provenance": "dynamicKeyPattern:review"
+      }
+    }
+  },
   "runtime": {
     "type": "string",
     "title": "Runtime",
@@ -1191,6 +1335,20 @@
     "x-description": "Where the context-usage indicator renders in the terminal status line (e.g. \"end\").",
     "x-provenance": "manifest"
   },
+  "statusline.show_context_tokens": {
+    "type": "string",
+    "title": "Show Context Tokens",
+    "x-category": "Workflow",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
+  "statusline.show_git": {
+    "type": "string",
+    "title": "Show Git",
+    "x-category": "Workflow",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
   "statusline.show_last_command": {
     "type": "boolean",
     "default": true,
@@ -1199,12 +1357,35 @@
     "x-description": "Show the last-run GSD command in the terminal status line.",
     "x-provenance": "manifest"
   },
+  "tavily_search": {
+    "type": "string",
+    "title": "Tavily Search",
+    "x-category": "General",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
   "workflow.ai_integration_phase": {
     "type": "boolean",
     "default": true,
     "title": "Ai Integration Phase",
     "x-category": "Workflow",
     "x-description": "Prompt for an AI-SPEC design contract before planning phases that involve AI systems.",
+    "x-provenance": "capability-registry"
+  },
+  "workflow.api_coverage_gate": {
+    "type": "boolean",
+    "default": true,
+    "title": "Api Coverage Gate",
+    "x-category": "Workflow",
+    "x-description": "Require an explicit API-coverage decision (full-by-default, opt-out-not-opt-in) before a phase that integrates an external API/SDK/service can seal. At plan:pre the planner is prompted to enumerate the API surface into COVERAGE.md; at verify:pre a blocking gate fails the seal unless the matrix exists with every non-integrated capability an explicit, reasoned opt-out. Independent of ai_integration_phase (applies to any external-API integration, not only AI).",
+    "x-provenance": "capability-registry"
+  },
+  "workflow.assumption_delta": {
+    "type": "boolean",
+    "default": true,
+    "title": "Assumption Delta",
+    "x-category": "Workflow",
+    "x-description": "Enable the assumption-delta architecture checkpoint during planning. When a pluralization/optional/chosen signal is detected in the phase scope, the planner is prompted to re-ask whether the primary key / identity model still names the right thing. Advisory (non-blocking).",
     "x-provenance": "capability-registry"
   },
   "workflow.auto_advance": {
@@ -1575,6 +1756,13 @@
     "x-description": "Skip the discuss-phase step entirely.",
     "x-provenance": "manifest"
   },
+  "workflow.specless_probe_fallback": {
+    "type": "string",
+    "title": "Specless Probe Fallback",
+    "x-category": "Workflow",
+    "x-description": "",
+    "x-provenance": "manifest"
+  },
   "workflow.subagent_timeout": {
     "type": "number",
     "default": 300000,
@@ -1600,6 +1788,13 @@
     "title": "Test Command",
     "x-category": "Workflow",
     "x-description": "Custom shell command run as the regression/test gate; auto-detected (Makefile, package.json, Cargo.toml, go.mod, pyproject.toml) when unset.",
+    "x-provenance": "manifest"
+  },
+  "workflow.test_gate_timeout": {
+    "type": "string",
+    "title": "Test Gate Timeout",
+    "x-category": "Workflow",
+    "x-description": "",
     "x-provenance": "manifest"
   },
   "workflow.text_mode": {
