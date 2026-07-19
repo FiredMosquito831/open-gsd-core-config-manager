@@ -165,7 +165,7 @@ Plans:
   2. User can view a structural diff between any past snapshot and the current file, showing exactly which keys changed.
   3. User can revert to a previous snapshot with one click, and the revert is routed through the same validate → atomic-write → snapshot pipeline as a normal save, never a special-case path.
 
-**Plans**: 8/9 plans executed
+**Plans**: 9/9 plans executed
 
 - [x] 05-01-PLAN.md
 - [x] 05-02-PLAN.md
@@ -184,7 +184,7 @@ Plans:
 
 **Wave 8** *(gap closure; blocked on Waves 6–7)*
 
-- [ ] 05-09-PLAN.md — Accept valid container/scalar DiffResult spans with collision-free paths and route selected row Retry to its query owner [wave 8; depends on 05-07, 05-08]
+- [x] 05-09-PLAN.md — Accept valid container/scalar DiffResult spans with collision-free paths and route selected row Retry to its query owner [wave 8; depends on 05-07, 05-08]
 
 **UI hint**: yes
 
@@ -214,5 +214,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 2. Local Loopback Server, CLI & Security Hardening | 7/7 | Complete    | 2026-07-12 |
 | 3. Generic Schema-Driven UI Shell | 6/6 | Complete    | 2026-07-17 |
 | 4. Pool Editors & Model Profile Specialization | 2/5 | In Progress|  |
-| 5. Version History UI | 8/8 | In Progress|  |
+| 5. Version History UI | 9/9 | In Progress|  |
 | 6. Live Schema Reconcile Against gsd-core | 0/TBD | Not started | - |

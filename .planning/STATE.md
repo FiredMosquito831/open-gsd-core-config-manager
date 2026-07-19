@@ -4,16 +4,16 @@ milestone: v1.0
 milestone_name: milestone
 current_phase: 04
 current_phase_name: pool-editors-model-profile-specialization
-status: executing
-stopped_at: Completed 05-07-PLAN.md
-last_updated: "2026-07-19T17:16:07.450Z"
+status: verifying
+stopped_at: Completed 05-09-PLAN.md
+last_updated: "2026-07-19T17:30:13.815Z"
 last_activity: 2026-07-18
 last_activity_desc: Phase 04 execution resumed (wave continue)
 progress:
   total_phases: 5
   completed_phases: 5
-  total_plans: 33
-  completed_plans: 33
+  total_plans: 34
+  completed_plans: 34
 ---
 
 # Project State
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-07-11)
 
 Phase: 04 (pool-editors-model-profile-specialization) — EXECUTING
 Plan: 5 of 5
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-07-18 — Phase 04 execution resumed (wave continue)
 
 Progress: [██████████] 100%
@@ -83,6 +83,7 @@ Progress: [██████████] 100%
 | Phase 05 P06 | 29min | 3 tasks | 7 files |
 | Phase 05-version-history-ui P08 | 22min | 2 tasks | 2 files |
 | Phase 05-version-history-ui P07 | 25min | 2 tasks | 4 files |
+| Phase 05-version-history-ui P09 | 27min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -140,6 +141,8 @@ Recent decisions affecting current work:
 - [Phase ?]: History comparisons now derive tree nodes and summary counts solely from redacted json-diff-kit DiffResult streams, failing closed on malformed rows.
 - [Phase ?]: Background history counts are capped at two workers while the selected detail query remains immediate.
 - [Phase ?]: Timeline counts derive solely from the redacted Snapshot-to-Current comparison summary and terminal failures require explicit row retry.
+- [Phase ?]: History adapter uses typed object/array identity with display paths kept presentation-only.
+- [Phase ?]: Selected timeline retry dispatches to selectedDetail.refetch while nonselected work stays bounded.
 
 ### Pending Todos
 
@@ -161,6 +164,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-07-19T16:12:26.896Z
-Stopped at: Completed 05-07-PLAN.md
+Last session: 2026-07-19T17:30:13.754Z
+Stopped at: Completed 05-09-PLAN.md
 Resume file: None
