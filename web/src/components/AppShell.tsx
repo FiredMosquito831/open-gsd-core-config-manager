@@ -5,8 +5,10 @@ export interface AppShellProps {
   sidebar: ReactNode;
   /** Middle pane: chapter/category navigation. */
   chapterNav: ReactNode;
-  /** Main pane: editor surface. */
+  /** Main pane surface. */
   editor: ReactNode;
+  /** Dedicated workspace mode controls chapter/search visibility and landmark name. */
+  mode?: 'editor' | 'history';
   /** Whether the left sidebar pane is currently open. */
   leftOpen: boolean;
   /** Whether the middle chapter pane is currently open. */
@@ -42,6 +44,7 @@ export function AppShell({
   sidebar,
   chapterNav,
   editor,
+  mode = 'editor',
   leftOpen,
   middleOpen,
   onToggleLeft,
@@ -62,7 +65,7 @@ export function AppShell({
         >
           <SidebarIcon />
         </button>
-        <button
+        {mode === 'editor' && <button
           type="button"
           className="gsd-rail-button"
           onClick={onToggleMiddle}
@@ -71,7 +74,7 @@ export function AppShell({
           title={middleOpen ? 'Collapse chapters' : 'Show chapters'}
         >
           <ChaptersIcon />
-        </button>
+        </button>}
       </div>
 
       <aside
@@ -82,17 +85,17 @@ export function AppShell({
         <div className="gsd-app-shell__pane-content">{sidebar}</div>
       </aside>
 
-      <nav
+      {mode === 'editor' && <nav
         className="gsd-app-shell__middle"
         aria-label="Chapters"
         aria-hidden={!middleOpen}
       >
         <div className="gsd-app-shell__pane-content">{chapterNav}</div>
-      </nav>
+      </nav>}
 
-      <main className="gsd-app-shell__main" aria-label="Editor">
+      <main className="gsd-app-shell__main" aria-label={mode === 'history' ? 'Version history' : 'Editor'}>
         <div className="gsd-app-shell__pane-content">
-          <div className="gsd-global-search" role="search">
+          {mode === 'editor' && <div className="gsd-global-search" role="search">
             <label className="gsd-global-search__label" htmlFor="gsd-global-search-input">
               Search settings
             </label>
@@ -104,7 +107,7 @@ export function AppShell({
               onChange={(event) => onSearchQueryChange(event.target.value)}
               placeholder="Search by key, title, explanation, or option meaning"
             />
-          </div>
+          </div>}
           {editor}
         </div>
       </main>
