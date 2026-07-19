@@ -1,0 +1,4 @@
+Script ran on page and returned:
+```json
+{"viewport":[900,800],"doc":[900,900],"body":[900,900],"overflow":false,"main":{"x":584,"y":0,"width":316,"height":800,"top":0,"right":900,"bottom":800,"left":584},"timeline":{"x":600,"y":153,"width":284,"height":256,"top":153,"right":884,"bottom":409,"left":600}}
+```

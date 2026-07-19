@@ -1,0 +1,4 @@
+Script ran on page and returned:
+```json
+{"viewport":[1280,900],"doc":[1280,1280],"body":[1280,1280],"historyClass":"gsd-history","overflow":false,"buttons":[{"text":"just nowJul 20, 2026, 1:08 AMSnapshot #3No key changes","rect":{"x":600,"y":155,"width":223,"height":87,"top":155,"right":823,"bottom":242,"left":600}},{"text":"just nowJul 20, 2026, 1:08 AMSnapshot #21 key changed","rect":{"x":600,"y":242,"width":223,"height":87,"top":242,"right":823,"bottom":329,"left":600}},{"text":"just nowJul 20, 2026, 1:08 AMSnapshot #12 keys changed","rect":{"x":600,"y":329,"width":223,"height":87,"top":329,"right":823,"bottom":416,"left":600}},{"text":"Restore this snapshot","rect":{"x":1082.59375,"y":145,"width":165.40625,"height":64,"top":145,"right":1248,"bottom":209,"left":1082.59375}}]}
+```
