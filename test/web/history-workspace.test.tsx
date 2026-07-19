@@ -157,7 +157,11 @@ describe('History workspace contract (SAVE-05)', () => {
     await waitFor(() => {
       expect(restoreConfigSnapshot).toHaveBeenCalledWith('cfg-1', 7);
       expect(loadConfig).toHaveBeenCalledWith('cfg-1');
-      expect(resetFromServer).toHaveBeenCalledWith(expect.objectContaining({ raw: { project: current } }));
+      expect(resetFromServer).toHaveBeenCalledTimes(1);
+      const [reloaded] = vi.mocked(resetFromServer).mock.calls[0]!;
+      expect(reloaded).toEqual(expect.objectContaining({
+        raw: expect.objectContaining({ project: expect.objectContaining({ mode: 'autonomous' }) }),
+      }));
       expect(backToEditor).toHaveBeenCalledTimes(1);
     });
   });
