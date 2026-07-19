@@ -221,6 +221,27 @@ describe('saveWithSnapshot — concurrent saves never lose a distinct historical
   });
 });
 
+describe('snapshot-store trusted sequence reader contract (SAVE-05, T-05-01, T-05-02)', () => {
+  it('reads only indexed canonical positive safe-integer snapshot files', async () => {
+    writeFile(configPath, '{"a":1}');
+    await saveWithSnapshot(configPath, { a: 2 }, alwaysValid, { root: appDataRoot });
+
+    // Phase 5 adds this trusted reader. It must accept an exact indexed safe
+    // integer and reject zero, negatives, decimals, exponent strings, leading
+    // zeros, unsafe integers, traversal-like filenames, and tampered index
+    // entries without exposing snapshot content or filesystem paths.
+    const { readSnapshotBySequence } = await import('../../packages/server/src/snapshot-store/index.js');
+    await expect(readSnapshotBySequence(configPath, 1, appDataRoot)).resolves.toMatchObject({ seq: 1, content: { a: 1 } });
+    for (const sequence of [0, -1, 1.5, Number.MAX_SAFE_INTEGER + 1]) {
+      await expect(readSnapshotBySequence(configPath, sequence, appDataRoot)).rejects.toThrow('Invalid snapshot sequence');
+    }
+
+    const dir = snapshotDirFor(configPath, appDataRoot);
+    writeFileSync(join(dir, 'index.json'), JSON.stringify({ entries: [{ seq: 1, file: '../secret.json' }] }));
+    await expect(readSnapshotBySequence(configPath, 1, appDataRoot)).rejects.toThrow('Snapshot unavailable');
+  });
+});
+
 describe('saveWithSnapshot — a failed first-ever save leaves NO stray stub file behind (CR-02)', () => {
   it('a failed first-ever save leaves NO stray stub file behind', async () => {
     expect(existsSync(configPath)).toBe(false);
