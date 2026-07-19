@@ -5,15 +5,15 @@ milestone_name: milestone
 current_phase: 04
 current_phase_name: pool-editors-model-profile-specialization
 status: executing
-stopped_at: Phase 5 UI-SPEC approved
-last_updated: "2026-07-19T08:20:44.035Z"
+stopped_at: Completed 05-01-PLAN.md
+last_updated: "2026-07-19T08:42:28.302Z"
 last_activity: 2026-07-18
 last_activity_desc: Phase 04 execution resumed (wave continue)
 progress:
   total_phases: 5
   completed_phases: 4
-  total_plans: 25
-  completed_plans: 25
+  total_plans: 31
+  completed_plans: 26
 ---
 
 # Project State
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-07-11)
 ## Current Position
 
 Phase: 04 (pool-editors-model-profile-specialization) — EXECUTING
-Plan: 1 of 5
+Plan: 2 of 5
 Status: Ready to execute
 Last activity: 2026-07-18 — Phase 04 execution resumed (wave continue)
 
@@ -75,6 +75,7 @@ Progress: [████████░░] 84%
 | Plan | Duration | Tasks | Files |
 |------|----------|-------|-------|
 | Phase 04 P01 | 8min | 3 tasks | 5 files |
+| Phase 05-version-history-ui P01 | 22min | 3 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -117,6 +118,8 @@ Recent decisions affecting current work:
 - [Phase ?]: Live source equality is required for every evidence gate mode; cached evidence cannot bypass source drift.
 - [Phase ?]: Reviewer instances remain source-backed but read-only when the bundled validation schema lacks a matching shape.
 - [Phase ?]: Copy-first custom model configuration persists ordinary project fields without a profile entity.
+- [Phase ?]: History uses json-diff-kit Differ with modification detection and LCS arrays; DiffResult is a before/after line tuple suitable for a project-owned renderer.
+- [Phase ?]: Phase 5 treats canonical positive safe-integer sequences and restore recovery snapshots as executable security contracts.
 
 ### Pending Todos
 
@@ -138,6 +141,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-07-19T07:37:51.594Z
-Stopped at: Phase 5 UI-SPEC approved
-Resume file: .planning/phases/05-version-history-ui/05-UI-SPEC.md
+Last session: 2026-07-19T08:42:28.173Z
+Stopped at: Completed 05-01-PLAN.md
+Resume file: None
