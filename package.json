@@ -14,7 +14,9 @@
     "node": ">=20.19"
   },
   "scripts": {
-    "test": "vitest run",
+    "test": "npm run test:ordinary && npm run test:integration",
+    "test:ordinary": "vitest run --exclude test/server/cli-launch.test.ts --exclude test/server/teardown.test.ts --exclude test/packaging/tarball-contents.test.ts --exclude test/helpers/process-tree.test.ts",
+    "test:integration": "vitest run test/helpers/process-tree.test.ts test/server/cli-launch.test.ts test/server/teardown.test.ts test/packaging/tarball-contents.test.ts --pool=forks --maxWorkers=1 --no-file-parallelism",
     "test:unit": "vitest run test/config-io --reporter=dot",
     "test:server": "vitest run test/server --reporter=dot",
     "typecheck": "tsc --noEmit && tsc -p tsconfig.web.json --noEmit",
