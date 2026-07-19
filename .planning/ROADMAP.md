@@ -165,7 +165,7 @@ Plans:
   2. User can view a structural diff between any past snapshot and the current file, showing exactly which keys changed.
   3. User can revert to a previous snapshot with one click, and the revert is routed through the same validate → atomic-write → snapshot pipeline as a normal save, never a special-case path.
 
-**Plans**: 6/8 plans executed
+**Plans**: 8/8 plans executed
 
 - [x] 05-01-PLAN.md
 - [x] 05-02-PLAN.md
@@ -176,11 +176,11 @@ Plans:
 
 **Wave 6** *(blocked on executed Waves 4–5)*
 
-- [ ] 05-08-PLAN.md — json-diff-kit DiffResult adapter becomes the sole validated tree/path/summary comparison authority [wave 6; depends on 05-03, 05-05, 05-06]
+- [x] 05-08-PLAN.md — json-diff-kit DiffResult adapter becomes the sole validated tree/path/summary comparison authority [wave 6; depends on 05-03, 05-05, 05-06]
 
 **Wave 7** *(blocked on Wave 6)*
 
-- [ ] 05-07-PLAN.md — Bounded selected-priority progressive detail loading resolves exact counts and retry states for every returned history row [wave 7; depends on 05-05, 05-06, 05-08]
+- [x] 05-07-PLAN.md — Bounded selected-priority progressive detail loading resolves exact counts and retry states for every returned history row [wave 7; depends on 05-05, 05-06, 05-08]
 
 **UI hint**: yes
 
@@ -210,5 +210,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 2. Local Loopback Server, CLI & Security Hardening | 7/7 | Complete    | 2026-07-12 |
 | 3. Generic Schema-Driven UI Shell | 6/6 | Complete    | 2026-07-17 |
 | 4. Pool Editors & Model Profile Specialization | 2/5 | In Progress|  |
-| 5. Version History UI | 6/8 | In Progress|  |
+| 5. Version History UI | 8/8 | In Progress|  |
 | 6. Live Schema Reconcile Against gsd-core | 0/TBD | Not started | - |

@@ -5,15 +5,15 @@ milestone_name: milestone
 current_phase: 04
 current_phase_name: pool-editors-model-profile-specialization
 status: verifying
-stopped_at: Completed 05-08-PLAN.md
-last_updated: "2026-07-19T15:48:46.428Z"
+stopped_at: Completed 05-07-PLAN.md
+last_updated: "2026-07-19T16:12:26.953Z"
 last_activity: 2026-07-18
 last_activity_desc: Phase 04 execution resumed (wave continue)
 progress:
   total_phases: 5
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 33
-  completed_plans: 31
+  completed_plans: 33
 ---
 
 # Project State
@@ -32,7 +32,7 @@ Plan: 5 of 5
 Status: Phase complete — ready for verification
 Last activity: 2026-07-18 — Phase 04 execution resumed (wave continue)
 
-Progress: [█████████░] 94%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -82,6 +82,7 @@ Progress: [█████████░] 94%
 | Phase 05 P05 | 25min | 3 tasks | 7 files |
 | Phase 05 P06 | 29min | 3 tasks | 7 files |
 | Phase 05-version-history-ui P08 | 22min | 2 tasks | 2 files |
+| Phase 05-version-history-ui P07 | 25min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -137,6 +138,8 @@ Recent decisions affecting current work:
 - [Phase ?]: Restore review uses a project-owned inert focus-trapping alert dialog with Cancel as initial focus.
 - [Phase ?]: Restore clears drafts only after authoritative server reload; save-first requires fresh confirmation.
 - [Phase ?]: History comparisons now derive tree nodes and summary counts solely from redacted json-diff-kit DiffResult streams, failing closed on malformed rows.
+- [Phase ?]: Background history counts are capped at two workers while the selected detail query remains immediate.
+- [Phase ?]: Timeline counts derive solely from the redacted Snapshot-to-Current comparison summary and terminal failures require explicit row retry.
 
 ### Pending Todos
 
@@ -158,6 +161,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-07-19T15:48:46.361Z
-Stopped at: Completed 05-08-PLAN.md
+Last session: 2026-07-19T16:12:26.896Z
+Stopped at: Completed 05-07-PLAN.md
 Resume file: None
