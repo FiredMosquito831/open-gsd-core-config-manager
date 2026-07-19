@@ -1,8 +1,11 @@
-import { Differ } from 'json-diff-kit';
+import { Differ, type DiffResult } from 'json-diff-kit';
 import { SPECIALIZED_METADATA } from '../schema/specializedMetadata';
 
 export const HISTORY_REDACTION_MARKER = '••••••';
 const DISPLAY_REDACTION_MARKER = '[redacted]';
+const COMPARISON_UNAVAILABLE = 'History comparison unavailable';
+
+type DiffSide = 'before' | 'current';
 
 export type HistoryDiffState = 'added' | 'removed' | 'changed' | 'unchanged';
 
@@ -30,9 +33,32 @@ export interface HistoryComparison {
   summary: HistoryChangeSummary;
 }
 
+interface ParsedLeaf {
+  cursor: number;
+  path: string;
+  parentPath: string;
+  type: DiffResult['type'];
+  value: unknown;
+}
+
+interface ParsedContainer {
+  path: string;
+  parentPath: string;
+}
+
+interface ContainerContext extends ParsedContainer {
+  kind: 'object' | 'array';
+  level: number;
+  nextIndex: number;
+}
+
 const sensitiveRoots = SPECIALIZED_METADATA
   .filter((descriptor) => descriptor.sensitive)
   .map((descriptor) => descriptor.path.split('.'));
+
+function unavailable(): never {
+  throw new Error(COMPARISON_UNAVAILABLE);
+}
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -42,12 +68,8 @@ function cloneAndProject(value: unknown, segments: string[] = []): unknown {
   if (sensitiveRoots.some((root) => root.length === segments.length && root.every((part, index) => part === segments[index]))) {
     return HISTORY_REDACTION_MARKER;
   }
-  if (Array.isArray(value)) {
-    return value.map((item) => cloneAndProject(item, segments));
-  }
-  if (isRecord(value)) {
-    return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, cloneAndProject(item, [...segments, key])]));
-  }
+  if (Array.isArray(value)) return value.map((item) => cloneAndProject(item, segments));
+  if (isRecord(value)) return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, cloneAndProject(item, [...segments, key])]));
   return value;
 }
 
@@ -57,122 +79,168 @@ export function projectHistoryDocument(document: object): object {
 }
 
 function joinPath(parent: string, key: string, arrayItem: boolean): string {
-  if (arrayItem) return `${parent}[${key}]`;
-  return parent ? `${parent}.${key}` : key;
+  return arrayItem ? `${parent}[${key}]` : parent ? `${parent}.${key}` : key;
 }
 
 function displayValue(value: unknown): unknown {
   return value === HISTORY_REDACTION_MARKER ? DISPLAY_REDACTION_MARKER : value;
 }
 
-function sameValue(before: unknown, current: unknown): boolean {
-  return JSON.stringify(before) === JSON.stringify(current);
+function validRow(row: unknown): row is DiffResult {
+  if (!isRecord(row)) return false;
+  const level = row.level;
+  if (typeof level !== 'number' || !Number.isFinite(level) || !Number.isInteger(level) || level < 0 || typeof row.text !== 'string') return false;
+  return row.type === 'equal' || row.type === 'modify' || row.type === 'add' || row.type === 'remove';
 }
 
-type ArrayAlignment = {
-  before?: unknown;
-  current?: unknown;
-  beforeIndex?: number;
-  currentIndex?: number;
-};
-
-function alignArrays(before: unknown[], current: unknown[]): ArrayAlignment[] {
-  // Store LCS lengths rather than reachability booleans. A boolean table cannot
-  // distinguish competing matches, so repeated values can be paired with the
-  // wrong occurrence during traversal.
-  const lcs: number[][] = Array.from({ length: before.length + 1 }, () => Array(current.length + 1).fill(0));
-  for (let beforeIndex = before.length - 1; beforeIndex >= 0; beforeIndex -= 1) {
-    for (let currentIndex = current.length - 1; currentIndex >= 0; currentIndex -= 1) {
-      lcs[beforeIndex][currentIndex] = sameValue(before[beforeIndex], current[currentIndex])
-        ? lcs[beforeIndex + 1][currentIndex + 1] + 1
-        : Math.max(lcs[beforeIndex + 1][currentIndex], lcs[beforeIndex][currentIndex + 1]);
-    }
+function parseMember(text: string): { key?: string; valueText: string } {
+  const match = /^(?:"((?:\\.|[^"\\])*)"\s*:\s*)?([\s\S]+)$/.exec(text.trim());
+  if (!match) unavailable();
+  let key: string | undefined;
+  if (match[1] !== undefined) {
+    try { key = JSON.parse(`"${match[1]}"`) as string; } catch { unavailable(); }
   }
+  return { key, valueText: match[2] };
+}
 
-  const alignment: ArrayAlignment[] = [];
-  let beforeIndex = 0;
-  let currentIndex = 0;
-  while (beforeIndex < before.length || currentIndex < current.length) {
-    if (beforeIndex < before.length && currentIndex < current.length && sameValue(before[beforeIndex], current[currentIndex])) {
-      alignment.push({ before: before[beforeIndex], current: current[currentIndex], beforeIndex, currentIndex });
-      beforeIndex += 1;
-      currentIndex += 1;
-    } else if (beforeIndex < before.length && currentIndex < current.length && lcs[beforeIndex + 1][currentIndex] === 0 && lcs[beforeIndex][currentIndex + 1] === 0) {
-      // Neither suffix contains a shared value, so represent the unmatched pair
-      // as one replacement rather than a removal followed by an addition.
-      alignment.push({ before: before[beforeIndex], current: current[currentIndex], beforeIndex, currentIndex });
-      beforeIndex += 1;
-      currentIndex += 1;
-    } else if (currentIndex < current.length && (beforeIndex === before.length || lcs[beforeIndex][currentIndex + 1] >= lcs[beforeIndex + 1][currentIndex])) {
-      alignment.push({ current: current[currentIndex], currentIndex });
-      currentIndex += 1;
+function parseValue(text: string): unknown {
+  try { return JSON.parse(text); } catch { return unavailable(); }
+}
+
+function parseStream(rows: readonly DiffResult[], side: DiffSide): { leaves: ParsedLeaf[]; containers: ParsedContainer[] } {
+  if (!Array.isArray(rows)) unavailable();
+  const leaves: ParsedLeaf[] = [];
+  const containers: ParsedContainer[] = [];
+  const stack: ContainerContext[] = [];
+
+  for (let cursor = 0; cursor < rows.length; cursor += 1) {
+    const row = rows[cursor];
+    if (!validRow(row)) unavailable();
+    const text = row.text.trim();
+    const parent = stack.at(-1);
+    // json-diff-kit emits blank equal rows for one-sided alignment. In arrays
+    // the blank reserves that stream's structural position; object blanks are
+    // separators and carry no member path.
+    if (text === '') {
+      if (row.type !== 'equal' || !parent || row.level !== parent.level + 1) unavailable();
+      if (parent.kind === 'array') parent.nextIndex += 1;
+      continue;
+    }
+
+    if (text === '}' || text === ']') {
+      if (!parent || (text === '}' && parent.kind !== 'object') || (text === ']' && parent.kind !== 'array') || parent.level !== row.level) unavailable();
+      stack.pop();
+      continue;
+    }
+
+    const member = parseMember(text);
+    const isObject = member.valueText === '{';
+    const isArray = member.valueText === '[';
+    let path: string;
+    if (parent?.kind === 'array') {
+      if (member.key !== undefined) unavailable();
+      const index = parent.nextIndex;
+      parent.nextIndex += 1;
+      path = joinPath(parent.path, String(index), true);
+    } else if (member.key !== undefined) {
+      path = joinPath(parent?.path ?? '', member.key, false);
+    } else if (!parent && stack.length === 0 && (isObject || isArray)) {
+      path = '';
+    } else if (!parent && stack.length === 0) {
+      // A controlled public tuple can contain a top-level member without braces.
+      path = '';
     } else {
-      alignment.push({ before: before[beforeIndex], beforeIndex });
-      beforeIndex += 1;
+      unavailable();
     }
+
+    if (isObject || isArray) {
+      if (row.type !== 'equal' && row.type !== 'modify' && row.type !== 'add' && row.type !== 'remove') unavailable();
+      if (parent && row.level !== parent.level + 1) unavailable();
+      if (!parent && row.level !== 0 && path === '') unavailable();
+      const context: ContainerContext = { path, parentPath: parent?.path ?? '', kind: isArray ? 'array' : 'object', level: row.level, nextIndex: 0 };
+      containers.push(context);
+      stack.push(context);
+      continue;
+    }
+
+    if (parent && row.level !== parent.level + 1) unavailable();
+    if (!parent && row.level !== 0) unavailable();
+    const scalarPath = path || member.key;
+    if (!scalarPath) unavailable();
+    leaves.push({ cursor, path: scalarPath, parentPath: parent?.path ?? '', type: row.type, value: parseValue(member.valueText) });
   }
-  return alignment;
+
+  if (stack.length !== 0) unavailable();
+  return { leaves, containers };
 }
 
-function buildNodes(before: unknown, current: unknown, path = '', parentPath?: string): HistoryDiffNode[] {
-  if (before === undefined && current !== undefined) {
-    return [{ path, parentPath, state: 'added', current: displayValue(current), children: [] }];
-  }
-  if (current === undefined && before !== undefined) {
-    return [{ path, parentPath, state: 'removed', before: displayValue(before), children: [] }];
-  }
-  if (sameValue(before, current)) {
-    return [{ path, parentPath, state: 'unchanged', before: displayValue(before), current: displayValue(current), children: [], collapsed: true }];
-  }
-  if (Array.isArray(before) && Array.isArray(current)) {
-    const children: HistoryDiffNode[] = [];
-    // LCS alignment preserves unchanged elements across insertions, deletions,
-    // and reorders instead of treating their shifted numeric indexes as edits.
-    for (const pair of alignArrays(before, current)) {
-      // Array additions identify their source position in Current; removals
-      // identify their source position in Snapshot. Matched/replaced entries
-      // use the current position, which is where the resulting value appears.
-      const index = pair.currentIndex ?? pair.beforeIndex;
-      children.push(...buildNodes(pair.before, pair.current, joinPath(path, String(index), true), path));
-    }
-    return [{ path, parentPath, state: children.some((node) => node.state !== 'unchanged') ? 'changed' : 'unchanged', children }];
-  }
-  if (isRecord(before) && isRecord(current)) {
-    const children: HistoryDiffNode[] = [];
-    for (const key of [...new Set([...Object.keys(before), ...Object.keys(current)])].sort()) {
-      children.push(...buildNodes(before[key], current[key], joinPath(path, key, false), path));
-    }
-    return [{ path, parentPath, state: children.some((node) => node.state !== 'unchanged') ? 'changed' : 'unchanged', children }];
-  }
-  return [{ path, parentPath, state: 'changed', before: displayValue(before), current: displayValue(current), children: [] }];
+function nodeState(before?: ParsedLeaf, current?: ParsedLeaf): HistoryDiffState {
+  if (!before && current) return 'added';
+  if (before && !current) return 'removed';
+  if (!before || !current) unavailable();
+  if (before.type === 'add' || current.type === 'add') return 'added';
+  if (before.type === 'remove' || current.type === 'remove') return 'removed';
+  if (before.type === 'modify' || current.type === 'modify') return 'changed';
+  if (before.type === 'equal' && current.type === 'equal') return 'unchanged';
+  unavailable();
 }
 
-function leafNodes(nodes: HistoryDiffNode[]): HistoryDiffNode[] {
-  return nodes.flatMap((node) => node.children.length > 0 ? leafNodes(node.children) : [node]);
+/** Adapts only json-diff-kit's documented two-stream result into renderer nodes. */
+export function adaptHistoryDiffResult(diffResult: readonly [DiffResult[], DiffResult[]]): HistoryComparison {
+  if (!Array.isArray(diffResult) || diffResult.length !== 2 || !Array.isArray(diffResult[0]) || !Array.isArray(diffResult[1])) unavailable();
+
+  const before = parseStream(diffResult[0], 'before');
+  const current = parseStream(diffResult[1], 'current');
+  const beforeLeaves = new Map(before.leaves.map((leaf) => [leaf.path, leaf]));
+  const currentLeaves = new Map(current.leaves.map((leaf) => [leaf.path, leaf]));
+  if (beforeLeaves.size !== before.leaves.length || currentLeaves.size !== current.leaves.length) unavailable();
+
+  const root: HistoryDiffNode = { path: '', state: 'unchanged', children: [] };
+  const nodes = new Map<string, HistoryDiffNode>([['', root]]);
+  const containers = [...before.containers, ...current.containers];
+  for (const container of containers) {
+    if (container.path === '') continue;
+    if (!nodes.has(container.path)) nodes.set(container.path, { path: container.path, parentPath: container.parentPath, state: 'unchanged', children: [], collapsed: true });
+  }
+
+  const leaves: HistoryDiffNode[] = [];
+  for (const path of new Set([...beforeLeaves.keys(), ...currentLeaves.keys()])) {
+    const left = beforeLeaves.get(path);
+    const right = currentLeaves.get(path);
+    const state = nodeState(left, right);
+    const parentPath = left?.parentPath ?? right?.parentPath;
+    if (left && right && left.parentPath !== right.parentPath) unavailable();
+    const node: HistoryDiffNode = { path, parentPath, state, before: left && displayValue(left.value), current: right && displayValue(right.value), children: [], collapsed: state === 'unchanged' };
+    if (nodes.has(path)) unavailable();
+    nodes.set(path, node);
+    leaves.push(node);
+  }
+
+  for (const node of [...nodes.values()].filter((node) => node.path).sort((a, b) => a.path.split(/[.[]/).length - b.path.split(/[.[]/).length)) {
+    const parent = nodes.get(node.parentPath ?? '');
+    if (!parent) unavailable();
+    parent.children.push(node);
+  }
+
+  const updateState = (node: HistoryDiffNode): HistoryDiffState => {
+    if (!node.children.length) return node.state;
+    const states = node.children.map(updateState);
+    node.state = states.some((state) => state !== 'unchanged') ? 'changed' : 'unchanged';
+    node.collapsed = node.state === 'unchanged';
+    return node.state;
+  };
+  updateState(root);
+  for (const node of nodes.values()) node.children.sort((left, right) => left.path.localeCompare(right.path));
+
+  const changedLeaves = leaves.filter((node) => node.state !== 'unchanged');
+  const paths = (state: HistoryDiffState) => changedLeaves.filter((node) => node.state === state).map((node) => node.path).sort();
+  return { nodes: [root], summary: { added: paths('added').length, removed: paths('removed').length, changed: paths('changed').length, addedPaths: paths('added'), removedPaths: paths('removed'), changedPaths: paths('changed') } };
 }
 
-/**
- * Produces a memoizable Snapshot → Current comparison. Differ remains the structural
- * comparison authority; the project-owned tree adapts its orientation for the UI.
- */
+/** Produces a redaction-first Snapshot → Current comparison from one library result. */
 export function buildHistoryComparison(snapshot: object, current: object): HistoryComparison {
   const before = projectHistoryDocument(snapshot);
   const after = projectHistoryDocument(current);
-  new Differ({ showModifications: true, arrayDiffMethod: 'lcs' }).diff(before, after);
-
-  const nodes = buildNodes(before, after);
-  const leaves = leafNodes(nodes).filter((node) => node.state !== 'unchanged');
-  const paths = (state: HistoryDiffState) => leaves.filter((node) => node.state === state).map((node) => node.path).sort();
-
-  return {
-    nodes,
-    summary: {
-      added: paths('added').length,
-      removed: paths('removed').length,
-      changed: paths('changed').length,
-      addedPaths: paths('added'),
-      removedPaths: paths('removed'),
-      changedPaths: paths('changed'),
-    },
-  };
+  const diffResult = new Differ({ showModifications: true, arrayDiffMethod: 'lcs' }).diff(before, after);
+  return adaptHistoryDiffResult(diffResult);
 }

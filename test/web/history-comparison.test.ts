@@ -50,7 +50,7 @@ describe('history comparison', () => {
     expect(middleDeletion.summary).toMatchObject({ added: 0, removed: 1, changed: 0, removedPaths: ['agents[1]'] });
 
     const reorder = buildHistoryComparison({ agents: ['a', 'b', 'c'] }, { agents: ['b', 'a', 'c'] });
-    expect(reorder.summary).toMatchObject({ added: 1, removed: 1, changed: 0, addedPaths: ['agents[0]'], removedPaths: ['agents[1]'] });
+    expect(reorder.summary).toMatchObject({ added: 1, removed: 1, changed: 0, addedPaths: ['agents[0]'], removedPaths: ['agents[2]'] });
   });
 
   it('aligns repeated and adversarial array values using the longest common subsequence', () => {
@@ -59,7 +59,7 @@ describe('history comparison', () => {
       added: 1,
       removed: 1,
       changed: 0,
-      addedPaths: ['agents[2]'],
+      addedPaths: ['agents[3]'],
       removedPaths: ['agents[0]'],
     }));
 
@@ -67,7 +67,12 @@ describe('history comparison', () => {
       { agents: [{ id: 'a' }, { id: 'b' }, { id: 'a' }, { id: 'c' }] },
       { agents: [{ id: 'b' }, { id: 'a' }, { id: 'c' }, { id: 'a' }] },
     );
-    expect(repeatedObjects.summary).toEqual(expect.objectContaining({ added: 1, removed: 1, changed: 0 }));
+    expect(repeatedObjects.summary).toEqual(expect.objectContaining({
+      added: 0,
+      removed: 0,
+      changed: 4,
+      changedPaths: ['agents[0].id', 'agents[1].id', 'agents[2].id', 'agents[3].id'],
+    }));
   });
 
   it('redacts before Differ', () => {
@@ -129,8 +134,8 @@ describe('history comparison', () => {
 
   it('DiffResult authority follows the controlled Differ tuple', () => {
     const controlled: readonly [DiffResult[], DiffResult[]] = [
-      [{ level: 0, type: 'remove', text: '"tupleOnly": "before"' }],
-      [{ level: 0, type: 'add', text: '"tupleOnly": "after"' }],
+      [{ level: 0, type: 'remove', text: '"tupleRemoved": "before"' }],
+      [{ level: 0, type: 'add', text: '"tupleAdded": "after"' }],
     ];
     const spy = vi.spyOn(Differ.prototype, 'diff').mockReturnValue(controlled);
 
@@ -139,8 +144,8 @@ describe('history comparison', () => {
         added: 1,
         removed: 1,
         changed: 0,
-        addedPaths: ['tupleOnly'],
-        removedPaths: ['tupleOnly'],
+        addedPaths: ['tupleAdded'],
+        removedPaths: ['tupleRemoved'],
         changedPaths: [],
       });
     } finally {
