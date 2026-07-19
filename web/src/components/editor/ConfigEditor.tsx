@@ -1,207 +1,57 @@
-import { useMemo, useState } from 'react';
-import { FormProvider, useForm, type FieldErrors, type Resolver } from 'react-hook-form';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ApiError } from '../../api/client';
-import { loadConfig, saveConfig } from '../../api/configs';
+import { FormProvider } from 'react-hook-form';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { loadConfig } from '../../api/configs';
 import { getSchema } from '../../api/schema';
-import { buildProjectSaveCandidate, type ProjectChange } from '../../schema/patchProject';
-import { createClientValidator, type ClientValidationError } from '../../schema/validation';
-import { getEffectiveLeaf } from '../../schema/effective';
-import { indexSchema } from '../../schema/indexSchema';
+import { useConfigDraft } from '../../editor/useConfigDraft';
 import { useUiStore } from '../../state/uiStore';
 import { EmptyState } from '../common/EmptyState';
+import { Button } from '../common/Button';
 import { ChapterView } from '../chapters/ChapterView';
 import { SearchView } from '../search/SearchView';
 import { SaveBar } from './SaveBar';
-import { ValidationSummary, type ValidationSummaryError } from './ValidationSummary';
+import { ValidationSummary } from './ValidationSummary';
 import { RuntimeInstallNotice } from '../specialized/RuntimeInstallNotice';
 import type { LoadResult, SchemaEntry } from '../../../../packages/config-io/src/types';
 
-function collectEffectiveDefaults(loadResult: LoadResult, schema: Record<string, SchemaEntry>) {
-  const values: Record<string, unknown> = {};
-  const indexed = indexSchema(schema);
-  for (const field of indexed.searchable) {
-    if (field.isHandoff) continue;
-    const leaf = getEffectiveLeaf(loadResult.effective, field.path);
-    values[field.path] = leaf?.value;
-  }
-  return values;
-}
-
-function toFormErrors(errors: ClientValidationError[]): FieldErrors<Record<string, unknown>> {
-  return errors.reduce<FieldErrors<Record<string, unknown>>>((acc, err) => {
-    const path = err.path === '/' ? 'config' : err.path.replace(/^\//, '').replace(/\//g, '.');
-    acc[path] = { type: 'schema', message: err.message };
-    return acc;
-  }, {});
-}
-
-function normalizeServerErrors(error: unknown): ValidationSummaryError[] {
-  if (!(error instanceof ApiError)) {
-    return [{ message: 'Save failed', instancePath: '/', keyword: 'request' }];
-  }
-
-  return error.errors.map((err) => ({
-    message: typeof err.message === 'string' ? err.message : 'invalid',
-    instancePath: typeof err.instancePath === 'string' ? err.instancePath : '/',
-    keyword: typeof err.keyword === 'string' ? err.keyword : undefined,
-  }));
+function RestoreNotice() {
+  const { restoreNotice, clearRestoreNotice, openHistory } = useUiStore();
+  if (!restoreNotice) return null;
+  return <div className="gsd-restore-notice" role="status">
+    Restored snapshot from {new Date(restoreNotice.timestamp).toLocaleString()}.
+    <Button size="sm" onClick={openHistory}>View history</Button>
+    <Button size="sm" variant="ghost" onClick={clearRestoreNotice}>Dismiss</Button>
+  </div>;
 }
 
 export function ConfigEditor() {
-  const { activeConfigId, searchQuery, searchOpen, setActiveChapter, setHighlightTarget, setSearchOpen } = useUiStore();
+  const { activeConfigId, searchQuery, searchOpen, setActiveChapter, setHighlightTarget, setSearchOpen, openHistory } = useUiStore();
   const queryClient = useQueryClient();
-  const [changes, setChanges] = useState<Record<string, unknown>>({});
-  const [resets, setResets] = useState<Set<string>>(() => new Set());
-  const [serverErrors, setServerErrors] = useState<ValidationSummaryError[]>([]);
-  const [snapshotId, setSnapshotId] = useState<string | undefined>();
-  const [runtimeNotice, setRuntimeNotice] = useState<{ runtime: 'codex' | 'opencode'; settings: string[] } | null>(null);
+  const configQuery = useQuery({ queryKey: ['config', activeConfigId], queryFn: () => loadConfig(activeConfigId!), enabled: !!activeConfigId });
+  const schemaQuery = useQuery({ queryKey: ['schema'], queryFn: getSchema });
 
-  const { data: loadResult, isLoading: isLoadingConfig, error: configError } = useQuery({
-    queryKey: ['config', activeConfigId],
-    queryFn: () => loadConfig(activeConfigId!),
-    enabled: !!activeConfigId,
-  });
-  const { data: schema, isLoading: isLoadingSchema, error: schemaError } = useQuery({
-    queryKey: ['schema'],
-    queryFn: getSchema,
-  });
+  if (!activeConfigId) return <EmptyState title="Select a configuration" description="Choose a tracked config from the sidebar to begin editing." />;
+  if (configQuery.isLoading || schemaQuery.isLoading) return <div className="gsd-sidebar__loading">Loading config...</div>;
+  if (configQuery.error || schemaQuery.error) return <div className="gsd-sidebar__error">Failed to load config.</div>;
+  if (!configQuery.data || !schemaQuery.data) return <div className="gsd-sidebar__error">Config data unavailable.</div>;
 
-  const validator = useMemo(() => (schema ? createClientValidator(schema) : null), [schema]);
-  const defaultValues = useMemo(() => {
-    if (!loadResult || !schema) return {};
-    return collectEffectiveDefaults(loadResult, schema);
-  }, [loadResult, schema]);
+  return <EditorContents key={activeConfigId} configId={activeConfigId} loadResult={configQuery.data} schema={schemaQuery.data} onSaved={(refreshed: LoadResult) => queryClient.setQueryData(['config', activeConfigId], refreshed)} searchQuery={searchQuery} searchOpen={searchOpen} setActiveChapter={setActiveChapter} setHighlightTarget={setHighlightTarget} setSearchOpen={setSearchOpen} openHistory={openHistory} />;
+}
 
-  const resolver: Resolver<Record<string, unknown>> = async (values) => {
-    if (!loadResult || !validator) return { values, errors: {} };
-    const changeList: ProjectChange[] = Object.entries(changes).map(([path, value]) => ({ path, value }));
-    const candidate = buildProjectSaveCandidate(loadResult, changeList, Array.from(resets));
-    const result = validator(candidate);
-    return result.valid ? { values, errors: {} } : { values: {}, errors: toFormErrors(result.errors) };
-  };
-
-  const form = useForm<Record<string, unknown>>({
-    defaultValues,
-    values: defaultValues,
-    resolver,
-    mode: 'onBlur',
-    reValidateMode: 'onChange',
-  });
-
-  const saveMutation = useMutation({
-    mutationFn: async () => {
-      if (!activeConfigId || !loadResult || !validator) return undefined;
-      setServerErrors([]);
-      setSnapshotId(undefined);
-      const changeList: ProjectChange[] = Object.entries(changes).map(([path, value]) => ({ path, value }));
-      const candidate = buildProjectSaveCandidate(loadResult, changeList, Array.from(resets));
-      const clientResult = validator(candidate);
-      if (!clientResult.valid) {
-        for (const err of clientResult.errors) {
-          const path = err.path === '/' ? 'config' : err.path.replace(/^\//, '').replace(/\//g, '.');
-          form.setError(path, { type: 'schema', message: err.message });
-        }
-        throw new Error('Client validation failed');
-      }
-      return saveConfig(activeConfigId, candidate);
-    },
-    onSuccess: async (result) => {
-      const changedPaths = Object.keys(changes);
-      const matching = changedPaths.filter((path) => /^(?:model_overrides|model_profile_overrides)\.(codex|opencode)\.(?:opus|sonnet|haiku)$/.test(path));
-      const runtime = matching.map((path) => path.match(/^(?:model_overrides|model_profile_overrides)\.(codex|opencode)\./)?.[1]).find((item): item is 'codex' | 'opencode' => item === 'codex' || item === 'opencode');
-      if (runtime) setRuntimeNotice({ runtime, settings: matching });
-      setSnapshotId(result?.snapshotId);
-      setChanges({});
-      setResets(new Set());
-      form.reset(defaultValues);
-      if (activeConfigId) {
-        const refreshed = await loadConfig(activeConfigId);
-        queryClient.setQueryData(['config', activeConfigId], refreshed);
-      }
-    },
-    onError: (error) => {
-      if (error instanceof ApiError) {
-        setServerErrors(normalizeServerErrors(error));
-      }
-    },
-  });
-
-  if (!activeConfigId) {
-    return (
-      <EmptyState
-        title="Select a configuration"
-        description="Choose a tracked config from the sidebar to begin editing."
-      />
-    );
-  }
-
-  if (isLoadingConfig || isLoadingSchema) return <div className="gsd-sidebar__loading">Loading config...</div>;
-  if (configError || schemaError) return <div className="gsd-sidebar__error">Failed to load config.</div>;
-  if (!loadResult || !schema) return <div className="gsd-sidebar__error">Config data unavailable.</div>;
-
-  const isDirty = Object.keys(changes).length > 0 || resets.size > 0;
-  const hasClientErrors = Object.keys(form.formState.errors).length > 0;
-
-  return (
-    <FormProvider {...form}>
-      <div className="gsd-config-editor">
-        <div className="gsd-config-editor__header">
-          <h2 className="gsd-sidebar__heading">Config editor</h2>
-          {loadResult.meta.globalDefaultsFound && (
-            <p className="gsd-preview">Global defaults loaded from {loadResult.meta.globalDefaultsPath}</p>
-          )}
-        </div>
-        <ValidationSummary errors={serverErrors} kind="server" />
-        {runtimeNotice && <RuntimeInstallNotice runtime={runtimeNotice.runtime} settings={runtimeNotice.settings} onDismiss={() => setRuntimeNotice(null)} />}
-        {searchOpen && searchQuery.trim() ? (
-          <SearchView
-            loadResult={loadResult}
-            schema={schema}
-            query={searchQuery}
-            onOpenResult={(chapter, path) => {
-              setActiveChapter(chapter);
-              setHighlightTarget(path);
-              setSearchOpen(false);
-            }}
-          />
-        ) : (
-          <ChapterView
-            loadResult={loadResult}
-            schema={schema}
-            control={form.control}
-            onFieldChange={(path, value) => {
-              setServerErrors([]);
-              setSnapshotId(undefined);
-              setResets((prev) => {
-                const next = new Set(prev);
-                next.delete(path);
-                return next;
-              });
-              setChanges((prev) => ({ ...prev, [path]: value }));
-              form.setValue(path, value, { shouldDirty: true, shouldTouch: true, shouldValidate: true });
-            }}
-            onResetField={(path) => {
-              setServerErrors([]);
-              setSnapshotId(undefined);
-              setChanges((prev) => {
-                const next = { ...prev };
-                delete next[path];
-                return next;
-              });
-              setResets((prev) => new Set(prev).add(path));
-              form.setValue(path, undefined, { shouldDirty: true, shouldTouch: true, shouldValidate: true });
-            }}
-          />
-        )}
-        <SaveBar
-          dirty={isDirty}
-          disabled={!isDirty || hasClientErrors}
-          isSaving={saveMutation.isPending}
-          snapshotId={snapshotId}
-          onSave={() => void form.handleSubmit(() => saveMutation.mutate())()}
-        />
+function EditorContents({ configId, loadResult, schema, onSaved, searchQuery, searchOpen, setActiveChapter, setHighlightTarget, setSearchOpen, openHistory }: any) {
+  const draft = useConfigDraft(configId, loadResult, schema);
+  return <FormProvider {...draft.form}>
+    <div className="gsd-config-editor">
+      <div className="gsd-config-editor__header">
+        <h2 className="gsd-sidebar__heading">Config editor</h2>
+        <Button size="sm" variant="secondary" onClick={openHistory}>View history</Button>
+        {loadResult.meta.globalDefaultsFound && <p className="gsd-preview">Global defaults loaded from {loadResult.meta.globalDefaultsPath}</p>}
       </div>
-    </FormProvider>
-  );
+      <RestoreNotice />
+      <ValidationSummary errors={draft.serverErrors} kind="server" />
+      {draft.runtimeNotice && <RuntimeInstallNotice runtime={draft.runtimeNotice.runtime} settings={draft.runtimeNotice.settings} onDismiss={draft.dismissRuntimeNotice} />}
+      {searchOpen && searchQuery.trim() ? <SearchView loadResult={loadResult} schema={schema} query={searchQuery} onOpenResult={(chapter: string, path: string) => { setActiveChapter(chapter); setHighlightTarget(path); setSearchOpen(false); }} /> :
+        <ChapterView loadResult={loadResult} schema={schema} control={draft.form.control} onFieldChange={draft.onFieldChange} onResetField={draft.onResetField} />}
+      <SaveBar dirty={draft.isDirty} disabled={!draft.isDirty || Object.keys(draft.form.formState.errors).length > 0} isSaving={draft.isSaving} snapshotId={draft.snapshotId} onSave={() => void draft.form.handleSubmit(async () => { const outcome = await draft.saveDraft(); if (outcome === 'saved') onSaved(await loadConfig(configId)); })()} />
+    </div>
+  </FormProvider>;
 }
