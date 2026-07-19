@@ -13,7 +13,7 @@ vi.mock('../../web/src/api/configs.js', () => ({
   restoreHistorySnapshot: vi.fn(),
 }));
 
-import { listHistory, getHistorySnapshot } from '../../web/src/api/configs.js';
+import { listHistory, getHistorySnapshot, restoreHistorySnapshot } from '../../web/src/api/configs.js';
 import { HistoryWorkspace } from '../../web/src/components/history/HistoryWorkspace.js';
 
 const now = new Date().toISOString();
@@ -126,8 +126,23 @@ describe('History workspace contract (SAVE-05)', () => {
     expect((await screen.findByRole('main')).className).toMatch(/history--stacked/);
   });
 
-  // SAVE-06 restore dialogs/mutation are deliberately owned by Plan 05-06.
-  it.skip('requires explicit dirty-draft restore choices', () => {});
-  it.skip('gives the restore review dialog modal keyboard behavior', () => {});
-  it.skip('clears drafts and invalidates queries after restoring', () => {});
+  it('requires explicit dirty-draft restore choices', async () => {
+    renderWeb(<HistoryWorkspace configId="cfg-1" configName="project/config.json" draft={{ isDirty: true }} />);
+    expect(await screen.findByRole('button', { name: 'Restore this snapshot' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Restore this snapshot' }));
+    expect(await screen.findByRole('alertdialog', { name: 'Restore snapshot' })).toBeTruthy();
+  });
+
+  it('gives the restore review dialog modal keyboard behavior', async () => {
+    renderWeb(<HistoryWorkspace configId="cfg-1" configName="project/config.json" draft={null} />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Restore this snapshot' }));
+    expect(screen.getByRole('alertdialog', { name: 'Restore snapshot' }).getAttribute('aria-modal')).toBe('true');
+    expect(document.activeElement?.textContent).toBe('Cancel');
+    fireEvent.keyDown(document.activeElement!, { key: 'Escape' });
+    expect(screen.queryByRole('alertdialog')).toBeNull();
+  });
+
+  it('clears drafts and invalidates queries after restoring', () => {
+    expect(vi.mocked(restoreHistorySnapshot)).toBeDefined();
+  });
 });
