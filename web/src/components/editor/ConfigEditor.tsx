@@ -16,8 +16,10 @@ import type { LoadResult, SchemaEntry } from '../../../../packages/config-io/src
 function RestoreNotice() {
   const { restoreNotice, clearRestoreNotice, openHistory } = useUiStore();
   if (!restoreNotice) return null;
-  return <div className="gsd-restore-notice" role="status">
-    Restored snapshot from {new Date(restoreNotice.timestamp).toLocaleString()}.
+  return <div className={`gsd-restore-notice${restoreNotice.warning ? ' gsd-restore-notice--warning' : ''}`} role="status">
+    {restoreNotice.warning
+      ? 'Your config was restored, but we couldn’t record its recovery snapshot. Your restored file is safe; check the warning and save again when ready.'
+      : `Restored the snapshot from ${new Date(restoreNotice.timestamp).toLocaleString()}.`}
     <Button size="sm" onClick={openHistory}>View history</Button>
     <Button size="sm" variant="ghost" onClick={clearRestoreNotice}>Dismiss</Button>
   </div>;

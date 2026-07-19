@@ -85,12 +85,8 @@ export function HistoryWorkspace({ configId: suppliedId, configName: suppliedNam
       await queryClient.invalidateQueries({ queryKey: ['history', idAtStart] });
       await queryClient.invalidateQueries({ queryKey: ['history', idAtStart, selectedAtStart] });
       setDialogMode(null);
-      showRestoreNotice(idAtStart, selectedDetail.data?.snapshot.timestamp ?? new Date().toISOString());
+      showRestoreNotice(idAtStart, selectedDetail.data?.snapshot.timestamp ?? new Date().toISOString(), Boolean(result.warning));
       backToEditor();
-      if (result.warning) {
-        // The editor owns the normal save-warning visual treatment; this safe copy remains available on return.
-        console.warn('Restore completed but recovery snapshot warning was returned.');
-      }
     } catch (error) {
       if (useUiStore.getState().activeConfigId === idAtStart) {
         setDialogMode(null);
