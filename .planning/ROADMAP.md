@@ -165,12 +165,12 @@ Plans:
   2. User can view a structural diff between any past snapshot and the current file, showing exactly which keys changed.
   3. User can revert to a previous snapshot with one click, and the revert is routed through the same validate → atomic-write → snapshot pipeline as a normal save, never a special-case path.
 
-**Plans**: 2/6 plans executed
+**Plans**: 3/6 plans executed
 
 - [x] 05-01-PLAN.md
 - [x] 05-02-PLAN.md
 - [ ] 05-03-PLAN.md
-- [ ] 05-04-PLAN.md
+- [x] 05-04-PLAN.md
 - [ ] 05-05-PLAN.md
 - [ ] 05-06-PLAN.md
 
@@ -202,5 +202,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 2. Local Loopback Server, CLI & Security Hardening | 7/7 | Complete    | 2026-07-12 |
 | 3. Generic Schema-Driven UI Shell | 6/6 | Complete    | 2026-07-17 |
 | 4. Pool Editors & Model Profile Specialization | 2/5 | In Progress|  |
-| 5. Version History UI | 2/6 | In Progress|  |
+| 5. Version History UI | 3/6 | In Progress|  |
 | 6. Live Schema Reconcile Against gsd-core | 0/TBD | Not started | - |
