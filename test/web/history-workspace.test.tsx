@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { renderWeb } from './render-helpers';
 import { Differ } from 'json-diff-kit';
 import { useUiStore } from '../../web/src/state/uiStore.js';
@@ -10,10 +10,11 @@ const SECRET = 'history-sensitive-sentinel-never-display';
 vi.mock('../../web/src/api/configs.js', () => ({
   listHistory: vi.fn(),
   getHistorySnapshot: vi.fn(),
-  restoreHistorySnapshot: vi.fn(),
+  restoreConfigSnapshot: vi.fn(),
+  loadConfig: vi.fn(),
 }));
 
-import { listHistory, getHistorySnapshot, restoreHistorySnapshot } from '../../web/src/api/configs.js';
+import { listHistory, getHistorySnapshot, restoreConfigSnapshot, loadConfig } from '../../web/src/api/configs.js';
 import { HistoryWorkspace } from '../../web/src/components/history/HistoryWorkspace.js';
 
 const now = new Date().toISOString();
@@ -46,6 +47,8 @@ beforeEach(() => {
     snapshot: { ...snapshots[0], document: snapshot.config },
     current,
   });
+  vi.mocked(restoreConfigSnapshot).mockResolvedValue({ ok: true });
+  vi.mocked(loadConfig).mockResolvedValue({ raw: { project: current, global: null }, effective: {}, unknown: [], meta: { globalDefaultsFound: false, globalDefaultsPath: '' } });
 });
 
 afterEach(() => {
@@ -142,7 +145,20 @@ describe('History workspace contract (SAVE-05)', () => {
     expect(screen.queryByRole('alertdialog')).toBeNull();
   });
 
-  it('clears drafts and invalidates queries after restoring', () => {
-    expect(vi.mocked(restoreHistorySnapshot)).toBeDefined();
+  it('restores the selected snapshot, reloads server authority, clears the draft, and returns to the editor', async () => {
+    const resetFromServer = vi.fn();
+    const backToEditor = vi.fn();
+    useUiStore.setState({ activeConfigId: 'cfg-1', backToEditor });
+    renderWeb(<HistoryWorkspace configId="cfg-1" configName="project/config.json" draft={{ isDirty: false, resetFromServer }} />);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Restore this snapshot' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Restore snapshot' }));
+
+    await waitFor(() => {
+      expect(restoreConfigSnapshot).toHaveBeenCalledWith('cfg-1', 7);
+      expect(loadConfig).toHaveBeenCalledWith('cfg-1');
+      expect(resetFromServer).toHaveBeenCalledWith(expect.objectContaining({ raw: { project: current } }));
+      expect(backToEditor).toHaveBeenCalledTimes(1);
+    });
   });
 });
