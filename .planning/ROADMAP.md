@@ -165,7 +165,7 @@ Plans:
   2. User can view a structural diff between any past snapshot and the current file, showing exactly which keys changed.
   3. User can revert to a previous snapshot with one click, and the revert is routed through the same validate → atomic-write → snapshot pipeline as a normal save, never a special-case path.
 
-**Plans**: 6/6 plans executed
+**Plans**: 6/8 plans executed
 
 - [x] 05-01-PLAN.md
 - [x] 05-02-PLAN.md
@@ -173,6 +173,8 @@ Plans:
 - [x] 05-04-PLAN.md
 - [x] 05-05-PLAN.md
 - [x] 05-06-PLAN.md
+- [ ] 05-07-PLAN.md — Bounded selected-priority progressive detail loading resolves exact counts for every returned history row
+- [ ] 05-08-PLAN.md — json-diff-kit DiffResult adapter becomes the sole tree/path/summary comparison authority
 
 **UI hint**: yes
 
