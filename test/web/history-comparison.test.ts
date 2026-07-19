@@ -51,6 +51,23 @@ describe('history comparison', () => {
     expect(reorder.summary).toMatchObject({ added: 1, removed: 1, changed: 0 });
   });
 
+  it('aligns repeated and adversarial array values using the longest common subsequence', () => {
+    const repeated = buildHistoryComparison({ agents: ['a', 'b', 'a'] }, { agents: ['b', 'a', 'c'] });
+    expect(repeated.summary).toEqual(expect.objectContaining({
+      added: 1,
+      removed: 1,
+      changed: 0,
+      addedPaths: ['agents[2]'],
+      removedPaths: ['agents[0]'],
+    }));
+
+    const repeatedObjects = buildHistoryComparison(
+      { agents: [{ id: 'a' }, { id: 'b' }, { id: 'a' }, { id: 'c' }] },
+      { agents: [{ id: 'b' }, { id: 'a' }, { id: 'c' }, { id: 'a' }] },
+    );
+    expect(repeatedObjects.summary).toEqual(expect.objectContaining({ added: 1, removed: 1, changed: 0 }));
+  });
+
   it('redacts descriptor roots before comparison values and summaries', () => {
     const secret = 'history-sensitive-sentinel-never-display';
     const snapshot = { brave_search: { apiKey: secret }, normal: 'before' };

@@ -72,12 +72,15 @@ function sameValue(before: unknown, current: unknown): boolean {
 type ArrayAlignment = { before?: unknown; current?: unknown };
 
 function alignArrays(before: unknown[], current: unknown[]): ArrayAlignment[] {
-  const common: boolean[][] = Array.from({ length: before.length + 1 }, () => Array(current.length + 1).fill(false));
+  // Store LCS lengths rather than reachability booleans. A boolean table cannot
+  // distinguish competing matches, so repeated values can be paired with the
+  // wrong occurrence during traversal.
+  const lcs: number[][] = Array.from({ length: before.length + 1 }, () => Array(current.length + 1).fill(0));
   for (let beforeIndex = before.length - 1; beforeIndex >= 0; beforeIndex -= 1) {
     for (let currentIndex = current.length - 1; currentIndex >= 0; currentIndex -= 1) {
-      common[beforeIndex][currentIndex] = sameValue(before[beforeIndex], current[currentIndex])
-        ? common[beforeIndex + 1][currentIndex + 1] || true
-        : common[beforeIndex + 1][currentIndex] || common[beforeIndex][currentIndex + 1];
+      lcs[beforeIndex][currentIndex] = sameValue(before[beforeIndex], current[currentIndex])
+        ? lcs[beforeIndex + 1][currentIndex + 1] + 1
+        : Math.max(lcs[beforeIndex + 1][currentIndex], lcs[beforeIndex][currentIndex + 1]);
     }
   }
 
@@ -87,11 +90,11 @@ function alignArrays(before: unknown[], current: unknown[]): ArrayAlignment[] {
   while (beforeIndex < before.length || currentIndex < current.length) {
     if (beforeIndex < before.length && currentIndex < current.length && sameValue(before[beforeIndex], current[currentIndex])) {
       alignment.push({ before: before[beforeIndex++], current: current[currentIndex++] });
-    } else if (beforeIndex < before.length && currentIndex < current.length && !common[beforeIndex][currentIndex + 1] && !common[beforeIndex + 1][currentIndex]) {
-      // Neither value aligns with a later element: this is a replacement,
-      // not an insertion followed by a deletion.
+    } else if (beforeIndex < before.length && currentIndex < current.length && lcs[beforeIndex + 1][currentIndex] === 0 && lcs[beforeIndex][currentIndex + 1] === 0) {
+      // Neither suffix contains a shared value, so represent the unmatched pair
+      // as one replacement rather than a removal followed by an addition.
       alignment.push({ before: before[beforeIndex++], current: current[currentIndex++] });
-    } else if (currentIndex < current.length && (beforeIndex === before.length || common[beforeIndex][currentIndex + 1])) {
+    } else if (currentIndex < current.length && (beforeIndex === before.length || lcs[beforeIndex][currentIndex + 1] >= lcs[beforeIndex + 1][currentIndex])) {
       alignment.push({ current: current[currentIndex++] });
     } else {
       alignment.push({ before: before[beforeIndex++] });
