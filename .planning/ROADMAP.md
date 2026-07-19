@@ -173,8 +173,13 @@ Plans:
 - [x] 05-04-PLAN.md
 - [x] 05-05-PLAN.md
 - [x] 05-06-PLAN.md
-- [ ] 05-07-PLAN.md — Bounded selected-priority progressive detail loading resolves exact counts for every returned history row
-- [ ] 05-08-PLAN.md — json-diff-kit DiffResult adapter becomes the sole tree/path/summary comparison authority
+**Wave 6** *(blocked on executed Waves 4–5)*
+
+- [ ] 05-08-PLAN.md — json-diff-kit DiffResult adapter becomes the sole validated tree/path/summary comparison authority [wave 6; depends on 05-03, 05-05, 05-06]
+
+**Wave 7** *(blocked on Wave 6)*
+
+- [ ] 05-07-PLAN.md — Bounded selected-priority progressive detail loading resolves exact counts and retry states for every returned history row [wave 7; depends on 05-05, 05-06, 05-08]
 
 **UI hint**: yes
 
