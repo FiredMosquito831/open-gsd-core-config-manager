@@ -64,7 +64,7 @@ Phase 5 should extend, rather than replace, the existing Phase 2 snapshot system
 
 Use `json-diff-kit@1.0.35` as the structural object differ/viewer already chosen by project architecture. Compute the selected `Snapshot → Current` diff from parsed persisted project objects, memoize it, derive a separate exhaustive changed-path/count summary, and project sensitive values to masked placeholders before either summary or viewer receives them. The library supplies structural diff computation and React rendering; the product must own domain semantics: stable orientation, redaction, changed-path summary, snapshot grouping, draft-resolution flow, error classification, and restore orchestration. [VERIFIED: npm registry] [CITED: https://github.com/rexskz/json-diff-kit/blob/main/README.md]
 
-**Primary recommendation:** Add a `history` workspace mode and three guarded opaque-ID routes (list, selected snapshot/current comparison payload, restore), centralizing trusted snapshot-file resolution in the snapshot store; render the result with a redacted `json-diff-kit` diff and restore only through `saveWithSnapshot()`. [VERIFIED: codebase grep]
+**Primary recommendation:** Add a `history` workspace mode and three guarded opaque-ID routes (list, selected snapshot/current comparison payload, restore), centralizing trusted snapshot-file resolution in the snapshot store; use `json-diff-kit` only for structural diff computation, then render an accessible project-owned changed-branches tree that can guarantee D-11 while restore goes only through `saveWithSnapshot()`. [VERIFIED: codebase grep] [CITED: https://github.com/rexskz/json-diff-kit/blob/main/README.md]
 
 ## Architectural Responsibility Map
 
@@ -214,7 +214,7 @@ return { ok: true, snapshotId: result.snapshotId, warning: result.warning };
 
 ### Pattern 3: Redact before diffing and summarizing
 
-**What:** Build a deep, non-mutating presentation projection of both parsed project objects using the same descriptor-driven sensitive paths used by the editor. Replace a sensitive leaf with a fixed opaque marker before calculating summary counts, changed paths, or viewer diff; never send/display raw sensitive scalar values in History. [VERIFIED: codebase grep]
+**What:** Build a deep, non-mutating presentation projection of both parsed project objects using the same descriptor-driven sensitive paths used by the editor. Replace a sensitive leaf with a fixed opaque marker before calculating summary counts, changed paths, or structural diff; never send/display raw sensitive scalar values in History. [VERIFIED: codebase grep]
 
 **When to use:** Every history response/UI flow, including restore confirmation summaries and error diagnostics. Keep the raw parsed snapshot only at the server restore boundary. [VERIFIED: codebase grep]
 
@@ -226,11 +226,17 @@ const diff = useMemo(() => {
   return differ.diff(redactedSnapshot, redactedCurrent);
 }, [redactedSnapshot, redactedCurrent]);
 
-return <Viewer diff={diff} indent={2} highlightInlineDiff inlineDiffOptions={{ mode: 'word', wordSeparator: ' ' }} />;
+return <HistoryDiffTree diff={diff} />; // project-owned expansion + changed-branch semantics
 ```
 [CITED: https://github.com/rexskz/json-diff-kit/blob/main/README.md]
 
-### Pattern 4: Preserve draft across History, then explicitly invalidate after restore
+### Pattern 4: Use library diff computation with a project-owned tree renderer
+
+**What:** Use `json-diff-kit` `Differ` to calculate nested and array-aware structural changes, but render its result in a small accessible `HistoryDiffTree` component. The official README documents `Viewer` presentation props but does not document controls for expanding/collapsing unchanged branches, virtual scrolling, or changed-node context; those controls are required by D-11. [CITED: https://github.com/rexskz/json-diff-kit/blob/main/README.md]
+
+**When to use:** For every History comparison. Default the project-owned tree to show changed branches and their parent context, while unchanged branches remain collapsed behind an explicit expand control. [ASSUMED]
+
+### Pattern 5: Preserve draft across History, then explicitly invalidate after restore
 
 **What:** History navigation must not unmount/reset the state that represents the editor draft. Make the parent editor/workspace controller own draft state, or keep the editor mounted while hiding its editor surface. After a successful restore, reset changes/resets/form to server-reloaded values and invalidate `['config', id]` plus the history key. [VERIFIED: codebase grep]
 
@@ -250,7 +256,8 @@ return <Viewer diff={diff} indent={2} highlightInlineDiff inlineDiffOptions={{ m
 | Problem | Don't Build | Use Instead | Why |
 |---------|-------------|-------------|-----|
 | Structural JSON comparison | Recursive object/array diff algorithm | `json-diff-kit` `Differ` | Handles modifications, nested object differences, and configurable LCS array diffing. [CITED: https://github.com/rexskz/json-diff-kit/blob/main/README.md] |
-| Expandable JSON diff presentation | Custom tree renderer with ad-hoc inline diff logic | `json-diff-kit` React `Viewer`, wrapped with product summary/redaction | The official viewer consumes `Differ` output and supports indentation, line numbers, and inline word highlighting. [CITED: https://github.com/rexskz/json-diff-kit/blob/main/README.md] |
+| Structural diff algorithm | Recursive object/array comparison | `json-diff-kit` `Differ` | The library provides modification detection and LCS array diffing. [CITED: https://github.com/rexskz/json-diff-kit/blob/main/README.md] |
+| D-11-specific expandable diff tree | Generic viewer integration or a new diff algorithm | Small project-owned `HistoryDiffTree` consuming `Differ` output | The official `Viewer` docs do not document required changed-branch expansion/collapse controls; own only accessibility and D-11 rendering semantics, not comparison logic. [CITED: https://github.com/rexskz/json-diff-kit/blob/main/README.md] |
 | Atomic/locked restore | New restoration write routine | Existing `saveWithSnapshot()` → Phase 1 `saveConfig` | It already serializes same-path writes, validates first, atomically writes, and snapshots previous on-disk state. [VERIFIED: codebase grep] |
 | Client API authentication | New `fetch` helper | Existing `apiFetch` | Existing wrappers use the launch token; all history calls must remain within that contract. [VERIFIED: codebase grep] |
 | Confirmation modal semantics | Bare `role="dialog"` overlay | Reuse/generalize existing dialog component and implement APG modal behavior | A destructive action needs focus trap, Escape close, focus return, and least-destructive initial focus. [CITED: https://www.w3.org/WAI/ARIA/apg/patterns/alertdialog/] |
@@ -366,7 +373,7 @@ showRestoreNotice(selectedSnapshot.timestamp);
 
 | # | Claim | Section | Risk if Wrong |
 |---|-------|---------|---------------|
-| A1 | None. | — | All implementation-critical claims were verified against code, Context7, W3C APG, or the npm registry. |
+| A1 | A small project-owned renderer can consume `json-diff-kit`'s `DiffResult` output while enforcing changed-branch expansion and accessible controls without reimplementing structural comparison. | Architecture Patterns / Don't Hand-Roll | If the library's result shape is unsuitable, implementation must inspect installed types and choose an approved renderer strategy before coding the UI. |
 
 ## Open Questions
 
@@ -375,10 +382,10 @@ showRestoreNotice(selectedSnapshot.timestamp);
    - What's unclear: Whether planner should keep `ConfigEditor` mounted or extract a controller hook/parent workspace component.
    - Recommendation: Plan an explicit refactor task first; favor a reusable `useConfigDraft`/workspace controller so History, restore dialogs, and editor use one authoritative draft lifecycle. [VERIFIED: codebase grep]
 
-2. **What is the precise `json-diff-kit` expansion-control API?**
-   - What we know: Official docs confirm `Differ` configuration and `Viewer` rendering, but the Context7 excerpt does not document a controlled expanded-node API. [CITED: https://github.com/rexskz/json-diff-kit/blob/main/README.md]
-   - What's unclear: Whether the viewer itself can initialize unchanged nodes collapsed while retaining changed context.
-   - Recommendation: Before implementation, inspect installed package types/source. If it cannot satisfy D-11, use its `Differ` output with a small accessible project-owned tree wrapper; do not substitute a custom diff algorithm. [CITED: https://github.com/rexskz/json-diff-kit/blob/main/README.md]
+2. **Can `json-diff-kit`'s result type directly support the required tree renderer?**
+   - What we know: Official docs confirm `Differ` configuration and `Viewer` rendering; the README does not document Viewer controls for tree expansion, collapsing unchanged nodes, virtual scrolling, or changed-node context. [CITED: https://github.com/rexskz/json-diff-kit/blob/main/README.md]
+   - What's unclear: The exact installed `DiffResult` shape and whether it preserves enough node metadata for a project-owned renderer without adaptation.
+   - Recommendation: The first implementation task must inspect the installed public types/source and write a focused renderer fixture. Keep `Differ`; do not silently fall back to a generic text diff or a new recursive comparison algorithm. [ASSUMED]
 
 ## Environment Availability
 
@@ -466,7 +473,7 @@ showRestoreNotice(selectedSnapshot.timestamp);
 ## Metadata
 
 **Confidence breakdown:**
-- Standard stack: HIGH — package version/legitimacy confirmed; official API usage retrieved. [VERIFIED: npm registry]
+- Standard stack: MEDIUM — package version/legitimacy confirmed and official API usage retrieved, but the documented Viewer API does not satisfy D-11. [VERIFIED: npm registry] [CITED: https://github.com/rexskz/json-diff-kit/blob/main/README.md]
 - Architecture: HIGH — Phase 2/3/4 seams and locked Phase 5 decisions are explicit in the checked-out code/context. [VERIFIED: codebase grep]
 - Pitfalls: HIGH — derived from existing security/snapshot invariants, with dialog keyboard details cited from W3C. [VERIFIED: codebase grep]
 
