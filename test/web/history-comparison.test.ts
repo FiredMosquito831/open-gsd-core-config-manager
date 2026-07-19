@@ -48,7 +48,7 @@ describe('history comparison', () => {
     expect(middleDeletion.summary).toMatchObject({ added: 0, removed: 1, changed: 0, removedPaths: ['agents[1]'] });
 
     const reorder = buildHistoryComparison({ agents: ['a', 'b', 'c'] }, { agents: ['b', 'a', 'c'] });
-    expect(reorder.summary).toMatchObject({ added: 1, removed: 1, changed: 0 });
+    expect(reorder.summary).toMatchObject({ added: 1, removed: 1, changed: 0, addedPaths: ['agents[0]'], removedPaths: ['agents[1]'] });
   });
 
   it('aligns repeated and adversarial array values using the longest common subsequence', () => {

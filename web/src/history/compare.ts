@@ -69,7 +69,12 @@ function sameValue(before: unknown, current: unknown): boolean {
   return JSON.stringify(before) === JSON.stringify(current);
 }
 
-type ArrayAlignment = { before?: unknown; current?: unknown };
+type ArrayAlignment = {
+  before?: unknown;
+  current?: unknown;
+  beforeIndex?: number;
+  currentIndex?: number;
+};
 
 function alignArrays(before: unknown[], current: unknown[]): ArrayAlignment[] {
   // Store LCS lengths rather than reachability booleans. A boolean table cannot
@@ -89,15 +94,21 @@ function alignArrays(before: unknown[], current: unknown[]): ArrayAlignment[] {
   let currentIndex = 0;
   while (beforeIndex < before.length || currentIndex < current.length) {
     if (beforeIndex < before.length && currentIndex < current.length && sameValue(before[beforeIndex], current[currentIndex])) {
-      alignment.push({ before: before[beforeIndex++], current: current[currentIndex++] });
+      alignment.push({ before: before[beforeIndex], current: current[currentIndex], beforeIndex, currentIndex });
+      beforeIndex += 1;
+      currentIndex += 1;
     } else if (beforeIndex < before.length && currentIndex < current.length && lcs[beforeIndex + 1][currentIndex] === 0 && lcs[beforeIndex][currentIndex + 1] === 0) {
       // Neither suffix contains a shared value, so represent the unmatched pair
       // as one replacement rather than a removal followed by an addition.
-      alignment.push({ before: before[beforeIndex++], current: current[currentIndex++] });
+      alignment.push({ before: before[beforeIndex], current: current[currentIndex], beforeIndex, currentIndex });
+      beforeIndex += 1;
+      currentIndex += 1;
     } else if (currentIndex < current.length && (beforeIndex === before.length || lcs[beforeIndex][currentIndex + 1] >= lcs[beforeIndex + 1][currentIndex])) {
-      alignment.push({ current: current[currentIndex++] });
+      alignment.push({ current: current[currentIndex], currentIndex });
+      currentIndex += 1;
     } else {
-      alignment.push({ before: before[beforeIndex++] });
+      alignment.push({ before: before[beforeIndex], beforeIndex });
+      beforeIndex += 1;
     }
   }
   return alignment;
@@ -117,7 +128,11 @@ function buildNodes(before: unknown, current: unknown, path = '', parentPath?: s
     const children: HistoryDiffNode[] = [];
     // LCS alignment preserves unchanged elements across insertions, deletions,
     // and reorders instead of treating their shifted numeric indexes as edits.
-    for (const [index, pair] of alignArrays(before, current).entries()) {
+    for (const pair of alignArrays(before, current)) {
+      // Array additions identify their source position in Current; removals
+      // identify their source position in Snapshot. Matched/replaced entries
+      // use the current position, which is where the resulting value appears.
+      const index = pair.currentIndex ?? pair.beforeIndex;
       children.push(...buildNodes(pair.before, pair.current, joinPath(path, String(index), true), path));
     }
     return [{ path, parentPath, state: children.some((node) => node.state !== 'unchanged') ? 'changed' : 'unchanged', children }];

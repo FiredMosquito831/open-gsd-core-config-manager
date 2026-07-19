@@ -134,7 +134,11 @@ describe('History workspace contract (SAVE-05)', () => {
   });
 
   it('requires explicit dirty-draft restore choices', async () => {
-    renderWeb(<HistoryWorkspace configId="cfg-1" configName="project/config.json" draft={{ isDirty: true }} />);
+    renderWeb(<HistoryWorkspace configId="cfg-1" configName="project/config.json" draft={{
+      isDirty: true,
+      saveDraft: vi.fn(async () => 'saved' as const),
+      resetFromServer: vi.fn(),
+    }} />);
     expect(await screen.findByRole('button', { name: 'Restore this snapshot' })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Restore this snapshot' }));
     expect(await screen.findByRole('alertdialog', { name: 'Restore snapshot' })).toBeTruthy();
@@ -171,9 +175,10 @@ describe('History workspace contract (SAVE-05)', () => {
 
   it('restores the selected snapshot, reloads server authority, clears the draft, and returns to the editor', async () => {
     const resetFromServer = vi.fn();
+    const saveDraft = vi.fn(async () => 'saved' as const);
     const backToEditor = vi.fn();
     useUiStore.setState({ activeConfigId: 'cfg-1', backToEditor });
-    renderWeb(<HistoryWorkspace configId="cfg-1" configName="project/config.json" draft={{ isDirty: false, resetFromServer }} />);
+    renderWeb(<HistoryWorkspace configId="cfg-1" configName="project/config.json" draft={{ isDirty: false, saveDraft, resetFromServer }} />);
 
     fireEvent.click(await screen.findByRole('button', { name: 'Restore this snapshot' }));
     fireEvent.click(screen.getByRole('button', { name: 'Restore snapshot' }));
