@@ -11,6 +11,8 @@ interface SnapshotTimelineProps {
   snapshots: HistorySnapshotMeta[];
   selectedSeq: number | null;
   counts: Map<number, SnapshotChangeCount>;
+  errors: Set<number>;
+  onRetry: (seq: number) => void;
   onSelect: (seq: number) => void;
 }
 
@@ -22,7 +24,7 @@ function countText(count?: SnapshotChangeCount): string {
   return `${total} key${total === 1 ? '' : 's'} changed`;
 }
 
-export function SnapshotTimeline({ snapshots, selectedSeq, counts, onSelect }: SnapshotTimelineProps) {
+export function SnapshotTimeline({ snapshots, selectedSeq, counts, errors, onRetry, onSelect }: SnapshotTimelineProps) {
   const groups = groupSnapshotsByLocalDate(snapshots);
 
   return <nav className="gsd-history-timeline" aria-label="Saved versions">
@@ -36,8 +38,9 @@ export function SnapshotTimeline({ snapshots, selectedSeq, counts, onSelect }: S
             <span className="gsd-history-timeline__relative">{relative}</span>
             <span className="gsd-history-timeline__exact">{exact}</span>
             <span className="gsd-history-timeline__sequence">Snapshot #{snapshot.seq}</span>
-            <span className="gsd-history-timeline__count">{countText(counts.get(snapshot.seq))}</span>
+            {!errors.has(snapshot.seq) && <span className="gsd-history-timeline__count">{countText(counts.get(snapshot.seq))}</span>}
           </button>
+          {errors.has(snapshot.seq) && <span className="gsd-history-timeline__count" role="alert">Comparison could not be loaded. <button type="button" className="gsd-button gsd-button--ghost" aria-label={`Retry snapshot #${snapshot.seq} comparison`} onClick={() => onRetry(snapshot.seq)}>Retry</button></span>}
         </li>;
         })}
       </ul>
