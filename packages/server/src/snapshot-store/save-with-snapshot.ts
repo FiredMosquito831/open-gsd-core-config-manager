@@ -4,8 +4,8 @@
  * 02-RESEARCH.md § Pattern 7).
  *
  * D-10: snapshotting is a server concern, implemented purely by
- * composition. This file imports `saveConfig`/`ValidationError` from the
- * frozen `config-io` barrel and never modifies or reimplements them.
+ * composition. This file imports the frozen `saveConfig`/`ValidationError`
+ * implementation and never modifies or reimplements them.
  *
  * Orchestration order (D-11 — pre-write snapshot of the CURRENT on-disk
  * content, taken before the write, recorded only after it succeeds):
@@ -53,15 +53,16 @@
  * calls for the SAME resolved config path can otherwise both read the same
  * `priorContent` before either writes, or race `recordSnapshot`'s `seq`
  * computation, silently dropping a version-history entry. `withPathLock`
- * below is an in-process async mutex keyed by the resolved config path
- * (never a cross-process lock — that is `proper-lockfile`'s job, already
- * covering the write itself) that serializes this entire orchestration
- * per path, so two overlapping saves to the same config always run this
- * whole sequence one after another rather than interleaved.
+ * serializes callers in one helper, while `withTransactionLock` applies the
+ * same resolved-path transaction boundary across independently launched
+ * helpers. Together they keep every save's prior state available for history.
  */
-import { readFile, unlink, writeFile } from 'node:fs/promises';
-import { resolve as resolvePath } from 'node:path';
-import { saveConfig, ValidationError } from '../../../config-io/src/index.js';
+import { createHash } from 'node:crypto';
+import { mkdir, readFile, unlink, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join, resolve as resolvePath } from 'node:path';
+import { lock } from 'proper-lockfile';
+import { saveConfig, ValidationError } from '../../../config-io/src/atomic-write.js';
 import type { ValidationResult } from '../../../config-io/src/types.js';
 import { recordSnapshot } from './index.js';
 
@@ -96,6 +97,29 @@ function withPathLock<T>(key: string, fn: () => Promise<T>): Promise<T> {
   return run;
 }
 
+/**
+ * Cross-process transaction lock. It intentionally lives outside the target
+ * config and snapshot directories: `saveConfig` owns the config-file lock and
+ * `recordSnapshot` owns the index lock, so nesting either of those here could
+ * self-deadlock. All helpers resolving the same config path derive this one
+ * stable lock path and hold it across the whole transaction.
+ */
+function transactionLockPath(resolvedConfigPath: string): string {
+  return join(tmpdir(), 'gsd-config-manager-save-locks', `${createHash('sha256').update(resolvedConfigPath).digest('hex')}.lock`);
+}
+
+async function withTransactionLock<T>(resolvedConfigPath: string, fn: () => Promise<T>): Promise<T> {
+  const lockPath = transactionLockPath(resolvedConfigPath);
+  await mkdir(join(tmpdir(), 'gsd-config-manager-save-locks'), { recursive: true });
+  await writeFile(lockPath, '', { flag: 'a' });
+  const release = await lock(lockPath, { retries: { retries: 50, factor: 1.2, minTimeout: 10, maxTimeout: 250 }, stale: 30_000 });
+  try {
+    return await fn();
+  } finally {
+    await release();
+  }
+}
+
 /** The frozen server-layer save-result envelope (D-10). */
 export type SaveResult =
   | { ok: true; snapshotId?: string; warning?: string }
@@ -120,10 +144,13 @@ export async function saveWithSnapshot(
   validate: (data: unknown) => ValidationResult,
   deps: SaveDeps = {},
 ): Promise<SaveResult> {
-  // CR-03: serialize the ENTIRE read-prior -> save -> record-snapshot
-  // sequence per resolved config path — see module header + withPathLock
-  // doc comment above.
-  return withPathLock(resolvePath(configPath), () => saveWithSnapshotUnlocked(configPath, nextConfig, validate, deps));
+  // Serialize the ENTIRE read-prior -> safe config write -> committed index
+  // sequence per resolved config path in both this process and peer helpers.
+  const resolvedConfigPath = resolvePath(configPath);
+  return withPathLock(resolvedConfigPath, () => withTransactionLock(
+    resolvedConfigPath,
+    () => saveWithSnapshotUnlocked(configPath, nextConfig, validate, deps),
+  ));
 }
 
 async function saveWithSnapshotUnlocked(
