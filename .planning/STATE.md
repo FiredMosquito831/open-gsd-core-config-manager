@@ -5,15 +5,15 @@ milestone_name: milestone
 current_phase: 04
 current_phase_name: pool-editors-model-profile-specialization
 status: executing
-stopped_at: Completed 05-02-PLAN.md
-last_updated: "2026-07-19T09:08:05.160Z"
+stopped_at: Completed 05-04-PLAN.md
+last_updated: "2026-07-19T09:31:44.385Z"
 last_activity: 2026-07-18
 last_activity_desc: Phase 04 execution resumed (wave continue)
 progress:
   total_phases: 5
   completed_phases: 4
   total_plans: 31
-  completed_plans: 27
+  completed_plans: 28
 ---
 
 # Project State
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-07-11)
 ## Current Position
 
 Phase: 04 (pool-editors-model-profile-specialization) — EXECUTING
-Plan: 3 of 5
+Plan: 4 of 5
 Status: Ready to execute
 Last activity: 2026-07-18 — Phase 04 execution resumed (wave continue)
 
-Progress: [█████████░] 87%
+Progress: [█████████░] 90%
 
 ## Performance Metrics
 
@@ -77,6 +77,7 @@ Progress: [█████████░] 87%
 | Phase 04 P01 | 8min | 3 tasks | 5 files |
 | Phase 05-version-history-ui P01 | 22min | 3 tasks | 5 files |
 | Phase 05-version-history-ui P02 | 17min | 2 tasks | 5 files |
+| Phase 05-version-history-ui P04 | 34min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -124,6 +125,8 @@ Recent decisions affecting current work:
 - [Phase ?]: History selection accepts only positive safe-integer canonical decimal sequences and derives snapshot locations from resolved tracked config paths.
 - [Phase ?]: History detail returns parsed persisted project documents; restore retains raw parsed content only at the saveWithSnapshot boundary.
 - [Phase ?]: Malformed index metadata and hash or JSON failures return static path-free errors rather than exposing storage details.
+- [Phase ?]: Draft records are keyed by opaque active configuration ID and remain independent across editor/history navigation.
+- [Phase ?]: History mode, selected snapshot sequence, and restore notices are UI-only Zustand state.
 
 ### Pending Todos
 
@@ -145,6 +148,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-07-19T09:08:04.917Z
-Stopped at: Completed 05-02-PLAN.md
+Last session: 2026-07-19T09:31:44.214Z
+Stopped at: Completed 05-04-PLAN.md
 Resume file: None
