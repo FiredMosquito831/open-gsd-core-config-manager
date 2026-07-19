@@ -15,6 +15,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import type { AddressInfo } from 'node:net';
 import { spawnCli, type SpawnedCli } from './helpers/spawn-cli.js';
+import { terminateProcessTree } from '../helpers/process-tree.js';
 import { bootstrap } from '../../packages/cli/src/bootstrap.js';
 import { createOutput } from '../../packages/cli/src/output.js';
 
@@ -28,7 +29,7 @@ let currentSpawned: SpawnedCli | undefined;
 afterEach(async () => {
   // Runs even when the test body throws — a crashed test must never orphan a server.
   if (currentSpawned) {
-    currentSpawned.kill('SIGKILL');
+    await terminateProcessTree(currentSpawned.proc);
     await currentSpawned.exited.catch(() => undefined);
     currentSpawned = undefined;
   }

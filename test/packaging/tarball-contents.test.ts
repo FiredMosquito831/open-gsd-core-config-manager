@@ -26,6 +26,7 @@ import {
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { terminateProcessTree } from '../helpers/process-tree.js';
 
 const REPO_ROOT = resolve(fileURLToPath(new URL('../..', import.meta.url)));
 const CLI_ENTRY = join(REPO_ROOT, 'dist', 'cli.js');
@@ -121,9 +122,9 @@ describe('extracted-tarball smoke run (DIST-01, DIST-03, DIST-04)', () => {
   let child: ChildProcess | undefined;
   let nodeModulesLink: string | undefined;
 
-  afterEach(() => {
-    if (child && child.exitCode === null && child.signalCode === null) {
-      child.kill('SIGKILL');
+  afterEach(async () => {
+    if (child) {
+      await terminateProcessTree(child);
     }
     child = undefined;
 
@@ -207,6 +208,7 @@ describe('extracted-tarball smoke run (DIST-01, DIST-03, DIST-04)', () => {
         cwd: packageDir,
         env: { ...process.env, NO_COLOR: '1' },
         stdio: ['ignore', 'pipe', 'pipe', 'ipc'],
+        detached: process.platform !== 'win32',
       });
 
       let stdoutBuf = '';
@@ -221,6 +223,7 @@ describe('extracted-tarball smoke run (DIST-01, DIST-03, DIST-04)', () => {
       // 5. Wait for the banner, parse port + token from it.
       const { port, token } = await new Promise<{ port: number; token: string }>((res, rej) => {
         const timer = setTimeout(() => {
+          void terminateProcessTree(child!);
           rej(new Error(`smoke run: timed out waiting for launch banner. stderr:\n${stderrBuf}`));
         }, 20_000);
 

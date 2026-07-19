@@ -16,6 +16,7 @@ import { mkdtempSync, readdirSync, rmSync, statSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawnCli, type SpawnedCli } from './helpers/spawn-cli.js';
+import { terminateProcessTree } from '../helpers/process-tree.js';
 
 let currentSpawned: SpawnedCli | undefined;
 let currentTempDirs: string[] = [];
@@ -23,7 +24,7 @@ let currentTempDirs: string[] = [];
 afterEach(async () => {
   // Runs even when the test body throws — a crashed test must never orphan a server.
   if (currentSpawned) {
-    currentSpawned.kill('SIGKILL');
+    await terminateProcessTree(currentSpawned.proc);
     await currentSpawned.exited.catch(() => undefined);
     currentSpawned = undefined;
   }

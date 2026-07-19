@@ -14,6 +14,7 @@
 import { spawn, type ChildProcess } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { terminateProcessTree } from '../../helpers/process-tree.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -87,6 +88,7 @@ export async function spawnCli(args: string[], opts: SpawnCliOptions = {}): Prom
     // `send()` below) — it changes nothing about the banner/stdout contract
     // `parseBannerUrl` parses, and a real `npx` launch never gets one.
     stdio: ['ignore', 'pipe', 'pipe', 'ipc'],
+    detached: process.platform !== 'win32',
   });
 
   let stdoutBuf = '';
@@ -105,10 +107,11 @@ export async function spawnCli(args: string[], opts: SpawnCliOptions = {}): Prom
   const banner = await new Promise<{ url: string; port: number; token: string }>((resolve, reject) => {
     let settled = false;
 
-    const timer = setTimeout(() => {
+    const timer = setTimeout(async () => {
       if (settled) return;
       settled = true;
       cleanup();
+      await terminateProcessTree(proc);
       reject(new Error(`spawnCli: timed out after ${timeoutMs}ms waiting for launch banner. stderr:\n${stderrBuf}`));
     }, timeoutMs);
 
