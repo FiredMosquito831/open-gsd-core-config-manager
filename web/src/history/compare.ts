@@ -33,7 +33,7 @@ export interface HistoryComparison { nodes: HistoryDiffNode[]; summary: HistoryC
 
 interface ParsedLeaf { identity: string; path: string; parentIdentity: string; parentPath: string; type: DiffResult['type']; value: unknown; }
 interface ParsedContainer extends Omit<ParsedLeaf, 'type'> { tokens: PathToken[]; kind: 'object' | 'array'; }
-interface ContainerContext extends ParsedContainer { level: number; nextIndex: number; memberKey?: string; sourceKey?: string; value: Record<string, unknown> | unknown[]; }
+interface ContainerContext extends ParsedContainer { level: number; openType: DiffResult['type']; nextIndex: number; memberKey?: string; sourceKey?: string; value: Record<string, unknown> | unknown[]; }
 
 const sensitiveRoots = SPECIALIZED_METADATA.filter((descriptor) => descriptor.sensitive).map((descriptor) => descriptor.path.split('.'));
 
@@ -84,7 +84,14 @@ function isDescendant(identity: string, ancestor: string): boolean { return iden
 
 function parseStream(rows: readonly DiffResult[], _side: DiffSide): { leaves: ParsedLeaf[]; containers: ParsedContainer[] } {
   if (!Array.isArray(rows)) unavailable();
-  const leaves: ParsedLeaf[] = []; const containers: ParsedContainer[] = []; const stack: ContainerContext[] = [];
+  const leaves: ParsedLeaf[] = []; const containers: ParsedContainer[] = []; const stack: ContainerContext[] = []; const identities = new Set<string>();
+  const registerIdentity = (identity: string) => {
+    // The anonymous root container has no renderer node. Every meaningful
+    // typed path must occur only once within a stream.
+    if (!identity) return;
+    if (identities.has(identity)) unavailable();
+    identities.add(identity);
+  };
   for (const row of rows) {
     if (!validRow(row)) unavailable();
     const text = row.text.trim(); const parent = stack.at(-1);
@@ -96,7 +103,7 @@ function parseStream(rows: readonly DiffResult[], _side: DiffSide): { leaves: Pa
       continue;
     }
     if (text === '}' || text === ']') {
-      if (!parent || row.level !== parent.level || (text === '}' && parent.kind !== 'object') || (text === ']' && parent.kind !== 'array')) unavailable();
+      if (!parent || row.level !== parent.level || row.type !== parent.openType || (text === '}' && parent.kind !== 'object') || (text === ']' && parent.kind !== 'array')) unavailable();
       stack.pop();
       containers.push({ identity: parent.identity, path: parent.path, parentIdentity: parent.parentIdentity, parentPath: parent.parentPath, tokens: parent.tokens, kind: parent.kind, value: parent.value });
       assign(stack.at(-1), parent.memberKey, parent.value);
@@ -119,10 +126,12 @@ function parseStream(rows: readonly DiffResult[], _side: DiffSide): { leaves: Pa
     const identity = encodePathIdentity(tokens); const path = formatDisplayPath(tokens); const parentTokens = tokens.slice(0, -1);
     const parentIdentity = encodePathIdentity(parentTokens); const parentPath = formatDisplayPath(parentTokens);
     if (isObject || isArray) {
-      stack.push({ identity, path, parentIdentity, parentPath, tokens, kind: isArray ? 'array' : 'object', level: row.level, nextIndex: 0, memberKey: parent?.kind === 'array' ? undefined : member.key, sourceKey: member.key ?? parent?.sourceKey, value: isArray ? [] : {} });
+      registerIdentity(identity);
+      stack.push({ identity, path, parentIdentity, parentPath, tokens, kind: isArray ? 'array' : 'object', level: row.level, openType: row.type, nextIndex: 0, memberKey: parent?.kind === 'array' ? undefined : member.key, sourceKey: member.key ?? parent?.sourceKey, value: isArray ? [] : {} });
       continue;
     }
     if (!token) unavailable();
+    registerIdentity(identity);
     const value = parseValue(member.valueText); assign(parent, member.key, value);
     leaves.push({ identity, path, parentIdentity, parentPath, type: row.type, value });
   }

@@ -173,13 +173,33 @@ describe('history comparison', () => {
     expect(node?.current).toEqual('outer' in current ? current.outer.replacement : current.replacement);
   });
 
-  it.each([
-    ['unchanged nested arrays', { x: [[]] }, { x: [[]] }, { added: 0, removed: 0, changed: 0 }],
-    ['nested-array additions', { x: [[]] }, { x: [[], []] }, { added: 1, removed: 0, changed: 0 }],
-    ['nested-array removals', { x: [[], []] }, { x: [[]] }, { added: 0, removed: 1, changed: 0 }],
-    ['nested arrays alongside scalars and objects', { x: [[], 1, { value: 'before' }] }, { x: [[], 2, { value: 'after' }] }, { added: 0, removed: 0, changed: 2 }],
-  ])('adapts real Differ %s without making the comparison unavailable', (_label, snapshot, current, expected) => {
-    expect(buildHistoryComparison(snapshot, current).summary).toMatchObject(expected);
+  it('preserves real Differ nested-array identities, alignment, and payloads', () => {
+    const flatten = (nodes: ReturnType<typeof buildHistoryComparison>['nodes']): typeof nodes => nodes.flatMap((node) => [node, ...flatten(node.children)]);
+
+    const unchanged = buildHistoryComparison({ x: [[]] }, { x: [[]] });
+    expect(unchanged.summary).toMatchObject({ added: 0, removed: 0, changed: 0 });
+    expect(flatten(unchanged.nodes)).toEqual(expect.arrayContaining([
+      expect.objectContaining({ path: 'x[0]', state: 'unchanged' }),
+    ]));
+
+    const insertion = buildHistoryComparison({ x: [[]] }, { x: [[], []] });
+    expect(insertion.summary).toMatchObject({ added: 1, removed: 0, changed: 0, addedPaths: ['x[0]'] });
+    expect(flatten(insertion.nodes)).toEqual(expect.arrayContaining([
+      expect.objectContaining({ path: 'x[0]', state: 'added', before: undefined, current: [] }),
+    ]));
+
+    const removal = buildHistoryComparison({ x: [[], []] }, { x: [[]] });
+    expect(removal.summary).toMatchObject({ added: 0, removed: 1, changed: 0, removedPaths: ['x[0]'] });
+    expect(flatten(removal.nodes)).toEqual(expect.arrayContaining([
+      expect.objectContaining({ path: 'x[0]', state: 'removed', before: [], current: undefined }),
+    ]));
+
+    const mixed = buildHistoryComparison({ x: [[], 1, { value: 'before' }] }, { x: [[], 2, { value: 'after' }] });
+    expect(mixed.summary).toMatchObject({ added: 0, removed: 0, changed: 2, changedPaths: ['x[1]', 'x[2].value'] });
+    expect(flatten(mixed.nodes)).toEqual(expect.arrayContaining([
+      expect.objectContaining({ path: 'x[1]', state: 'changed', before: 1, current: 2 }),
+      expect.objectContaining({ path: 'x[2].value', state: 'changed', before: 'before', current: 'after' }),
+    ]));
   });
 
   it('keeps adversarial JSON keys distinct without using display paths as identity', () => {
@@ -197,6 +217,16 @@ describe('history comparison', () => {
   it('adapter rejects malformed DiffResult streams without disclosing values', () => {
     const malformed: readonly [DiffResult[], DiffResult[]][] = [
       [[{ level: 0, type: 'equal', text: '{' }], [{ level: 0, type: 'equal', text: '}' }]],
+      [[
+        { level: 0, type: 'add', text: '"x": {' },
+        { level: 0, type: 'remove', text: '}' },
+      ], []],
+      [[
+        { level: 0, type: 'equal', text: '"x": {' },
+        { level: 0, type: 'equal', text: '}' },
+        { level: 0, type: 'equal', text: '"x": {' },
+        { level: 0, type: 'equal', text: '}' },
+      ], []],
       [[{ level: Number.NaN, type: 'equal', text: 'fixture-secret' }], []],
       [[{ level: 0, type: 'unsupported' as DiffResult['type'], text: 'fixture-secret' }], []],
     ];
