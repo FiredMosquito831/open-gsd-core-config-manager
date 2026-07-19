@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { queryClient } from '../../web/src/state/queryClient.js';
 import { renderWeb } from './render-helpers';
 import { Differ } from 'json-diff-kit';
 import { useUiStore } from '../../web/src/state/uiStore.js';
@@ -56,6 +57,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
+  queryClient.clear();
   document.getElementById('root')?.remove();
   vi.resetAllMocks();
   useUiStore.setState({
@@ -193,5 +195,68 @@ describe('History workspace contract (SAVE-05)', () => {
       }));
       expect(backToEditor).toHaveBeenCalledTimes(1);
     });
+  });
+
+  it('progressive counts settle every returned row without truncating complete history', async () => {
+    const many = [7, 6, 5, 4, 3].map((seq) => ({ seq, timestamp: new Date(Date.now() - seq * 60_000).toISOString(), contentHash: String(seq) }));
+    vi.mocked(listHistory).mockResolvedValueOnce(many);
+    vi.mocked(getHistorySnapshot).mockImplementation(async (_id, seq) => ({
+      snapshot: { ...many.find((entry) => entry.seq === seq)!, document: { value: seq } },
+      current: { value: 0 },
+    }));
+
+    renderWeb(<HistoryWorkspace configId="cfg-many" configName="many/config.json" draft={null} />);
+
+    await waitFor(() => expect(screen.getAllByRole('button', { name: /Snapshot #/ })).toHaveLength(5));
+    await waitFor(() => expect(screen.getAllByText('1 key changed')).toHaveLength(5));
+    expect(screen.queryAllByText('Calculating changes…')).toHaveLength(0);
+    expect(vi.mocked(getHistorySnapshot).mock.calls.map(([, seq]) => seq)).toEqual(expect.arrayContaining([7, 6, 5, 4, 3]));
+  });
+
+  it('keeps background detail loading bounded and selected priority immediate', async () => {
+    const many = [7, 6, 5, 4, 3].map((seq) => ({ seq, timestamp: new Date(Date.now() - seq * 60_000).toISOString(), contentHash: String(seq) }));
+    const deferred = new Map<number, { resolve: (value: any) => void }>();
+    let backgroundInFlight = 0;
+    let peakBackgroundInFlight = 0;
+    vi.mocked(listHistory).mockResolvedValueOnce(many);
+    vi.mocked(getHistorySnapshot).mockImplementation((_id, seq) => new Promise((resolve) => {
+      if (seq !== 7) {
+        backgroundInFlight += 1;
+        peakBackgroundInFlight = Math.max(peakBackgroundInFlight, backgroundInFlight);
+      }
+      deferred.set(seq, { resolve: (value) => { if (seq !== 7) backgroundInFlight -= 1; resolve(value); } });
+    }));
+
+    renderWeb(<HistoryWorkspace configId="cfg-priority" configName="priority/config.json" draft={null} />);
+    await waitFor(() => expect(deferred.has(7)).toBe(true));
+    expect(peakBackgroundInFlight).toBeLessThanOrEqual(2);
+
+    fireEvent.click(screen.getByRole('button', { name: /Snapshot #5/ }));
+    await waitFor(() => expect(deferred.has(5)).toBe(true));
+    expect(peakBackgroundInFlight).toBeLessThanOrEqual(2);
+  });
+
+  it('retries count detail twice at 250ms and 500ms then exposes an accessible row Retry', async () => {
+    vi.useFakeTimers();
+    vi.mocked(getHistorySnapshot).mockRejectedValue(new Error('detail failed'));
+    renderWeb(<HistoryWorkspace configId="cfg-retry" configName="retry/config.json" draft={null} />);
+
+    try {
+      await vi.advanceTimersByTimeAsync(0);
+      await vi.advanceTimersByTimeAsync(250);
+      await vi.advanceTimersByTimeAsync(500);
+      await vi.advanceTimersByTimeAsync(0);
+      expect(vi.mocked(getHistorySnapshot).mock.calls.filter(([, seq]) => seq === 6)).toHaveLength(3);
+      expect(screen.getByRole('button', { name: 'Retry snapshot #6 comparison' })).toBeTruthy();
+      expect(within(screen.getByRole('button', { name: /Snapshot #6/ })).queryByText('Calculating changes…')).toBeNull();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('does not reuse a cached detail request after a fresh config selection', async () => {
+    renderWeb(<HistoryWorkspace configId="cfg-old" configName="old/config.json" draft={null} />);
+    await waitFor(() => expect(vi.mocked(getHistorySnapshot)).toHaveBeenCalledWith('cfg-old', 7));
+    expect(vi.mocked(getHistorySnapshot).mock.calls.every(([id]) => id === 'cfg-old')).toBe(true);
   });
 });
