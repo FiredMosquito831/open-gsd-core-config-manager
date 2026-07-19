@@ -19,6 +19,8 @@ interface HistoryWorkspaceProps {
   configPath?: string;
   /** Optional seam for the editor-owned draft lifecycle. */
   draft?: Partial<DraftController> | object | null;
+  /** Render inside AppShell's production main landmark rather than nesting one. */
+  embedded?: boolean;
   viewportWidth?: number;
 }
 
@@ -31,8 +33,10 @@ function safeRestoreReason(error: unknown) {
   return 'The restore could not be completed. Try again.';
 }
 
-export function HistoryWorkspace({ configId: suppliedId, configName: suppliedName, configPath, draft, viewportWidth }: HistoryWorkspaceProps) {
+export function HistoryWorkspace({ configId: suppliedId, configName: suppliedName, configPath, draft, embedded = false, viewportWidth }: HistoryWorkspaceProps) {
   const { activeConfigId, selectedHistorySeq, selectHistorySnapshot, backToEditor, showRestoreNotice } = useUiStore();
+  const Container = embedded ? 'div' : 'main';
+  const landmarkProps = embedded ? {} : { 'aria-label': `History for ${suppliedName ?? 'Selected configuration'}` };
   const queryClient = useQueryClient();
   const configId = suppliedId ?? activeConfigId;
   const configName = suppliedName ?? 'Selected configuration';
@@ -107,10 +111,9 @@ export function HistoryWorkspace({ configId: suppliedId, configName: suppliedNam
   };
 
   const responsiveClass = viewportWidth !== undefined ? viewportWidth <= 768 ? ' gsd-history--stacked' : viewportWidth <= 900 ? ' gsd-history--compact' : '' : '';
-  const landmarkName = `History for ${configName}`;
-  if (!configId) return <main className={`gsd-history${responsiveClass}`} aria-label={landmarkName}><p>Select a configuration to view its saved versions.</p></main>;
+  if (!configId) return <Container className={`gsd-history${responsiveClass}`} {...landmarkProps}><p>Select a configuration to view its saved versions.</p></Container>;
   const timestamp = selectedDetail.data?.snapshot.timestamp ?? new Date().toISOString();
-  return <main className={`gsd-history${responsiveClass}`} aria-label={landmarkName}>
+  return <Container className={`gsd-history${responsiveClass}`} {...landmarkProps}>
     <header className="gsd-history__header">
       <div><p className="gsd-history__eyebrow">Version history</p><h1>{configName}</h1>{configPath && <p className="gsd-history__path">{configPath}</p>}<p className="gsd-history__target">Current saved file</p></div>
       <button type="button" className="gsd-button gsd-button--secondary gsd-button--md" onClick={backToEditor}>Back to editor</button>
@@ -128,5 +131,5 @@ export function HistoryWorkspace({ configId: suppliedId, configName: suppliedNam
       </section>
     </div>
     <RestoreDialogs mode={dialogMode} configName={configName} timestamp={timestamp} summary={summary} pending={pending} onCancel={() => !pending && setDialogMode(null)} onConfirm={() => void confirmRestore()} onSaveDraft={() => void saveDraftFirst()} />
-  </main>;
+  </Container>;
 }
