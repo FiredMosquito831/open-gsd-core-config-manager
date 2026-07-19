@@ -171,13 +171,20 @@ export async function readIndex(dir: string): Promise<SnapshotIndex> {
  * appends the new entry, rewrites `index.json` pretty-printed (2-space
  * indent), and returns a snapshot id of the form `<dirBasename>:<seq>`.
  */
+/** Narrow write seam used to fault-inject atomic replacement failures in tests. */
+export interface SnapshotWriteDeps {
+  write?: typeof writeWithRetry;
+}
+
 export async function recordSnapshot(
   configPath: string,
   priorContent: string | null,
   root?: string,
+  deps: SnapshotWriteDeps = {},
 ): Promise<string | undefined> {
   if (priorContent === null) return undefined; // D-11
 
+  const atomicWrite = deps.write ?? writeWithRetry;
   const dir = snapshotDirFor(configPath, root);
   await mkdir(dir, { recursive: true });
 
@@ -190,12 +197,12 @@ export async function recordSnapshot(
     const file = `${seq}.json`;
     const snapshotPath = join(dir, file);
 
-    await writeWithRetry(snapshotPath, priorContent);
+    await atomicWrite(snapshotPath, priorContent);
     index.entries.push({ seq, timestamp: new Date().toISOString(), contentHash, file });
     try {
       // write-file-atomic fsyncs a same-directory temporary file before an
       // atomic rename, so interruption cannot replace index.json partially.
-      await writeWithRetry(join(dir, 'index.json'), JSON.stringify(index, null, 2));
+      await atomicWrite(join(dir, 'index.json'), JSON.stringify(index, null, 2));
     } catch (error) {
       await unlink(snapshotPath).catch(() => undefined);
       throw error;

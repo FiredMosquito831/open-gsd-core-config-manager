@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createHash } from 'node:crypto';
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { spawn } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { ValidationResult } from '../../packages/config-io/src/types.js';
@@ -218,6 +219,48 @@ describe('saveWithSnapshot — concurrent saves never lose a distinct historical
     // (captured as a snapshot), plus whichever committed last (the final
     // on-disk content) — three distinct states, no duplicate/lost entry.
     expect(allStates.size).toBe(3);
+  });
+});
+
+async function runSnapshotWorker(content: string): Promise<void> {
+  const worker = new URL('./helpers/snapshot-record-worker.ts', import.meta.url);
+  await new Promise<void>((resolve, reject) => {
+    const child = spawn(process.execPath, ['--import', 'tsx', worker.pathname, configPath, appDataRoot, content], { stdio: ['ignore', 'ignore', 'pipe'] });
+    let stderr = '';
+    child.stderr.on('data', (chunk) => { stderr += chunk; });
+    child.once('error', reject);
+    child.once('exit', (code) => code === 0 ? resolve() : reject(new Error(`snapshot worker exited ${code}: ${stderr}`)));
+  });
+}
+
+describe('snapshot-store cross-process serialization (CR-02)', () => {
+  it('allocates unique sequences and preserves both entries from independent helper processes', async () => {
+    writeFile(configPath, '{"a":0}');
+    await Promise.all([runSnapshotWorker('{"a":1}'), runSnapshotWorker('{"a":2}')]);
+
+    const index = await readIndex(snapshotDirFor(configPath, appDataRoot));
+    expect(index.entries.map((entry) => entry.seq).sort((left, right) => left - right)).toEqual([1, 2]);
+    expect(new Set(index.entries.map((entry) => entry.file)).size).toBe(2);
+  });
+});
+
+describe('snapshot-store atomic index replacement (CR-03)', () => {
+  it('keeps the existing index valid and removes the orphan snapshot when index replacement fails', async () => {
+    writeFile(configPath, '{"a":0}');
+    await recordSnapshot(configPath, '{"a":0}', appDataRoot);
+    const dir = snapshotDirFor(configPath, appDataRoot);
+    const previousIndex = readFileSync(join(dir, 'index.json'), 'utf8');
+
+    await expect(recordSnapshot(configPath, '{"a":1}', appDataRoot, {
+      write: async (path, content) => {
+        if (path.endsWith('index.json')) throw Object.assign(new Error('simulated index replacement failure'), { code: 'EIO' });
+        writeFileSync(path, content, 'utf8');
+      },
+    })).rejects.toThrow('simulated index replacement failure');
+
+    expect(readFileSync(join(dir, 'index.json'), 'utf8')).toBe(previousIndex);
+    expect(await readIndex(dir)).toMatchObject({ entries: [{ seq: 1 }] });
+    expect(existsSync(join(dir, '2.json'))).toBe(false);
   });
 });
 
