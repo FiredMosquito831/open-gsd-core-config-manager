@@ -5,14 +5,14 @@ milestone_name: milestone
 current_phase: 04
 current_phase_name: pool-editors-model-profile-specialization
 status: verifying
-stopped_at: Completed 05-06-PLAN.md
-last_updated: "2026-07-19T11:40:00.795Z"
+stopped_at: Completed 05-08-PLAN.md
+last_updated: "2026-07-19T15:48:46.428Z"
 last_activity: 2026-07-18
 last_activity_desc: Phase 04 execution resumed (wave continue)
 progress:
   total_phases: 5
-  completed_phases: 5
-  total_plans: 31
+  completed_phases: 4
+  total_plans: 33
   completed_plans: 31
 ---
 
@@ -32,7 +32,7 @@ Plan: 5 of 5
 Status: Phase complete — ready for verification
 Last activity: 2026-07-18 — Phase 04 execution resumed (wave continue)
 
-Progress: [██████████] 100%
+Progress: [█████████░] 94%
 
 ## Performance Metrics
 
@@ -81,6 +81,7 @@ Progress: [██████████] 100%
 | Phase 05 P03 | 3h17min | 2 tasks | 5 files |
 | Phase 05 P05 | 25min | 3 tasks | 7 files |
 | Phase 05 P06 | 29min | 3 tasks | 7 files |
+| Phase 05-version-history-ui P08 | 22min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -135,6 +136,7 @@ Recent decisions affecting current work:
 - [Phase ?]: History uses opaque config-and-sequence query keys and only renders the established redacted comparison model.
 - [Phase ?]: Restore review uses a project-owned inert focus-trapping alert dialog with Cancel as initial focus.
 - [Phase ?]: Restore clears drafts only after authoritative server reload; save-first requires fresh confirmation.
+- [Phase ?]: History comparisons now derive tree nodes and summary counts solely from redacted json-diff-kit DiffResult streams, failing closed on malformed rows.
 
 ### Pending Todos
 
@@ -156,6 +158,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-07-19T11:40:00.696Z
-Stopped at: Completed 05-06-PLAN.md
+Last session: 2026-07-19T15:48:46.361Z
+Stopped at: Completed 05-08-PLAN.md
 Resume file: None

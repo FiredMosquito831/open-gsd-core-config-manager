@@ -173,6 +173,7 @@ Plans:
 - [x] 05-04-PLAN.md
 - [x] 05-05-PLAN.md
 - [x] 05-06-PLAN.md
+
 **Wave 6** *(blocked on executed Waves 4–5)*
 
 - [ ] 05-08-PLAN.md — json-diff-kit DiffResult adapter becomes the sole validated tree/path/summary comparison authority [wave 6; depends on 05-03, 05-05, 05-06]
@@ -209,5 +210,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 2. Local Loopback Server, CLI & Security Hardening | 7/7 | Complete    | 2026-07-12 |
 | 3. Generic Schema-Driven UI Shell | 6/6 | Complete    | 2026-07-17 |
 | 4. Pool Editors & Model Profile Specialization | 2/5 | In Progress|  |
-| 5. Version History UI | 6/6 | In Progress|  |
+| 5. Version History UI | 6/8 | In Progress|  |
 | 6. Live Schema Reconcile Against gsd-core | 0/TBD | Not started | - |
