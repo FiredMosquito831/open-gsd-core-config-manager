@@ -1,7 +1,7 @@
 ---
 phase: 05
 slug: version-history-ui
-status: draft
+status: approved
 shadcn_initialized: false
 preset: none
 created: 2026-07-19
@@ -41,7 +41,7 @@ Declared values (must be multiples of 4):
 | 2xl | 48px | Centered empty/loading/error-state vertical breathing room |
 | 3xl | 64px | Reserved for full-page empty-state composition only |
 
-**Exceptions:** Icon-only rail buttons and any icon-only expand/collapse or close controls have a minimum interactive target of 44 × 44px. Restore and draft-decision buttons use existing button sizing but never render below 44px high on touch-capable layouts.
+**Exceptions:** The 44 × 44px rule is an accessibility minimum-interactive-target exception: icon-only rail buttons and any icon-only expand/collapse or close controls must meet it. Restore and draft-decision buttons use existing button sizing but never render below 44px high on touch-capable layouts.
 
 ---
 
@@ -103,6 +103,7 @@ Accent reserved for: selected snapshot state, focus states, Back to editor, tree
 - Selection updates the adjacent comparison in place, sets a visible accent outline/subtle background, and exposes `aria-current="true"` or equivalent selected state. Initial selection is the newest snapshot after list/detail data is ready.
 - Changed counts may load after metadata. Until resolved, show a neutral `Calculating changes…` label in the count slot rather than a misleading zero; retain row selection and restore availability only after the selected comparison has loaded.
 - For long timestamps/names and nested key paths, wrap metadata and key-path previews; snapshot rows must grow vertically rather than clip essential identity data.
+- **Timeline/list-load failure:** Replace the timeline list area with the documented list-load error state: `Couldn’t load saved versions. Your config was not changed. Try again, or return to the editor.` Provide exactly `Try again` (re-runs the list query) and `Back to editor` (exits History without changing the draft or saved file). Do not render stale, partial, or fabricated snapshot rows after an initial list failure.
 
 ### Comparison pane and structural diff
 
@@ -135,6 +136,7 @@ Accent reserved for: selected snapshot state, focus states, Back to editor, tree
 | Empty state heading | `No saved versions yet` |
 | Empty state body | `History starts after you change and successfully save this existing config. Your current file is not shown as a restorable version.` Actions: `Back to editor`. |
 | Loading state | `Loading saved versions…` for the timeline; `Loading comparison…` for the selected diff. Use skeleton rows/tree lines without fabricated data. |
+| Timeline/list-load error | `Couldn’t load saved versions. Your config was not changed. Try again, or return to the editor.` Actions exactly: `Try again` and `Back to editor`. |
 | Detail-load error | `We couldn’t load this comparison. Your config was not changed. Try again, or choose another saved version.` Include `Try again`. |
 | Restore blocking error | `Couldn’t restore this snapshot. Your config was not changed. {safe actionable reason} Try again or return to the editor.` |
 | Restore success | `Restored the snapshot from {exact local timestamp}.` Action: `View history`. |
@@ -146,28 +148,40 @@ Accent reserved for: selected snapshot state, focus states, Back to editor, tree
 
 ## UI Considerations
 
-Applicable state considerations resolved: 18 covered, 5 backstop, 0 unresolved.
+Probe classification was confirmed for five mixed surfaces: timeline (`list-collection`, `interactive-control`), comparison (`list-collection`, `static-content`, `interactive-control`), restore dialogs (`form`, `interactive-control`, `static-content`), responsive shell (`nav`, `static-content`), and post-restore notices (`static-content`, `interactive-control`).
+
+Applicable state considerations resolved: 25 covered, 3 dismissed, 0 backstop, 0 unresolved.
 
 | Category | Element(s) | Status | Resolution / Reason |
 |----------|------------|--------|---------------------|
-| empty | Snapshot timeline | ✅ covered | Zero snapshots render the documented calm empty state and only `Back to editor`; no fake current-file version is created. |
-| loading | Snapshot timeline and comparison pane | ✅ covered | Timeline uses skeleton rows; selected comparison uses summary/tree skeletons with explicit loading status, preserving shell layout. |
-| error | Timeline and selected comparison | ✅ covered | List/detail failure shows the documented safe error copy and retry path without clearing a previously loaded selection. |
-| populated | Snapshot timeline and diff tree | ✅ covered | Newest-first date groups, selected-row treatment, summary, then exhaustive changed-branch tree are always present for loaded data. |
-| partial | Lazy changed counts and selected comparison | ✅ covered | Rows show `Calculating changes…` while count computation is incomplete; selected comparison controls remain pending until data is ready. |
-| overflow | Timeline, diff tree, changed-path summary | 🧪 backstop | Independently scrollable panes, wrapping key paths, and expanded blocks prevent clipping at long histories and deeply nested JSON. |
-| zero-one-many | Snapshot timeline and summary counts | ✅ covered | Zero uses empty state; one shows one selectable row; many remain date-grouped; count labels use zero/singular/plural grammar. |
-| long-text | Config names, paths, scalar values, errors, confirmation text | 🧪 backstop | Wrap all generated paths/text, use preformatted scrollable blocks for large values, and never ellipsize restore identity. |
-| loading | Restore action and dialogs | ✅ covered | Pending restore disables duplicate actions, announces `Restoring snapshot…`, and keeps the selected diff visible. |
-| error | Restore mutation | ✅ covered | Failure keeps History selection/diff intact and explicitly states whether the file remained unchanged. |
-| overflow | Responsive workspace navigation | 🧪 backstop | At ≤900px stack timeline and diff with bounded timeline scroll; at ≤768px reuse shell sidebar overlay and keep chapters hidden. |
-| long-text | Snapshot row metadata | 🧪 backstop | Exact local timestamp, sequence, and change-count remain visible through wrapping and accessible labels. |
-| populated | Restore confirmation dialog | ✅ covered | Dialog repeats config identity, exact snapshot time, change counts, recovery-snapshot explanation, and explicit final action. |
-| partial | Sensitive values in summary and diff | ✅ covered | Redact before summary/diff creation; tree shows opaque placeholders only, with no History reveal control. |
-| error | Non-blocking snapshot warning | ✅ covered | Successful restore still returns to editor and distinguishes a recovery-snapshot warning from a failed restore. |
-| overflow | Diff branch expansion | ✅ covered | Changed branches start expanded; unchanged branches collapse behind explicit controls; changed nodes are never omitted. |
-| long-text | Draft-decision dialog | ✅ covered | Fixed action labels and wrapping explanation preserve clear choices on narrow layouts. |
-| error | Draft save-before-restore | ✅ covered | Failed draft save stays in dialog/workspace, preserves draft, and does not start restore. |
+| empty | Snapshot timeline | ✅ covered | Zero snapshots render `No saved versions yet`, explanatory body copy, and only `Back to editor`; no fake current-file version is created. |
+| loading | Snapshot timeline | ✅ covered | Render `Loading saved versions…` with skeleton rows and no fabricated snapshot data. |
+| error | Snapshot timeline | ✅ covered | Replace the list with `Couldn’t load saved versions…`, `Try again`, and `Back to editor`; never retain stale or partial rows after initial failure. |
+| populated | Snapshot timeline | ✅ covered | Render newest-first local-date groups with full-width selectable rows, exact and relative timestamps, sequence, and change count. |
+| partial | Snapshot timeline | ✅ covered | Retain row identity and selection while unresolved counts say `Calculating changes…`; restore waits for the selected comparison. |
+| overflow | Snapshot timeline | ✅ covered | Timeline scrolls independently, becomes a bounded 16rem list when stacked, and rows grow rather than clip. |
+| zero-one-many | Snapshot timeline | ✅ covered | Zero uses the empty state, one remains a normal selectable row, many are date-grouped, and count copy uses correct grammar. |
+| long-text | Snapshot timeline | ✅ covered | Exact timestamps and row metadata wrap, remain accessible, and are never ellipsized when needed to identify a restore target. |
+| empty | Comparison pane | ✅ covered | A selected comparison with zero semantic differences states `This snapshot matches the current saved file.` and reports zero counts without inventing changed paths. |
+| loading | Comparison pane | ✅ covered | Render `Loading comparison…` with summary/tree skeletons; do not fabricate diff content or enable restore before readiness. |
+| error | Comparison pane | ✅ covered | Preserve the selected snapshot and show the documented safe retry/alternate-snapshot path without implying the saved file changed. |
+| populated | Comparison pane | ✅ covered | Show snapshot identity and target, added/removed/changed summary, exhaustive changed paths, then the complete structural tree. |
+| partial | Comparison pane | ✅ covered | Redact both documents before counts and rendering; masked values remain opaque, and incomplete selected data keeps controls pending. |
+| overflow | Comparison pane | ✅ covered | Diff pane scrolls independently; key paths wrap; long values use titled preformatted blocks; changed nodes are never omitted. |
+| zero-one-many | Comparison pane | ✅ covered | Summary labels use zero/singular/plural grammar, and the tree remains structurally coherent from no changes through deeply nested many changes. |
+| long-text | Comparison pane | ✅ covered | Machine-generated paths use `overflow-wrap: anywhere`; long strings, arrays, and objects reflow into expanded blocks without losing identity. |
+| empty | Restore dialogs | ➖ dismissed | A restore or draft-decision dialog opens only after a concrete config and snapshot are selected; an empty-target dialog is unreachable by contract. |
+| loading | Restore dialogs | ✅ covered | Pending restore disables duplicate submission and announces `Restoring snapshot…`; the selected diff remains visible behind the modal. |
+| error | Restore dialogs | ✅ covered | Restore failure preserves selection/diff and states that the file was unchanged; failed `Save draft first` preserves the draft and never starts restore. |
+| partial | Restore dialogs | ✅ covered | A dirty draft invokes exactly the three-choice decision flow; saving refreshes data and requires fresh review instead of auto-restoring. |
+| overflow | Restore dialogs | ✅ covered | Dialog content and fixed action labels wrap/reflow on narrow layouts while modal focus, cancellation, and final actions remain reachable. |
+| long-text | Restore dialogs | ✅ covered | Config identity, exact timestamp, summary, safe reason, and explanatory copy wrap without truncating restore identity. |
+| loading | Responsive History shell | ➖ dismissed | Loading belongs to timeline/comparison regions; the retained sidebar, workspace header, and navigation shell remain stable rather than entering a separate shell-loading state. |
+| error | Responsive History shell | ➖ dismissed | Failures are isolated to the timeline, comparison, or restore mutation; the shell stays navigable with `Back to editor` and does not need a duplicate shell error. |
+| overflow | Responsive History shell | ✅ covered | Split panes scroll independently above 900px; at ≤900px they stack with bounded timeline scrolling; at ≤768px the existing sidebar overlay is reused. |
+| long-text | Responsive History shell | ✅ covered | Config names and paths wrap in the header, the main landmark remains labelled, and no essential action is hidden behind horizontal scrolling. |
+| overflow | Post-restore notices | ✅ covered | Success and warning notices reflow within the editor shell; body copy and `View history` remain visible and operable without clipping. |
+| long-text | Post-restore notices | ✅ covered | Exact timestamps and warning detail wrap naturally while the status meaning and action stay associated and readable. |
 
 ---
 
@@ -193,11 +207,11 @@ Applicable state considerations resolved: 18 covered, 5 backstop, 0 unresolved.
 
 ## Checker Sign-Off
 
-- [ ] Dimension 1 Copywriting: PASS
-- [ ] Dimension 2 Visuals: PASS
-- [ ] Dimension 3 Color: PASS
-- [ ] Dimension 4 Typography: PASS
-- [ ] Dimension 5 Spacing: PASS
-- [ ] Dimension 6 Registry Safety: PASS
+- [x] Dimension 1 Copywriting: PASS
+- [x] Dimension 2 Visuals: PASS
+- [x] Dimension 3 Color: PASS
+- [x] Dimension 4 Typography: PASS
+- [x] Dimension 5 Spacing: PASS
+- [x] Dimension 6 Registry Safety: PASS
 
-**Approval:** pending
+**Approval:** approved on 2026-07-19 after one revision; no recommendations remain.
