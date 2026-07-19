@@ -1,6 +1,8 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+import { Differ, type DiffResult } from 'json-diff-kit';
 import {
   HISTORY_REDACTION_MARKER,
+  adaptHistoryDiffResult,
   buildHistoryComparison,
   projectHistoryDocument,
 } from '../../web/src/history/compare.js';
@@ -68,17 +70,99 @@ describe('history comparison', () => {
     expect(repeatedObjects.summary).toEqual(expect.objectContaining({ added: 1, removed: 1, changed: 0 }));
   });
 
-  it('redacts descriptor roots before comparison values and summaries', () => {
+  it('redacts before Differ', () => {
     const secret = 'history-sensitive-sentinel-never-display';
     const snapshot = { brave_search: { apiKey: secret }, normal: 'before' };
     const current = { brave_search: { apiKey: 'new-secret' }, normal: 'after' };
+    const originalDiff = Differ.prototype.diff;
+    const spy = vi.spyOn(Differ.prototype, 'diff');
 
-    const projected = projectHistoryDocument(snapshot);
-    const comparison = buildHistoryComparison(snapshot, current);
+    try {
+      const projected = projectHistoryDocument(snapshot);
+      const comparison = buildHistoryComparison(snapshot, current);
 
-    expect(projected).toEqual({ brave_search: HISTORY_REDACTION_MARKER, normal: 'before' });
-    expect(JSON.stringify(comparison)).not.toContain(secret);
-    expect(JSON.stringify(comparison)).not.toContain(HISTORY_REDACTION_MARKER);
+      expect(projected).toEqual({ brave_search: HISTORY_REDACTION_MARKER, normal: 'before' });
+      expect(spy).toHaveBeenCalledWith(
+        { brave_search: HISTORY_REDACTION_MARKER, normal: 'before' },
+        { brave_search: HISTORY_REDACTION_MARKER, normal: 'after' },
+      );
+      expect(JSON.stringify(spy.mock.calls)).not.toContain(secret);
+      expect(JSON.stringify(comparison)).not.toContain(secret);
+      expect(JSON.stringify(comparison)).not.toContain(HISTORY_REDACTION_MARKER);
+    } finally {
+      Differ.prototype.diff = originalDiff;
+      spy.mockRestore();
+    }
+  });
+
+  it('DiffResult authority adapts a nested object tuple without source documents', () => {
+    const tuple: readonly [DiffResult[], DiffResult[]] = [
+      [
+        { level: 0, type: 'equal', text: '{' },
+        { level: 1, type: 'equal', text: '"nested": {' },
+        { level: 2, type: 'modify', text: '"changed": 1' },
+        { level: 2, type: 'remove', text: '"removed": true' },
+        { level: 1, type: 'equal', text: '}' },
+        { level: 0, type: 'equal', text: '}' },
+      ],
+      [
+        { level: 0, type: 'equal', text: '{' },
+        { level: 1, type: 'equal', text: '"nested": {' },
+        { level: 2, type: 'modify', text: '"changed": 2' },
+        { level: 2, type: 'add', text: '"added": true' },
+        { level: 1, type: 'equal', text: '}' },
+        { level: 0, type: 'equal', text: '}' },
+      ],
+    ];
+
+    expect(adaptHistoryDiffResult(tuple)).toMatchObject({
+      summary: {
+        added: 1,
+        removed: 1,
+        changed: 1,
+        addedPaths: ['nested.added'],
+        removedPaths: ['nested.removed'],
+        changedPaths: ['nested.changed'],
+      },
+    });
+  });
+
+  it('DiffResult authority follows the controlled Differ tuple', () => {
+    const controlled: readonly [DiffResult[], DiffResult[]] = [
+      [{ level: 0, type: 'remove', text: '"tupleOnly": "before"' }],
+      [{ level: 0, type: 'add', text: '"tupleOnly": "after"' }],
+    ];
+    const spy = vi.spyOn(Differ.prototype, 'diff').mockReturnValue(controlled);
+
+    try {
+      expect(buildHistoryComparison({ ignored: 'snapshot' }, { ignored: 'current' }).summary).toEqual({
+        added: 1,
+        removed: 1,
+        changed: 0,
+        addedPaths: ['tupleOnly'],
+        removedPaths: ['tupleOnly'],
+        changedPaths: [],
+      });
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
+  it('adapter rejects malformed DiffResult streams without disclosing values', () => {
+    const malformed: readonly [DiffResult[], DiffResult[]][] = [
+      [[{ level: 0, type: 'equal', text: '{' }], [{ level: 0, type: 'equal', text: '}' }]],
+      [[{ level: Number.NaN, type: 'equal', text: 'fixture-secret' }], []],
+      [[{ level: 0, type: 'unsupported' as DiffResult['type'], text: 'fixture-secret' }], []],
+    ];
+
+    for (const tuple of malformed) {
+      expect(() => adaptHistoryDiffResult(tuple)).toThrow('History comparison unavailable');
+      try {
+        adaptHistoryDiffResult(tuple);
+      } catch (error) {
+        expect(String(error)).not.toContain('fixture-secret');
+      }
+    }
   });
 });
 
