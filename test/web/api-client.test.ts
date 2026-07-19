@@ -132,4 +132,31 @@ describe('route wrappers', () => {
     await workspace.listWorkspaceConfigs();
     expect(fetchSpy).toHaveBeenCalledWith('/api/workspace/configs', expect.any(Object));
   });
+
+  it('history API wrappers use token-aware encoded opaque routes without document bodies', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(mockJsonResponse({ ok: true, snapshots: [] }));
+    await configs.listConfigHistory('id / unsafe');
+    expect(fetchSpy).toHaveBeenCalledWith('/api/configs/id%20%2F%20unsafe/history', expect.any(Object));
+    expect(new Headers(firstFetchCall().init?.headers).get('x-gsd-token')).toBe('test-token-123');
+
+    fetchSpy.mockResolvedValueOnce(mockJsonResponse({ ok: true, detail: {} }));
+    await configs.loadHistoryComparison('id-1', 7);
+    expect(fetchSpy).toHaveBeenLastCalledWith('/api/configs/id-1/history/7', expect.any(Object));
+
+    fetchSpy.mockResolvedValueOnce(mockJsonResponse({ ok: true }));
+    await configs.restoreConfigSnapshot('id-1', 7);
+    expect(fetchSpy).toHaveBeenLastCalledWith(
+      '/api/configs/id-1/history/7/restore',
+      expect.objectContaining({ method: 'POST' }),
+    );
+    expect(firstFetchCall().init?.body).toBeUndefined();
+    expect(() => configs.loadHistoryComparison('id-1', 1.5)).toThrow(/positive safe integer/);
+  });
+
+  it('history API wrapper propagates ApiError without logging response payloads', async () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(mockJsonResponse({ ok: false, errors: [{ message: 'History unavailable' }] }));
+    await expect(configs.listConfigHistory('id-1')).rejects.toBeInstanceOf(ApiError);
+    expect(errorSpy).not.toHaveBeenCalled();
+  });
 });
