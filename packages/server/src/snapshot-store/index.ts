@@ -27,9 +27,22 @@
  * an object literal (no prototype-pollution surface).
  */
 import { createHash } from 'node:crypto';
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile, unlink } from 'node:fs/promises';
 import { join } from 'node:path';
+import { lock } from 'proper-lockfile';
+import { writeWithRetry } from '../../../config-io/src/atomic-write.js';
 import { snapshotDirFor } from './paths.js';
+
+async function withIndexLock<T>(dir: string, fn: () => Promise<T>): Promise<T> {
+  const lockPath = join(dir, '.index-lock');
+  await writeFile(lockPath, '', { flag: 'a' });
+  const release = await lock(lockPath, { retries: { retries: 20, factor: 1.3 }, stale: 10_000 });
+  try {
+    return await fn();
+  } finally {
+    await release();
+  }
+}
 
 /** One entry in a config's snapshot `index.json` (D-09). */
 export interface SnapshotIndexEntry {
@@ -168,19 +181,30 @@ export async function recordSnapshot(
   const dir = snapshotDirFor(configPath, root);
   await mkdir(dir, { recursive: true });
 
-  const index = await readIndex(dir);
-  const seq = (index.entries.at(-1)?.seq ?? 0) + 1;
-  const contentHash = createHash('sha256').update(priorContent).digest('hex');
-  const file = `${seq}.json`;
+  return withIndexLock(dir, async () => {
+    // Re-read only after acquiring the process-shared lock so sequence
+    // allocation and index replacement cannot lose another helper's entry.
+    const index = await readIndex(dir);
+    const seq = (index.entries.at(-1)?.seq ?? 0) + 1;
+    const contentHash = createHash('sha256').update(priorContent).digest('hex');
+    const file = `${seq}.json`;
+    const snapshotPath = join(dir, file);
 
-  await writeFile(join(dir, file), priorContent, 'utf8');
+    await writeWithRetry(snapshotPath, priorContent);
+    index.entries.push({ seq, timestamp: new Date().toISOString(), contentHash, file });
+    try {
+      // write-file-atomic fsyncs a same-directory temporary file before an
+      // atomic rename, so interruption cannot replace index.json partially.
+      await writeWithRetry(join(dir, 'index.json'), JSON.stringify(index, null, 2));
+    } catch (error) {
+      await unlink(snapshotPath).catch(() => undefined);
+      throw error;
+    }
 
-  index.entries.push({ seq, timestamp: new Date().toISOString(), contentHash, file });
-  await writeFile(join(dir, 'index.json'), JSON.stringify(index, null, 2), 'utf8');
-
-  const dirParts = dir.split(/[\\/]/);
-  const dirBasename = dirParts[dirParts.length - 1];
-  return `${dirBasename}:${seq}`;
+    const dirParts = dir.split(/[\\/]/);
+    const dirBasename = dirParts[dirParts.length - 1];
+    return `${dirBasename}:${seq}`;
+  });
 }
 
 /**
