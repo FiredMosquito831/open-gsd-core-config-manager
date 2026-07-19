@@ -27,8 +27,9 @@ async function writeArtifactAtomically(path, contents) {
   }
 }
 
-const REVISION = '36a311c5bb5fa1a475cfbb685a845cd2d5bf88fe';
-const API_REF = 'https://api.github.com/repos/open-gsd/gsd-core/git/refs/heads/next';
+// Immutable evidence is verified against this reviewed source revision, never
+// the moving `next` branch head. Updating it is an explicit review action.
+const REVISION = '40ce95f8827210afdcb6da5467e0da72b9c68f6c';
 const RAW_ROOT = `https://raw.githubusercontent.com/open-gsd/gsd-core/${REVISION}/`;
 const SOURCES = [
   'docs/CONFIGURATION.md',
@@ -88,10 +89,6 @@ async function fetchText(path) {
   return response.text();
 }
 async function retrieve() {
-  const refResponse = await fetch(API_REF, { headers: { 'User-Agent': 'gsd-config-manager-phase4-evidence' } });
-  if (!refResponse.ok) fail(`unable to retrieve next ref (${refResponse.status})`);
-  const ref = await refResponse.json();
-  if (ref.object?.sha !== REVISION) fail(`next ref is ${ref.object?.sha ?? 'missing'}, expected ${REVISION}`);
   const contents = Object.fromEntries(await Promise.all(SOURCES.map(async path => [path, await fetchText(path)])));
   const digests = Object.fromEntries(SOURCES.map(path => [path, createHash('sha256').update(contents[path]).digest('hex')]));
   for (const path of SOURCES) if (digests[path] !== EXPECTED_DIGESTS[path]) fail(`digest mismatch for ${path}`);
@@ -105,7 +102,7 @@ async function retrieve() {
 function buildArtifact(retrieved) {
   return {
     schemaVersion: 1,
-    source: { revision: REVISION, nextRef: API_REF, retrievedAt: new Date().toISOString(), rawRoot: RAW_ROOT, digests: retrieved.digests },
+    source: { revision: REVISION, retrievedAt: new Date().toISOString(), rawRoot: RAW_ROOT, digests: retrieved.digests },
     sourceFiles: SOURCES.map(path => ({ path, url: RAW_ROOT + path, sha256: retrieved.digests[path], anchors: ANCHORS[path] })),
     profileCatalog: retrieved.catalog.profiles,
     phaseTypes: retrieved.catalog.phaseTypes,

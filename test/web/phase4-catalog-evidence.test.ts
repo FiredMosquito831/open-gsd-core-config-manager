@@ -15,7 +15,7 @@ function runGate(...args: string[]) {
 describe('Phase 4 catalog evidence contract', () => {
   it('re-verifies the immutable source artifact before accepting catalog assertions', () => {
     expect(runGate('--verify-artifact', 'test/fixtures/phase4-gsd-core-source-evidence.json')).toContain('verified immutable');
-    expect(evidence.source.revision).toBe('36a311c5bb5fa1a475cfbb685a845cd2d5bf88fe');
+    expect(evidence.source.revision).toBe('40ce95f8827210afdcb6da5467e0da72b9c68f6c');
     expect(evidence.source.digests).toBeDefined();
     expect(evidence.sourceFiles.every((source: any) => source.url.includes(evidence.source.revision) && source.sha256 && source.anchors.length > 0)).toBe(true);
     expect(evidence.descriptors.every((descriptor: any) => descriptor.evidence.url && descriptor.evidence.path && descriptor.evidence.anchor)).toBe(true);

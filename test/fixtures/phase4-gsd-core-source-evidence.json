@@ -1,10 +1,9 @@
 {
   "schemaVersion": 1,
   "source": {
-    "revision": "36a311c5bb5fa1a475cfbb685a845cd2d5bf88fe",
-    "nextRef": "https://api.github.com/repos/open-gsd/gsd-core/git/refs/heads/next",
-    "retrievedAt": "2026-07-18T20:32:11.196Z",
-    "rawRoot": "https://raw.githubusercontent.com/open-gsd/gsd-core/36a311c5bb5fa1a475cfbb685a845cd2d5bf88fe/",
+    "revision": "40ce95f8827210afdcb6da5467e0da72b9c68f6c",
+    "retrievedAt": "2026-07-19T18:53:29.751Z",
+    "rawRoot": "https://raw.githubusercontent.com/open-gsd/gsd-core/40ce95f8827210afdcb6da5467e0da72b9c68f6c/",
     "digests": {
       "docs/CONFIGURATION.md": "92e71b15bba6d328bafee191ae9448a4baab895d0441ba37f9c430830c31a7f7",
       "docs/how-to/configure-model-profiles.md": "46b5bbb0c03d0cdf6c20030a8eae65c4481d256229665e604014df8aeb684821",
@@ -18,7 +17,7 @@
   "sourceFiles": [
     {
       "path": "docs/CONFIGURATION.md",
-      "url": "https://raw.githubusercontent.com/open-gsd/gsd-core/36a311c5bb5fa1a475cfbb685a845cd2d5bf88fe/docs/CONFIGURATION.md",
+      "url": "https://raw.githubusercontent.com/open-gsd/gsd-core/40ce95f8827210afdcb6da5467e0da72b9c68f6c/docs/CONFIGURATION.md",
       "sha256": "92e71b15bba6d328bafee191ae9448a4baab895d0441ba37f9c430830c31a7f7",
       "anchors": [
         "model_profile",
@@ -31,7 +30,7 @@
     },
     {
       "path": "docs/how-to/configure-model-profiles.md",
-      "url": "https://raw.githubusercontent.com/open-gsd/gsd-core/36a311c5bb5fa1a475cfbb685a845cd2d5bf88fe/docs/how-to/configure-model-profiles.md",
+      "url": "https://raw.githubusercontent.com/open-gsd/gsd-core/40ce95f8827210afdcb6da5467e0da72b9c68f6c/docs/how-to/configure-model-profiles.md",
       "sha256": "46b5bbb0c03d0cdf6c20030a8eae65c4481d256229665e604014df8aeb684821",
       "anchors": [
         "quality",
@@ -49,7 +48,7 @@
     },
     {
       "path": "gsd-core/bin/shared/model-catalog.json",
-      "url": "https://raw.githubusercontent.com/open-gsd/gsd-core/36a311c5bb5fa1a475cfbb685a845cd2d5bf88fe/gsd-core/bin/shared/model-catalog.json",
+      "url": "https://raw.githubusercontent.com/open-gsd/gsd-core/40ce95f8827210afdcb6da5467e0da72b9c68f6c/gsd-core/bin/shared/model-catalog.json",
       "sha256": "b55176ca044728d3aa098ae8a750fccd4f00489289f6150e549aa577e49b2caf",
       "anchors": [
         "profiles",
@@ -61,7 +60,7 @@
     },
     {
       "path": "src/model-catalog.cts",
-      "url": "https://raw.githubusercontent.com/open-gsd/gsd-core/36a311c5bb5fa1a475cfbb685a845cd2d5bf88fe/src/model-catalog.cts",
+      "url": "https://raw.githubusercontent.com/open-gsd/gsd-core/40ce95f8827210afdcb6da5467e0da72b9c68f6c/src/model-catalog.cts",
       "sha256": "b2992277815323befe7a3f111b031024b37903097124cf9d1f543503b27380f4",
       "anchors": [
         "agents",
@@ -70,7 +69,7 @@
     },
     {
       "path": "src/model-resolver.cts",
-      "url": "https://raw.githubusercontent.com/open-gsd/gsd-core/36a311c5bb5fa1a475cfbb685a845cd2d5bf88fe/src/model-resolver.cts",
+      "url": "https://raw.githubusercontent.com/open-gsd/gsd-core/40ce95f8827210afdcb6da5467e0da72b9c68f6c/src/model-resolver.cts",
       "sha256": "76292d87f414c0f4731544fabf5c5a870884fcb0a226729389a4257639182cdc",
       "anchors": [
         "model_profile_overrides",
@@ -80,7 +79,7 @@
     },
     {
       "path": "src/config-loader.cts",
-      "url": "https://raw.githubusercontent.com/open-gsd/gsd-core/36a311c5bb5fa1a475cfbb685a845cd2d5bf88fe/src/config-loader.cts",
+      "url": "https://raw.githubusercontent.com/open-gsd/gsd-core/40ce95f8827210afdcb6da5467e0da72b9c68f6c/src/config-loader.cts",
       "sha256": "08eda003f85ca87a973747d3aabe086458dfa008be2a2020fd73c0f10d229ead",
       "anchors": [
         "model_policy",
@@ -89,7 +88,7 @@
     },
     {
       "path": "src/model-profiles.cts",
-      "url": "https://raw.githubusercontent.com/open-gsd/gsd-core/36a311c5bb5fa1a475cfbb685a845cd2d5bf88fe/src/model-profiles.cts",
+      "url": "https://raw.githubusercontent.com/open-gsd/gsd-core/40ce95f8827210afdcb6da5467e0da72b9c68f6c/src/model-profiles.cts",
       "sha256": "0b6567730e11c945b2b399f68aed8c14774d17b904b0d9ecf203eb2d7c13a543",
       "anchors": [
         "model-profiles"
@@ -192,7 +191,7 @@
       "id": "model_overrides.<agent-id>",
       "evidence": {
         "path": "docs/CONFIGURATION.md",
-        "url": "https://raw.githubusercontent.com/open-gsd/gsd-core/36a311c5bb5fa1a475cfbb685a845cd2d5bf88fe/docs/CONFIGURATION.md",
+        "url": "https://raw.githubusercontent.com/open-gsd/gsd-core/40ce95f8827210afdcb6da5467e0da72b9c68f6c/docs/CONFIGURATION.md",
         "anchor": "model_overrides"
       }
     },
@@ -200,7 +199,7 @@
       "id": "models.<phase_type>",
       "evidence": {
         "path": "docs/CONFIGURATION.md",
-        "url": "https://raw.githubusercontent.com/open-gsd/gsd-core/36a311c5bb5fa1a475cfbb685a845cd2d5bf88fe/docs/CONFIGURATION.md",
+        "url": "https://raw.githubusercontent.com/open-gsd/gsd-core/40ce95f8827210afdcb6da5467e0da72b9c68f6c/docs/CONFIGURATION.md",
         "anchor": "models.<phase_type>"
       }
     },
@@ -208,7 +207,7 @@
       "id": "effort.agent_overrides.<agent-id>",
       "evidence": {
         "path": "docs/CONFIGURATION.md",
-        "url": "https://raw.githubusercontent.com/open-gsd/gsd-core/36a311c5bb5fa1a475cfbb685a845cd2d5bf88fe/docs/CONFIGURATION.md",
+        "url": "https://raw.githubusercontent.com/open-gsd/gsd-core/40ce95f8827210afdcb6da5467e0da72b9c68f6c/docs/CONFIGURATION.md",
         "anchor": "agent_overrides"
       }
     },
@@ -216,7 +215,7 @@
       "id": "fast_mode.agent_overrides.<agent-id>",
       "evidence": {
         "path": "docs/CONFIGURATION.md",
-        "url": "https://raw.githubusercontent.com/open-gsd/gsd-core/36a311c5bb5fa1a475cfbb685a845cd2d5bf88fe/docs/CONFIGURATION.md",
+        "url": "https://raw.githubusercontent.com/open-gsd/gsd-core/40ce95f8827210afdcb6da5467e0da72b9c68f6c/docs/CONFIGURATION.md",
         "anchor": "fast_mode.agent_overrides"
       }
     },
@@ -224,7 +223,7 @@
       "id": "model_profile_overrides.<runtime>.<tier>",
       "evidence": {
         "path": "docs/CONFIGURATION.md",
-        "url": "https://raw.githubusercontent.com/open-gsd/gsd-core/36a311c5bb5fa1a475cfbb685a845cd2d5bf88fe/docs/CONFIGURATION.md",
+        "url": "https://raw.githubusercontent.com/open-gsd/gsd-core/40ce95f8827210afdcb6da5467e0da72b9c68f6c/docs/CONFIGURATION.md",
         "anchor": "model_profile_overrides.<runtime>.<tier>"
       }
     },
@@ -232,7 +231,7 @@
       "id": "model_policy.runtime_tiers.<runtime>.<tier>",
       "evidence": {
         "path": "docs/CONFIGURATION.md",
-        "url": "https://raw.githubusercontent.com/open-gsd/gsd-core/36a311c5bb5fa1a475cfbb685a845cd2d5bf88fe/docs/CONFIGURATION.md",
+        "url": "https://raw.githubusercontent.com/open-gsd/gsd-core/40ce95f8827210afdcb6da5467e0da72b9c68f6c/docs/CONFIGURATION.md",
         "anchor": "model_policy.runtime_tiers"
       }
     },
@@ -240,7 +239,7 @@
       "id": "review.reviewer_instances.<name>",
       "evidence": {
         "path": "docs/CONFIGURATION.md",
-        "url": "https://raw.githubusercontent.com/open-gsd/gsd-core/36a311c5bb5fa1a475cfbb685a845cd2d5bf88fe/docs/CONFIGURATION.md",
+        "url": "https://raw.githubusercontent.com/open-gsd/gsd-core/40ce95f8827210afdcb6da5467e0da72b9c68f6c/docs/CONFIGURATION.md",
         "anchor": "reviewer_instances.<name>.cli"
       }
     },
@@ -248,7 +247,7 @@
       "id": "search-api-key",
       "evidence": {
         "path": "docs/CONFIGURATION.md",
-        "url": "https://raw.githubusercontent.com/open-gsd/gsd-core/36a311c5bb5fa1a475cfbb685a845cd2d5bf88fe/docs/CONFIGURATION.md",
+        "url": "https://raw.githubusercontent.com/open-gsd/gsd-core/40ce95f8827210afdcb6da5467e0da72b9c68f6c/docs/CONFIGURATION.md",
         "anchor": "Masked in display"
       }
     }
