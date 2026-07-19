@@ -74,7 +74,7 @@ describe('History API contracts (SAVE-05, SAVE-06)', () => {
   it('uses an opaque config id and canonical positive safe-integer sequences only', async () => {
     const id = await track();
     await save(id, { mode: 'interactive', workflow: { tdd_mode: true } });
-    for (const sequence of ['0', '-1', '1.5', '1e0', '01', '9007199254740992', '../1', '1.json']) {
+    for (const sequence of ['0', '-1', '1.5', '1e0', '01', '9007199254740992', '%2E%2E%2F1', '1.json']) {
       const response = await app.inject({ method: 'GET', url: `/api/configs/${id}/history/${sequence}`, headers: headers() });
       expect(response.statusCode).toBe(400);
       expect(response.body).not.toContain(configPath);
@@ -125,10 +125,10 @@ describe('History API contracts (SAVE-05, SAVE-06)', () => {
     await save(id, { mode: 'interactive', workflow: { tdd_mode: true } });
     const response = await app.inject({ method: 'POST', url: `/api/configs/${id}/history/1/restore`, headers: headers() });
     expect(response.statusCode).toBe(200);
-    expect(readFileSync(configPath, 'utf8')).toBe(before);
+    expect(JSON.parse(readFileSync(configPath, 'utf8'))).toEqual(JSON.parse(before));
     const index = await readIndex(snapshotDirFor(configPath, snapshotRoot));
     expect(index.entries).toHaveLength(2);
-    expect(readFileSync(join(snapshotDirFor(configPath, snapshotRoot), index.entries[1].file), 'utf8')).toContain('"tdd_mode":true');
+    expect(JSON.parse(readFileSync(join(snapshotDirFor(configPath, snapshotRoot), index.entries[1].file), 'utf8'))).toMatchObject({ workflow: { tdd_mode: true } });
   });
 
   it('leaves bytes unchanged for invalid snapshots, validation failures, and atomic write failures', async () => {

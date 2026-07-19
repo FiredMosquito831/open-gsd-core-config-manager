@@ -37,6 +37,7 @@ import { buildCorsOptions } from './plugins/cors.js';
 import { registerStatic } from './static/serve.js';
 import { healthRoutes } from './routes/health.js';
 import { configRoutes } from './routes/configs.js';
+import { historyRoutes } from './routes/history.js';
 import { schemaRoutes } from './routes/schema.js';
 import { workspaceRoutes } from './routes/workspace.js';
 import { createRegistry, type ConfigRegistry } from './registry.js';
@@ -106,6 +107,7 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
       await api.register(healthRoutes);
       await api.register(schemaRoutes);
       await api.register(configRoutes, { registry, snapshotRoot: opts.snapshotRoot, warn: opts.warn });
+      await api.register(historyRoutes, { registry, snapshotRoot: opts.snapshotRoot, warn: opts.warn });
       await api.register(workspaceRoutes, { workspaceStore });
     },
     { prefix: '/api' },

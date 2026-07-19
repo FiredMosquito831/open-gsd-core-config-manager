@@ -45,3 +45,22 @@ export interface TrackedWorkspaceConfig extends TrackedConfig {
   /** Human-readable problem description when status is not 'ok'. */
   problem?: string;
 }
+
+/** Safe, recorded facts about one historical config snapshot. */
+export interface HistorySnapshotMeta {
+  seq: number;
+  timestamp: string;
+  contentHash: string;
+}
+
+/** Selected historical document and the current persisted project document. */
+export interface HistorySnapshotDetail {
+  snapshot: HistorySnapshotMeta & { document: object };
+  current: object;
+}
+
+/** Normal save-pipeline result returned after a successful restore. */
+export interface HistoryRestoreResult {
+  snapshotId?: string;
+  warning?: string;
+}
