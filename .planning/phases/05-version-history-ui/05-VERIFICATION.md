@@ -2,7 +2,7 @@
 phase: 05-version-history-ui
 verified: 2026-07-19T19:35:00Z
 status: gaps_found
-score: 4/8 must-haves verified
+score: 6/8 must-haves verified
 behavior_unverified: 0
 overrides_applied: 0
 re_verification:
@@ -61,7 +61,7 @@ gaps:
 | 7 | Snapshot selection and restore fail closed to canonical positive safe-integer sequences from a server-derived per-config directory. | VERIFIED | `parseSequence`, trusted snapshot read/index validation, registry resolution, and guarded API routes are substantive; focused server tests cover malformed sequences, cross-config access, index tampering, and recovery snapshots. |
 | 8 | The dedicated History workspace retains tracked-config context, hides chapter/search navigation, and returns safely to the editor. | VERIFIED | `AppShell` and `ConfigEditor` use History mode while preserving the sidebar and editor-owned draft; `HistoryWorkspace` has the sole embedded main region and Back to editor action. App-shell/workspace tests pass. |
 
-**Score:** 4/8 truths verified (0 present, behavior-unverified).
+**Score:** 6/8 truths verified (0 present, behavior-unverified).
 
 ## Re-verification of Original Gaps
 
