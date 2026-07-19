@@ -234,14 +234,19 @@ async function runSnapshotWorker(content: string): Promise<void> {
   });
 }
 
-describe('snapshot-store cross-process serialization (CR-02)', () => {
-  it('allocates unique sequences and preserves both entries from independent helper processes', async () => {
+describe('saveWithSnapshot cross-process transaction serialization (CR-02)', () => {
+  it('preserves original, intermediate, and final states across independent helper processes', async () => {
     writeFile(configPath, '{"a":0}');
     await Promise.all([runSnapshotWorker('{"a":1}'), runSnapshotWorker('{"a":2}')]);
 
-    const index = await readIndex(snapshotDirFor(configPath, appDataRoot));
+    const dir = snapshotDirFor(configPath, appDataRoot);
+    const index = await readIndex(dir);
     expect(index.entries.map((entry) => entry.seq).sort((left, right) => left - right)).toEqual([1, 2]);
     expect(new Set(index.entries.map((entry) => entry.file)).size).toBe(2);
+
+    const snapshotContents = index.entries.map((entry) => readFileSync(join(dir, entry.file), 'utf8'));
+    const finalOnDisk = readFileSync(configPath, 'utf8');
+    expect(new Set([...snapshotContents, finalOnDisk])).toEqual(new Set(['{"a":0}', '{\n  "a": 1\n}', '{\n  "a": 2\n}']));
   });
 });
 

@@ -47,7 +47,7 @@ export function ConfigEditor({ workspaceMode = 'editor' }: ConfigEditorProps) {
 function EditorContents({ configId, loadResult, schema, workspaceMode, onSaved, searchQuery, searchOpen, setActiveChapter, setHighlightTarget, setSearchOpen, openHistory }: any) {
   const draft = useConfigDraft(configId, loadResult, schema);
   if (workspaceMode === 'history') {
-    return <HistoryWorkspace configId={configId} draft={draft} />;
+    return <HistoryWorkspace configId={configId} draft={draft} embedded />;
   }
   return <FormProvider {...draft.form}>
     <div className="gsd-config-editor">

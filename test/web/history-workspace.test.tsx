@@ -42,17 +42,21 @@ const snapshots = [
 ];
 
 beforeEach(() => {
+  const root = document.createElement('div');
+  root.id = 'root';
+  document.body.append(root);
   vi.mocked(listHistory).mockResolvedValue(snapshots);
   vi.mocked(getHistorySnapshot).mockResolvedValue({
     snapshot: { ...snapshots[0], document: snapshot.config },
     current,
   });
-  vi.mocked(restoreConfigSnapshot).mockResolvedValue({ ok: true });
+  vi.mocked(restoreConfigSnapshot).mockResolvedValue({});
   vi.mocked(loadConfig).mockResolvedValue({ raw: { project: current, global: null }, effective: {}, unknown: [], meta: { globalDefaultsFound: false, globalDefaultsPath: '' } });
 });
 
 afterEach(() => {
   cleanup();
+  document.getElementById('root')?.remove();
   vi.resetAllMocks();
   useUiStore.setState({
     activeConfigId: null,
@@ -136,11 +140,31 @@ describe('History workspace contract (SAVE-05)', () => {
     expect(await screen.findByRole('alertdialog', { name: 'Restore snapshot' })).toBeTruthy();
   });
 
-  it('gives the restore review dialog modal keyboard behavior', async () => {
-    renderWeb(<HistoryWorkspace configId="cfg-1" configName="project/config.json" draft={null} />);
-    fireEvent.click(await screen.findByRole('button', { name: 'Restore this snapshot' }));
-    expect(screen.getByRole('alertdialog', { name: 'Restore snapshot' }).getAttribute('aria-modal')).toBe('true');
+  it('portals the restore review dialog outside the inert app, traps focus, and supports keyboard/click activation', async () => {
+    const { container } = renderWeb(<HistoryWorkspace configId="cfg-1" configName="project/config.json" draft={null} />);
+    const restoreButton = await screen.findByRole('button', { name: 'Restore this snapshot' });
+    restoreButton.focus();
+    fireEvent.click(restoreButton);
+
+    const dialog = screen.getByRole('alertdialog', { name: 'Restore snapshot' });
+    expect(dialog.getAttribute('aria-modal')).toBe('true');
+    expect(dialog.parentElement?.parentElement).toBe(document.body);
+    expect(container.querySelector('[role="alertdialog"]')).toBeNull();
+    expect(document.getElementById('root')?.hasAttribute('inert')).toBe(true);
+    expect(dialog.closest('[inert]')).toBeNull();
     expect(document.activeElement?.textContent).toBe('Cancel');
+
+    fireEvent.keyDown(document.activeElement!, { key: 'Tab', shiftKey: true });
+    expect(document.activeElement?.textContent).toBe('Restore snapshot');
+    fireEvent.keyDown(document.activeElement!, { key: 'Tab' });
+    expect(document.activeElement?.textContent).toBe('Cancel');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(screen.queryByRole('alertdialog')).toBeNull();
+    expect(document.getElementById('root')?.hasAttribute('inert')).toBe(false);
+    expect(document.activeElement).toBe(restoreButton);
+
+    fireEvent.click(restoreButton);
     fireEvent.keyDown(document.activeElement!, { key: 'Escape' });
     expect(screen.queryByRole('alertdialog')).toBeNull();
   });
