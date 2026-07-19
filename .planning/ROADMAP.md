@@ -165,7 +165,7 @@ Plans:
   2. User can view a structural diff between any past snapshot and the current file, showing exactly which keys changed.
   3. User can revert to a previous snapshot with one click, and the revert is routed through the same validate → atomic-write → snapshot pipeline as a normal save, never a special-case path.
 
-**Plans**: 8/8 plans executed
+**Plans**: 8/9 plans executed
 
 - [x] 05-01-PLAN.md
 - [x] 05-02-PLAN.md
@@ -181,6 +181,10 @@ Plans:
 **Wave 7** *(blocked on Wave 6)*
 
 - [x] 05-07-PLAN.md — Bounded selected-priority progressive detail loading resolves exact counts and retry states for every returned history row [wave 7; depends on 05-05, 05-06, 05-08]
+
+**Wave 8** *(gap closure; blocked on Waves 6–7)*
+
+- [ ] 05-09-PLAN.md — Accept valid container/scalar DiffResult spans with collision-free paths and route selected row Retry to its query owner [wave 8; depends on 05-07, 05-08]
 
 **UI hint**: yes
 
