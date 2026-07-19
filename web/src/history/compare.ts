@@ -33,7 +33,7 @@ export interface HistoryComparison { nodes: HistoryDiffNode[]; summary: HistoryC
 
 interface ParsedLeaf { identity: string; path: string; parentIdentity: string; parentPath: string; type: DiffResult['type']; value: unknown; }
 interface ParsedContainer extends Omit<ParsedLeaf, 'type'> { tokens: PathToken[]; kind: 'object' | 'array'; }
-interface ContainerContext extends ParsedContainer { level: number; nextIndex: number; memberKey?: string; value: Record<string, unknown> | unknown[]; }
+interface ContainerContext extends ParsedContainer { level: number; nextIndex: number; memberKey?: string; sourceKey?: string; value: Record<string, unknown> | unknown[]; }
 
 const sensitiveRoots = SPECIALIZED_METADATA.filter((descriptor) => descriptor.sensitive).map((descriptor) => descriptor.path.split('.'));
 
@@ -105,14 +105,21 @@ function parseStream(rows: readonly DiffResult[], _side: DiffSide): { leaves: Pa
     const member = parseMember(text); const isObject = member.valueText === '{'; const isArray = member.valueText === '[';
     if (parent && row.level !== parent.level + 1) unavailable(); if (!parent && row.level !== 0) unavailable();
     let token: PathToken | undefined;
-    if (parent?.kind === 'array') { if (member.key !== undefined) unavailable(); token = { kind: 'array', index: parent.nextIndex++ }; }
+    if (parent?.kind === 'array') {
+      // json-diff-kit renders nested array openings using the enclosing object
+      // member label (for example, `"x": [` inside the array for `{ x: [[]] }`).
+      // The label is presentation-only: validate it against the inherited label,
+      // then retain the array index as this node's semantic identity.
+      if (member.key !== undefined && (!isArray || parent.sourceKey !== member.key)) unavailable();
+      token = { kind: 'array', index: parent.nextIndex++ };
+    }
     else if (member.key !== undefined) token = { kind: 'object', key: member.key };
     else if (parent || !(isObject || isArray)) unavailable();
     const tokens = token ? [...(parent?.tokens ?? []), token] : [];
     const identity = encodePathIdentity(tokens); const path = formatDisplayPath(tokens); const parentTokens = tokens.slice(0, -1);
     const parentIdentity = encodePathIdentity(parentTokens); const parentPath = formatDisplayPath(parentTokens);
     if (isObject || isArray) {
-      stack.push({ identity, path, parentIdentity, parentPath, tokens, kind: isArray ? 'array' : 'object', level: row.level, nextIndex: 0, memberKey: member.key, value: isArray ? [] : {} });
+      stack.push({ identity, path, parentIdentity, parentPath, tokens, kind: isArray ? 'array' : 'object', level: row.level, nextIndex: 0, memberKey: parent?.kind === 'array' ? undefined : member.key, sourceKey: member.key ?? parent?.sourceKey, value: isArray ? [] : {} });
       continue;
     }
     if (!token) unavailable();

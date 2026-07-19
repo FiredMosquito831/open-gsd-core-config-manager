@@ -173,6 +173,15 @@ describe('history comparison', () => {
     expect(node?.current).toEqual('outer' in current ? current.outer.replacement : current.replacement);
   });
 
+  it.each([
+    ['unchanged nested arrays', { x: [[]] }, { x: [[]] }, { added: 0, removed: 0, changed: 0 }],
+    ['nested-array additions', { x: [[]] }, { x: [[], []] }, { added: 1, removed: 0, changed: 0 }],
+    ['nested-array removals', { x: [[], []] }, { x: [[]] }, { added: 0, removed: 1, changed: 0 }],
+    ['nested arrays alongside scalars and objects', { x: [[], 1, { value: 'before' }] }, { x: [[], 2, { value: 'after' }] }, { added: 0, removed: 0, changed: 2 }],
+  ])('adapts real Differ %s without making the comparison unavailable', (_label, snapshot, current, expected) => {
+    expect(buildHistoryComparison(snapshot, current).summary).toMatchObject(expected);
+  });
+
   it('keeps adversarial JSON keys distinct without using display paths as identity', () => {
     const comparison = buildHistoryComparison(
       { 'a.b': 1, a: { b: 2 }, 'items[0]': 3, items: [{ 'a.b': 4, '0': 5 }], 'a/b~c': 6, 'quote\\key': 7 },
