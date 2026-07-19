@@ -146,6 +146,24 @@ describe('History workspace contract (SAVE-05)', () => {
     expect(await screen.findByRole('alertdialog', { name: 'Restore snapshot' })).toBeTruthy();
   });
 
+  it('recovers when saving a dirty draft rejects before restore', async () => {
+    renderWeb(<HistoryWorkspace configId="cfg-1" configName="project/config.json" draft={{
+      isDirty: true,
+      saveDraft: vi.fn(async () => { throw new Error('save failed'); }),
+      resetFromServer: vi.fn(),
+    }} />);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Restore this snapshot' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Restore snapshot' }));
+    const dialog = await screen.findByRole('alertdialog', { name: 'Unsaved changes' });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Save draft first' }));
+
+    expect(await screen.findByText(/The draft could not be saved\. Try again\./)).toBeTruthy();
+    await waitFor(() => expect((within(dialog).getByRole('button', { name: 'Cancel' }) as HTMLButtonElement).disabled).toBe(false));
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }));
+    expect(screen.queryByRole('alertdialog')).toBeNull();
+  });
+
   it('portals the restore review dialog outside the inert app, traps focus, and supports keyboard/click activation', async () => {
     const { container } = renderWeb(<HistoryWorkspace configId="cfg-1" configName="project/config.json" draft={null} />);
     const restoreButton = await screen.findByRole('button', { name: 'Restore this snapshot' });

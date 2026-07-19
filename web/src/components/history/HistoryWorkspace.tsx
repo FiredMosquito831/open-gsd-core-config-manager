@@ -99,12 +99,17 @@ export function HistoryWorkspace({ configId: suppliedId, configName: suppliedNam
   const saveDraftFirst = async () => {
     if (!draft || pending) return;
     setPending(true);
-    const outcome = await draft.saveDraft();
-    setPending(false);
-    if (outcome === 'blocked') return;
-    await queryClient.invalidateQueries({ queryKey: ['config', configId] });
-    await queryClient.invalidateQueries({ queryKey: ['history', configId] });
-    setDialogMode(null);
+    try {
+      const outcome = await draft.saveDraft();
+      if (outcome === 'blocked') return;
+      await queryClient.invalidateQueries({ queryKey: ['config', configId] });
+      await queryClient.invalidateQueries({ queryKey: ['history', configId] });
+      setDialogMode(null);
+    } catch {
+      setRestoreError('The draft could not be saved. Try again.');
+    } finally {
+      setPending(false);
+    }
   };
 
   const responsiveClass = viewportWidth !== undefined ? viewportWidth <= 768 ? ' gsd-history--stacked' : viewportWidth <= 900 ? ' gsd-history--compact' : '' : '';
