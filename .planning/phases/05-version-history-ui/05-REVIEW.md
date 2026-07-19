@@ -1,123 +1,75 @@
 ---
 phase: 05-version-history-ui
-reviewed: 2026-07-19T16:45:00Z
+reviewed: 2026-07-19T19:20:00Z
 depth: deep
-files_reviewed: 27
+files_reviewed: 7
 files_reviewed_list:
-  - package.json
-  - packages/server/src/api-types.ts
-  - packages/server/src/app.ts
-  - packages/server/src/routes/history.ts
-  - packages/server/src/snapshot-store/index.ts
-  - packages/server/src/snapshot-store/save-with-snapshot.ts
-  - test/server/helpers/snapshot-record-worker.ts
-  - test/server/history-routes.test.ts
-  - test/server/snapshot-store.test.ts
-  - test/web/api-client.test.ts
-  - test/web/app-shell.test.tsx
+  - web/src/history/compare.ts
+  - web/src/history/useProgressiveHistoryCounts.ts
+  - web/src/components/history/HistoryWorkspace.tsx
+  - web/src/components/history/SnapshotTimeline.tsx
   - test/web/history-comparison.test.ts
   - test/web/history-workspace.test.tsx
-  - web/src/App.tsx
   - web/src/api/configs.ts
-  - web/src/components/AppShell.tsx
-  - web/src/components/editor/ConfigEditor.tsx
-  - web/src/components/history/HistoryDiffTree.tsx
-  - web/src/components/history/HistoryWorkspace.tsx
-  - web/src/components/history/RestoreDialogs.tsx
-  - web/src/components/history/SnapshotDiff.tsx
-  - web/src/components/history/SnapshotTimeline.tsx
-  - web/src/editor/useConfigDraft.ts
-  - web/src/history/compare.ts
-  - web/src/history/time.ts
-  - web/src/state/uiStore.ts
-  - web/src/styles.css
 findings:
-  critical: 1
-  warning: 2
+  critical: 3
+  warning: 1
   info: 0
-  total: 3
+  total: 4
 status: issues_found
 ---
 
 # Phase 05: Code Review Report
 
-**Reviewed:** 2026-07-19T16:45:00Z
+**Reviewed:** 2026-07-19T19:20:00Z
 **Depth:** deep
-**Files Reviewed:** 27
+**Files Reviewed:** 7
 **Status:** issues_found
 
 ## Summary
 
-This final deep review confirms the previously reported transaction, index durability, recovery-dialog portal/inert, restore-success mock, live-draft production integration, and single-main-landmark defects have been addressed in the reviewed implementation. In particular, `saveWithSnapshot` now holds a cross-process transaction lock across prior-byte capture, the atomic config write, and snapshot recording; the dialog is portaled outside the inert app root; and production history is embedded in AppShell's sole main landmark.
-
-However, the claimed LCS alignment remains incorrect for arrays with repeated values, causing misleading history changes. The live-draft integration also still bypasses TypeScript at its most important cross-component boundary, and the timeline duplicates less robust date grouping logic that fails across DST transitions.
+The Phase 5 gap-closure implementation was reviewed at deep depth, including the comparison adapter, progressive TanStack Query scheduler, React workspace/timeline integration, API wrappers, and focused tests. The focused history suites pass, but valid json-diff-kit streams and an explicit Retry path can leave comparisons unavailable or permanently failed. The path encoding also cannot represent all valid JSON object keys without collisions.
 
 ## Critical Issues
 
-### CR-01 [BLOCKER]: Array comparison is not actually LCS-aligned for repeated values
+### CR-01: Valid container-to-scalar comparisons are rejected as malformed
 
-**File:** `web/src/history/compare.ts:73-99`
+**File:** `web/src/history/compare.ts:124-127`
 
-**Issue:** `alignArrays` builds a boolean “some common subsequence exists” matrix instead of an LCS-length matrix. Its greedy tie-breaking can discard an alignable element where arrays contain duplicate values. This produces false additions/removals/changes in the version-history UI, rather than preserving all unchanged elements as LCS alignment requires.
+**Issue:** The adapter treats every blank stream row as an alignment placeholder only when its type is `equal`. Real `json-diff-kit` output for a valid replacement of an object/array with a scalar includes blank `modify` rows on the scalar side. For example, `{ "x": { "a": 1 } }` → `{ "x": 2 }` emits a `modify` container and its child/close rows in one stream, with `modify` blanks in the other. `parseStream()` throws `History comparison unavailable` at line 124 rather than rendering the change. Users therefore cannot inspect or restore-review a legitimate persisted config difference.
 
-For example, comparing `['a', 'b', 'a']` to `['b', 'a', 'c']` has an LCS of `['b', 'a']` (length 2). The current traversal preserves only one unchanged item and reports the other match as part of a replacement. Users are consequently shown an inaccurate restore comparison.
+**Evidence:** Direct inspection of `new Differ({ showModifications: true, arrayDiffMethod: 'lcs' }).diff({ x: { a: 1 } }, { x: 2 })` shows the second stream includes `{ level: 1, type: 'modify', text: '' }` alignment rows. The production parser rejects that row before it can adapt the tuple.
 
-**Fix:** Store LCS lengths in the dynamic-programming matrix and choose the traversal direction based on the larger remaining LCS length. Preserve a deterministic tie-breaker only when both directions have equal lengths. Add duplicate-value test coverage.
+**Fix:** Model documented blank `modify` alignment rows as structural counterparts to a modified container, with strict level/context validation. Do not treat them as scalar members or increment array positions unless the library semantics require it. Add real-Differ integration cases for object-to-scalar, scalar-to-object, array-to-scalar, and scalar-to-array replacements.
 
-```ts
-// In a mismatch, retain the side that can still produce the longer LCS.
-if (lcs[beforeIndex + 1][currentIndex] >= lcs[beforeIndex][currentIndex + 1]) {
-  alignment.push({ before: before[beforeIndex++] });
-} else {
-  alignment.push({ current: current[currentIndex++] });
-}
-```
+### CR-02: A selected terminal-error row cannot be retried from its timeline control
 
-Add a case such as:
+**File:** `web/src/history/useProgressiveHistoryCounts.ts:107-109, 119-127`
 
-```ts
-buildHistoryComparison(
-  { agents: ['a', 'b', 'a'] },
-  { agents: ['b', 'a', 'c'] },
-);
-```
+**Issue:** `retry()` starts a new effect generation, but the effect deliberately refuses to place `retryNow` into its queue when that sequence is selected (`retryNow !== selectedSeq`). The row Retry UI calls only this hook callback; it does not call the separately-owned selected-detail query's `refetch()`. Thus, after a row reaches terminal error, selecting that same row and pressing its accessible timeline Retry leaves it terminal forever even when the next detail request would succeed.
 
-and assert two unchanged aligned entries, one removal, and one addition.
+**Fix:** Make row retry start the selected detail query when the target is selected, or enqueue that retry under the same bounded scheduler instead of excluding it. Preserve one owner per request/key to avoid duplicate work. Add an integration test that exhausts a row, selects it, activates timeline Retry, resolves the next request, and asserts the error becomes the exact count.
+
+### CR-03: Dot/bracket path construction collides for valid object keys
+
+**File:** `web/src/history/compare.ts:80, 193-195`
+
+**Issue:** `joinPath()` concatenates raw object keys with `.` and raw array positions with brackets, then uses the resulting string as the unique map key. JSON permits keys containing dots, brackets, quotes, and numeric-looking fragments. `{ "a.b": 1, "a": { "b": 2 } }` produces `a.b` for two different leaves; `{ "agents[0]": 1, "agents": [2] }` likewise collides. The duplicate-path guard throws, so valid documents fail comparison. Even where a collision does not trigger, the UI path cannot faithfully identify the changed key.
+
+**Fix:** Use an injective internal identity such as RFC 6901 JSON Pointer segments, and independently render escaped display labels. If retaining dot notation, quote/escape every non-identifier object key and escape brackets/backslashes. Add tests covering dotted keys, bracket-containing keys, quoted keys, and collisions with nested and array paths.
 
 ## Warnings
 
-### WR-01 [WARNING]: Live draft/history boundary disables TypeScript verification
+### WR-01: Priority and retry lifecycle contracts are not actually covered by the focused tests
 
-**File:** `web/src/components/editor/ConfigEditor.tsx:46`; `web/src/components/history/HistoryWorkspace.tsx:20,76,87,102`
+**File:** `test/web/history-workspace.test.tsx:215-253`
 
-**Issue:** `EditorContents` accepts every prop as `any`, and `HistoryWorkspace.draft` accepts `Partial<DraftController> | object | null`. The explicit `object` union makes the boundary effectively untyped, then repeated assertions force that object into the controller shape. An incorrectly supplied `saveDraft` or `resetFromServer` implementation will compile and can fail only during a destructive history flow. This regresses the intended Phase 5 type-safety improvement at the live draft integration point.
+**Issue:** The selected-priority test clicks Snapshot #5 only after the scheduler has had an opportunity to start it as ordinary background work, so `deferred.has(5)` does not prove a newly selected, previously queued sequence starts immediately while two other background requests occupy the limit. The retry test proves exhaustion only; it never activates Retry and verifies a successful fresh group. The required stale completion/list replacement/backoff cancellation cases are also absent. These gaps allowed CR-02 to ship.
 
-**Fix:** Give `EditorContents` a real props interface and expose only the required controller members through a typed workspace prop.
-
-```ts
-type HistoryDraftController = Pick<
-  ConfigDraftController,
-  'isDirty' | 'saveDraft' | 'resetFromServer'
->;
-
-interface HistoryWorkspaceProps {
-  // ...
-  draft?: HistoryDraftController | null;
-}
-```
-
-Remove `object` and the type assertions, and type `EditorContents` using its actual inputs.
-
-### WR-02 [WARNING]: Timeline labels “Yesterday” using a fixed 24-hour duration
-
-**File:** `web/src/components/history/SnapshotTimeline.tsx:30-38`
-
-**Issue:** `dateGroup` computes yesterday as `startToday - 86_400_000`. Local calendar days are not reliably 24 hours at daylight-saving transitions. A snapshot from the preceding local calendar day can therefore be placed under a formatted date rather than “Yesterday.” The phase already includes DST-safe component-independent grouping logic in `web/src/history/time.ts`, but the displayed timeline does not use it.
-
-**Fix:** Refactor `SnapshotTimeline` to use `groupSnapshotsByLocalDate` and `formatSnapshotTime` from `web/src/history/time.ts`, which compare local calendar date parts rather than fixed millisecond intervals. Add a test using a DST-observing timezone on a spring/fall transition.
+**Fix:** Hold two known nonselected detail requests in flight, keep a third sequence queued, select that queued sequence, and assert its selected query begins before either background promise resolves. Add tests for explicit retry success, cache reselection without duplicate calls, list/config replacement during backoff, and late completion rejection.
 
 ---
 
-_Reviewed: 2026-07-19T16:45:00Z_
+_Reviewed: 2026-07-19T19:20:00Z_
 _Reviewer: Claude (gsd-code-reviewer)_
 _Depth: deep_
