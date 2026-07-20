@@ -216,7 +216,7 @@ const archiveSha256 = createHash('sha256').update(archive).digest('hex');
 
 **When to use:** Exactly once after immutable identity resolution; dispose all bytes and parsed source after an accepted proposal is replaced/cancelled or a failure occurs.
 
-**Limits:** Use a 15-second release request, 30-second archive request, 8 MiB compressed archive, 32 MiB total decompressed data, 1 MiB per required file, 64 entry count, and depth 12 as initial conservative defaults. These values are implementation recommendations, not upstream guarantees; expose none to the browser and make cap failures path-free. [ASSUMED]
+**Limits:** Use a 15-second release request, 30-second archive request, 8 MiB compressed archive, 32 MiB total decompressed data, 1 MiB per required file, 4,096 entry count, and depth 12 as initial conservative defaults. These values are implementation recommendations, not upstream guarantees; expose none to the browser and make cap failures path-free. [ASSUMED]
 
 ### Pattern 3: Literal-only capability registry extraction
 
@@ -370,7 +370,7 @@ const activate = useMutation({
 
 | # | Claim | Section | Risk if Wrong |
 |---|-------|---------|---------------|
-| A1 | Initial caps of 8 MiB compressed, 32 MiB decompressed, 1 MiB/file, 64 entries, depth 12, and 15/30-second timeouts are appropriate. | Architecture Pattern 2 | Limits may reject a legitimate future release or fail to provide desired resource protection; confirm/tune with maintainers. |
+| A1 | Initial caps of 8 MiB compressed, 32 MiB decompressed, 1 MiB/file, 4,096 entries, depth 12, and 15/30-second timeouts are appropriate. | Architecture Pattern 2 | Limits may reject a legitimate future release or fail to provide desired resource protection; confirm/tune with maintainers. |
 | A2 | Regex extraction is intrinsically too brittle for the allowed CommonJS data shape. | Alternatives | Low; AST parser remains the recommended secure path regardless. |
 
 ## Resolved Decisions
