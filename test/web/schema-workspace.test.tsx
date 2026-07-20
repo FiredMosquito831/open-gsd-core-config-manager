@@ -15,14 +15,14 @@ import { SchemaWorkspace } from '../../web/src/components/schema/SchemaWorkspace
 import { SchemaStatusControl } from '../../web/src/components/schema/SchemaStatusControl.js';
 import { useUiStore } from '../../web/src/state/uiStore.js';
 
-const status = { source: 'bundled' as const, gsdCoreVersion: '1.7.0', activatedAt: '2026-07-20T12:00:00.000Z', lastChecked: '2026-07-20T13:00:00.000Z', commitPrefix: 'abc1234', archiveSha256Prefix: 'def5678' };
+const status = { source: 'bundled' as const, gsdCoreVersion: '1.7.0', generatedAt: '2026-07-20T12:00:00.000Z', lastChecked: '2026-07-20T13:00:00.000Z', commitPrefix: 'abc1234', archiveSha256Prefix: 'def5678' };
 const proposal = {
   id: 'opaque-proposal-id', expiresAt: '2026-07-21T12:00:00.000Z', checkedAt: '2026-07-20T14:00:00.000Z', gsdCoreVersion: '1.8.0', documentationDiagnostics: [],
   changes: [
     { path: 'workflow.auto_advance', kind: 'added', after: { type: 'boolean' } },
     { path: 'models.default', kind: 'changed', before: { default: 'a' }, after: { default: 'b' } },
     { path: 'legacy.old', kind: 'deprecated', before: { type: 'string' } },
-    { path: 'docs.note', kind: 'documentation', after: { fingerprint: 'changed' } },
+    { path: 'docs.note', kind: 'documentation-drift', after: { fingerprint: 'changed' } },
   ],
 };
 
@@ -39,7 +39,7 @@ afterEach(() => { cleanup(); queryClient.clear(); vi.resetAllMocks(); });
 describe('schema maintenance workspace', () => {
   it('keeps a safe persistent status control usable with no selected config', async () => {
     renderWeb(<SchemaStatusControl />);
-    expect(await screen.findByRole('button', { name: /Bundled.*gsd-core v1\.7\.0.*Open schema maintenance/i })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: /Bundled.*gsd-core v1\.7\.0.*7\/20\/2026.*Open schema maintenance/i })).toBeTruthy();
     fireEvent.click(screen.getByRole('button'));
     expect(useUiStore.getState().workspaceMode).toBe('schema');
   });
@@ -73,13 +73,31 @@ describe('schema maintenance workspace', () => {
     expect(screen.queryByRole('button', { name: 'Activate schema' })).toBeNull();
   });
 
-  it('cancels only the review and provides a keyboard-safe reset confirmation', async () => {
+  it('cancels the server proposal, evicts schema status, and does not rehydrate it on remount', async () => {
+    vi.mocked(getSchemaStatus).mockResolvedValueOnce({ ...status, proposal }).mockResolvedValue(status);
     renderWeb(<SchemaWorkspace />);
-    fireEvent.click(await screen.findByRole('button', { name: 'Check for updates' }));
-    fireEvent.click(await screen.findByRole('button', { name: 'Cancel review' }));
+    expect(await screen.findByRole('button', { name: 'Cancel review' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel review' }));
     expect(await screen.findByText('Schema update review cancelled. Your active schema was not changed.')).toBeTruthy();
-    vi.mocked(getSchemaStatus).mockResolvedValue({ ...status, source: 'refreshed' });
+    expect(cancelSchemaProposal).toHaveBeenCalledWith('opaque-proposal-id');
     cleanup(); queryClient.clear(); renderWeb(<SchemaWorkspace />);
+    expect(await screen.findByRole('button', { name: 'Check for updates' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Cancel review' })).toBeNull();
+  });
+
+  it('keeps the proposal visible and reports a cancellation failure', async () => {
+    vi.mocked(getSchemaStatus).mockResolvedValue({ ...status, proposal });
+    vi.mocked(cancelSchemaProposal).mockRejectedValue(new Error('network unavailable'));
+    renderWeb(<SchemaWorkspace />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Cancel review' }));
+    expect(await screen.findByRole('heading', { name: 'Couldn’t cancel this schema update review' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Cancel review' })).toBeTruthy();
+    expect(screen.queryByText('Schema update review cancelled. Your active schema was not changed.')).toBeNull();
+  });
+
+  it('provides a keyboard-safe reset confirmation', async () => {
+    vi.mocked(getSchemaStatus).mockResolvedValue({ ...status, source: 'refreshed', activatedAt: '2026-07-20T12:00:00.000Z' });
+    renderWeb(<SchemaWorkspace />);
     const reset = await screen.findByRole('button', { name: 'Reset to bundled schema' });
     reset.focus(); fireEvent.click(reset);
     const dialog = await screen.findByRole('alertdialog', { name: 'Reset to bundled schema' });
@@ -87,6 +105,12 @@ describe('schema maintenance workspace', () => {
     fireEvent.keyDown(document.activeElement!, { key: 'Escape' });
     expect(screen.queryByRole('alertdialog')).toBeNull();
     expect(document.activeElement).toBe(reset);
+  });
+
+  it('uses activatedAt for refreshed status controls', async () => {
+    vi.mocked(getSchemaStatus).mockResolvedValue({ ...status, source: 'refreshed', activatedAt: '2026-07-21T12:00:00.000Z' });
+    renderWeb(<SchemaStatusControl />);
+    expect(await screen.findByRole('button', { name: /Refreshed.*7\/21\/2026.*Open schema maintenance/i })).toBeTruthy();
   });
 
   it('keeps raw rejected remote data out of the DOM and exposes visual backstop hooks', async () => {

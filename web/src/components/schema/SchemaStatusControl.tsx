@@ -20,7 +20,8 @@ export function SchemaStatusControl() {
   }, []);
   const source = status?.source === 'refreshed' ? 'Refreshed' : 'Bundled';
   const version = status?.gsdCoreVersion ?? 'schema unavailable';
-  const date = status?.activatedAt ? new Date(status.activatedAt).toLocaleDateString() : 'date unavailable';
+  const sourceDate = status?.source === 'refreshed' ? status.activatedAt : status?.generatedAt;
+  const date = sourceDate ? new Date(sourceDate).toLocaleDateString() : 'date unavailable';
   return <div className="gsd-schema-status-control">
     <button type="button" className="gsd-rail-button gsd-schema-status-control__button" onClick={openSchemaMaintenance} aria-busy={busy} aria-label={`${source} schema, gsd-core v${version}, ${date}. Open schema maintenance`}>
       <span aria-hidden="true">{source === 'Refreshed' ? 'R' : 'B'}</span><span className="gsd-schema-status-control__text">{source} · gsd-core v{version}</span>

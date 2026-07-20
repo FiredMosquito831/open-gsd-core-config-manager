@@ -73,7 +73,7 @@ describe('schema lifecycle routes', () => {
   it('reports only client-safe active status facts', async () => {
     const res = await app.inject({ method: 'GET', url: '/api/schema/status', headers: authHeaders() });
     expect(res.statusCode).toBe(200);
-    expect(res.json()).toMatchObject({ ok: true, status: { source: 'bundled' } });
+    expect(res.json()).toMatchObject({ ok: true, status: { source: 'bundled', generatedAt: expect.any(String) } });
     expect(res.body).not.toContain(workspaceRoot);
   });
 

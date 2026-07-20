@@ -7,7 +7,7 @@ const groups: Array<{ id: Group; heading: string; singular: string }> = [
 ];
 
 function groupFor(change: SchemaChangeDto): Group {
-  return change.kind === 'documentation' ? 'documentation' : change.kind === 'deprecated' ? 'deprecated' : change.kind === 'added' ? 'added' : 'changed';
+  return change.kind === 'documentation' || change.kind === 'documentation-drift' ? 'documentation' : change.kind === 'deprecated' ? 'deprecated' : change.kind === 'added' ? 'added' : 'changed';
 }
 
 export function SchemaChangeSummary({ changes, filter, onFilter, expanded, onToggle }: { changes: readonly SchemaChangeDto[]; filter: Group | 'all'; onFilter(filter: Group | 'all'): void; expanded: Set<string>; onToggle(path: string): void }) {
