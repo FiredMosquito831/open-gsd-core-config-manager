@@ -62,6 +62,12 @@ describe('inspectPinnedArchive', () => {
     expect(Object.values(result.files).every((content) => content.byteLength > 0)).toBe(true);
   });
 
+  it('rejects a highly compressible archive before decompression exceeds the configured cap', () => {
+    const archive = gzipSync(Buffer.alloc(33 * 1024 * 1024, 0));
+
+    expect(() => inspect(archive)).toThrow();
+  });
+
   it('retains only required regular-file bodies while safe unrelated files consume entry and byte budgets', () => {
     const archive = tar([
       ...REQUIRED.map((path) => ({ path: `prefix/${path}`, body: path })),

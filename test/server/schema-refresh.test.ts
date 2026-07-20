@@ -1,8 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { getBundledSchema, getBundledSchemaMetadata } from '../../packages/server/src/schema.js';
-import { SchemaRefreshService, specializedOverlaysFromSchema, type RefreshDependencies } from '../../packages/server/src/schema-refresh-service.js';
+import { defaultRefreshDependencies, SchemaRefreshService, specializedOverlaysFromSchema, type RefreshDependencies } from '../../packages/server/src/schema-refresh-service.js';
 import type { CanonicalSchema, ParsedSchemaSources } from '../../packages/schema-data/src/source-types.js';
 import { parseCapabilityRegistryLiteral } from '../../packages/server/src/capability-registry-parser.js';
 import { extractDocumentationEvidence } from '../../packages/server/src/documentation-evidence-parser.js';
@@ -55,6 +55,43 @@ function dependencies(overrides: Partial<RefreshDependencies> = {}): RefreshDepe
 }
 
 describe('SchemaRefreshService', () => {
+  afterEach(() => { vi.unstubAllGlobals(); });
+
+  it('uses production overlays to retain bundled curation and specialized metadata in a refreshed candidate', async () => {
+    const production = new SchemaRefreshService({
+      ...dependencies(),
+      overlays: defaultRefreshDependencies().overlays,
+    });
+
+    const result = await production.refresh();
+
+    expect(result.kind).toBe('proposal');
+    if (result.kind !== 'proposal') return;
+    const bundled = getBundledSchema();
+    expect(result.proposal.schema.mode['x-description']).toBe(bundled.mode['x-description']);
+    expect(result.proposal.schema.mode['x-category']).toBe(bundled.mode['x-category']);
+    expect(result.proposal.schema.mode['x-options']).toEqual(bundled.mode['x-options']);
+    const specializedEntry = Object.entries(bundled).find(([, entry]) => entry['x-specialized'] && typeof entry['x-specialized'] === 'object');
+    expect(specializedEntry).toBeDefined();
+    if (!specializedEntry) return;
+    expect(result.proposal.schema[specializedEntry[0]]?.['x-specialized']).toEqual(specializedEntry[1]['x-specialized']);
+  });
+
+  it('rejects an oversized compressed response while reading the production stream', async () => {
+    const chunks = [new Uint8Array(8 * 1024 * 1024), new Uint8Array([1])];
+    let cancelled = false;
+    const reader = {
+      read: vi.fn(async () => chunks.length ? { done: false as const, value: chunks.shift()! } : { done: true as const, value: undefined }),
+      cancel: vi.fn(async () => { cancelled = true; }),
+      releaseLock: vi.fn(),
+    };
+    vi.stubGlobal('fetch', vi.fn(async () => ({ ok: true, body: { getReader: () => reader } })));
+
+    await expect(defaultRefreshDependencies().fetchBytes('https://api.github.com/repos/open-gsd/gsd-core/tarball/' + commit)).rejects.toThrow();
+    expect(cancelled).toBe(true);
+    expect(reader.releaseLock).toHaveBeenCalledOnce();
+  });
+
   it('ignores non-object catalog entries while retaining object-valued specialized metadata', () => {
     const overlays = specializedOverlaysFromSchema({
       profiles: ['quality'],
@@ -142,6 +179,34 @@ describe('SchemaRefreshService', () => {
     expect(result.kind === 'proposal' && result.proposal.documentationDiagnostics).not.toContainEqual(expect.objectContaining({ key: 'mode' }));
     expect(result.kind === 'proposal' && result.proposal.changes.byGroup['documentation-drift']).toHaveLength(1);
     expect(result.kind === 'proposal' && result.proposal.schema.mode['x-description']).toBe(getBundledSchema().mode['x-description']);
+  });
+
+  it('reports prose drift through the production diff after a refreshed generation is activated', async () => {
+    let activeSchema = getBundledSchema();
+    let activeMetadata = getBundledSchemaMetadata();
+    let documentationText = '## mode\nThe first upstream explanation.\n';
+    const service = new SchemaRefreshService(dependencies({
+      activeSchema: () => activeSchema,
+      activeMetadata: () => activeMetadata,
+      inspectArchive: () => ({
+        files: Object.fromEntries(Object.entries(sourceFiles).map(([path, value]) => [path, new TextEncoder().encode(path === 'docs/CONFIGURATION.md' ? documentationText : value)])),
+        entries: 2702,
+      }),
+    }));
+
+    const first = await service.refresh();
+    expect(first.kind).toBe('proposal');
+    if (first.kind !== 'proposal') return;
+    activeSchema = first.proposal.schema;
+    activeMetadata = first.proposal.metadata;
+    documentationText = '## mode\nThe upstream explanation changed after activation.\n';
+
+    const second = await service.refresh();
+    expect(second.kind).toBe('proposal');
+    expect(second.kind === 'proposal' && second.proposal.changes.byGroup['documentation-drift']).toEqual([
+      expect.objectContaining({ key: 'mode', group: 'documentation-drift' }),
+    ]);
+    expect(second.kind === 'proposal' && second.proposal.schema.mode['x-description']).toBe(getBundledSchema().mode['x-description']);
   });
 
   it('does not invent documentation fingerprints when source evidence is unavailable', async () => {

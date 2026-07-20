@@ -102,7 +102,7 @@ describe('AppShell', () => {
     expect(screen.getByText('Select a configuration')).toBeTruthy();
   });
 
-  it('renders exactly one production main landmark in editor and history modes', () => {
+  it('renders exactly one production main landmark in editor, history, and schema modes', () => {
     renderApp();
     expect(screen.getAllByRole('main', { name: 'Editor' })).toHaveLength(1);
 
@@ -110,6 +110,12 @@ describe('AppShell', () => {
     useUiStore.setState({ workspaceMode: 'history' });
     renderApp();
     expect(screen.getAllByRole('main', { name: 'Version history' })).toHaveLength(1);
+    expect(screen.getAllByRole('main')).toHaveLength(1);
+
+    cleanup();
+    useUiStore.setState({ workspaceMode: 'schema' });
+    renderApp();
+    expect(screen.getAllByRole('main', { name: 'Schema maintenance' })).toHaveLength(1);
     expect(screen.getAllByRole('main')).toHaveLength(1);
   });
 });

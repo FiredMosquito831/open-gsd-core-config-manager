@@ -73,6 +73,16 @@ describe('schema maintenance workspace', () => {
     expect(screen.queryByRole('button', { name: 'Activate schema' })).toBeNull();
   });
 
+  it('rehydrates a server-retained proposal after remount so it remains reviewable and activatable', async () => {
+    vi.mocked(getSchemaStatus).mockResolvedValue({ ...status, proposal });
+    renderWeb(<SchemaWorkspace />);
+    expect(await screen.findByRole('button', { name: 'Activate schema' })).toBeTruthy();
+
+    cleanup(); queryClient.clear(); renderWeb(<SchemaWorkspace />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Activate schema' }));
+    await waitFor(() => expect(activateSchemaProposal).toHaveBeenCalledWith('opaque-proposal-id'));
+  });
+
   it('cancels the server proposal, evicts schema status, and does not rehydrate it on remount', async () => {
     vi.mocked(getSchemaStatus).mockResolvedValueOnce({ ...status, proposal }).mockResolvedValue(status);
     renderWeb(<SchemaWorkspace />);
