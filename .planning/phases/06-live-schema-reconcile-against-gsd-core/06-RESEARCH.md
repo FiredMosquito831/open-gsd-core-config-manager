@@ -178,6 +178,7 @@ packages/
 │   ├── schema-refresh-service.ts     # GitHub acquisition, parsing, proposal lifecycle
 │   ├── upstream-archive.ts           # capped allowlist-only archive inspection
 │   ├── capability-registry-parser.ts # AST-to-literal constrained parser
+│   ├── documentation-evidence-parser.ts # inert heading/anchor/key fingerprints
 │   ├── schema-persistence.ts         # one-file override envelope + quarantine
 │   └── routes/schema.ts              # status/refresh/proposal/activate/reset routes
 web/src/
@@ -251,7 +252,7 @@ const archiveSha256 = createHash('sha256').update(archive).digest('hex');
 |---------|-------------|-------------|-----|
 | HTTP transport/timeouts | Custom `http` redirect/request client | Node global `fetch` + `AbortSignal.timeout`, plus an explicit streaming byte counter | Existing Node runtime supports the primitives; application code need only enforce product-specific caps. [CITED: https://nodejs.org/api/globals.html] |
 | JavaScript execution sandbox | VM, `eval`, `Function`, dynamic import, or `require` | TypeScript AST literal-only parser | A sandbox is unnecessary and harder to secure when no remote behavior is needed. [CITED: https://github.com/microsoft/TypeScript] |
-| Tar format decoder | Bespoke TAR/GZIP implementation | `tar@7.5.20` after human legitimacy approval, configured as inspection-only | Archive parsing has link/path corner cases and recent security history. [CITED: https://github.com/isaacs/node-tar] |
+| Tar format decoder | An unconstrained general TAR implementation | `tar@7.5.20` after human legitimacy approval; if rejected, a dependency-free bounded reader limited to frozen-official-fixture USTAR/PAX/GNU needs | Archive parsing has link/path corner cases; either branch must pass the same official-format and hostile fixture matrix before acquisition. [CITED: https://github.com/isaacs/node-tar] |
 | JSON-schema compiler | Parallel ad-hoc validator | Existing Ajv conversion/validator | The active descriptor must drive both server validation and client feedback. [VERIFIED: packages/config-io/src/schema-convert.ts] |
 | Atomic persistence | `writeFile` plus rename scripts | Existing `writeWithRetry` / `write-file-atomic` | Existing helper provides fsync and Windows retry behavior. [VERIFIED: packages/config-io/src/atomic-write.ts] |
 | Structural diff | Text diff / raw JSON string compare | Stable semantic projections and explicit per-field equality | Key order and formatting must not create review noise under D-05. [VERIFIED: 06-CONTEXT.md] |
@@ -372,22 +373,18 @@ const activate = useMutation({
 | A1 | Initial caps of 8 MiB compressed, 32 MiB decompressed, 1 MiB/file, 64 entries, depth 12, and 15/30-second timeouts are appropriate. | Architecture Pattern 2 | Limits may reject a legitimate future release or fail to provide desired resource protection; confirm/tune with maintainers. |
 | A2 | Regex extraction is intrinsically too brittle for the allowed CommonJS data shape. | Alternatives | Low; AST parser remains the recommended secure path regardless. |
 
-## Open Questions
+## Resolved Decisions
 
-1. **How should the package build record the immutable gsd-core identity for the bundled baseline?**
-   - What we know: the current bundle is an inlined JSON artifact with no adjacent source-version metadata; D-11 requires version precedence. [VERIFIED: packages/server/src/schema.ts; packages/schema-data/bundled-schema.json]
-   - What's unclear: the exact build-time source commit/version used for the existing artifact.
-   - Recommendation: add checked-in `bundled-schema-meta.json` generated/updated with `gsdCoreVersion`, tag, commit, archive SHA if available, and generated timestamp; fail package schema build if it is missing or not stable semver. [ASSUMED]
+1. **Bundled baseline identity is generated at build time and shipped.**
+   - Add checked-in `packages/schema-data/bundled-schema-meta.json`, generated/updated with the schema build and included in the package. It records stable `gsdCoreVersion`, tag, immutable commit/archive identity when available, and generation timestamp; build/completeness validation fails when required stable identity is missing or malformed. Existing provenance that cannot be proven is represented as absent, never invented. [RESOLVED: planner/checker decision; supports D-02 and D-11]
 
-2. **How should a semver tie between bundled and refreshed schema be resolved?**
-   - What we know: D-11 only requires newer version precedence; a refreshed schema has stronger identity evidence.
-   - What's unclear: whether same-version refreshed-but-different commit should be accepted.
-   - Recommendation: treat a same semver version with a different commit/archive SHA as a conflict and fall back to bundled with a warning; release tags are expected immutable, so this is fail-closed. [ASSUMED]
+2. **A same-version different-commit/archive identity is a fail-closed identity conflict.**
+   - Neither acquisition nor startup may create, activate, or select the conflicting override/proposal. Runtime remains on the valid bundled baseline and exposes the persistent safe warning. Equal semver is not permission to prefer refreshed content when immutable provenance differs. [RESOLVED: planner/checker decision; supports D-04, D-11, and D-14]
 
-3. **Should `tar` be approved after its legitimacy checkpoint?**
-   - What we know: it is official `isaacs/node-tar`, created in 2011, has high use, but seam verdict is SUS because latest publish was recent and it has a recent link-related advisory history. [VERIFIED: npm registry; CITED: https://github.com/isaacs/node-tar]
-   - What's unclear: human acceptance of adding it to this package.
-   - Recommendation: checkpoint approval must include pinning `7.5.20`, reviewing current advisory status, no postinstall, and inspection-only configuration. If rejected, create a separate constrained parser spike; do not silently implement a tar decoder in this phase. [ASSUMED]
+3. **Tar legitimacy and fallback are resolved by mandatory Plan 06-01 checkpoint branches.**
+   - `approve-tar` permits only exact `tar@7.5.20` after provenance/advisory review and inspection-only use.
+   - `reject-tar` requires a dependency-free bounded reader that passes a frozen fixture captured from the official commit-pinned GitHub archive format. It may implement only the exact PAX/GNU metadata records demonstrated by that fixture, with bounded record length/count and immediate-next-entry application, while rejecting links, unsafe paths, special/sparse entries, duplicates, unsupported records, malformed checksums/padding, and every cap/time violation.
+   - If exact safe official-format support cannot be proven, execution stops and escalates for a new human decision before acquisition/proposal work. It must not proceed with a branch that cannot consume the official archive format or reduce SCHEMA-05. [RESOLVED: mandatory human checkpoint contract; supports D-02 through D-04]
 
 ## Environment Availability
 
