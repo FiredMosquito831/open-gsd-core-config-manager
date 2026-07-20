@@ -12,7 +12,7 @@ describe('parseCapabilityRegistryLiteral', () => {
 
     const parsed = parseCapabilityRegistryLiteral(fixture('capability-registry.cjs'), limits);
 
-    expect(parsed).toMatchObject({ model_profile: expect.any(Object) });
+    expect(parsed).toMatchObject({ 'workflow.ai_integration_phase': expect.any(Object) });
     expect((globalThis as Record<string, unknown>).__schemaRefreshFixtureExecuted).toBeUndefined();
   });
 
