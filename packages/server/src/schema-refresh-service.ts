@@ -13,8 +13,8 @@ import type {
 import { parseCapabilityRegistryLiteral, type CapabilityParserLimits } from './capability-registry-parser.js';
 import { extractDocumentationEvidence, type DocumentationEvidence, type DocumentationEvidenceLimits } from './documentation-evidence-parser.js';
 import { inspectPinnedArchive, type ArchiveLimits, type InspectedArchive } from './upstream-archive.js';
+import bundledSchema from '../../schema-data/bundled-schema.json' with { type: 'json' };
 import curatedDocs from '../../schema-data/curated-docs.json' with { type: 'json' };
-import specializedCatalog from '../../schema-data/specialized-catalog.json' with { type: 'json' };
 
 const API_ROOT = 'https://api.github.com/repos/open-gsd/gsd-core';
 const COMMIT = /^[a-f0-9]{40}$/iu;
@@ -91,6 +91,27 @@ function parseManifest(value: unknown): SchemaManifestSource {
 }
 
 function defaults(value: unknown): Record<string, unknown> { return record(value); }
+
+/** Retain only per-schema-key object metadata; catalog-wide lists are not descriptors. */
+export function specializedOverlaysFromSchema(value: unknown): ReconciliationOverlays['specialized'] {
+  const schema = record(value);
+  return Object.fromEntries(Object.entries(schema).flatMap(([key, entry]) => {
+    if (!entry || typeof entry !== 'object' || Array.isArray(entry)) return [];
+    const specialized = (entry as Record<string, unknown>)['x-specialized'];
+    return specialized && typeof specialized === 'object' && !Array.isArray(specialized)
+      ? [[key, { ...specialized }] as const]
+      : [];
+  }));
+}
+
+const bundledSpecializedOverlays = specializedOverlaysFromSchema(bundledSchema);
+
+export function productionRefreshOverlays(): ReconciliationOverlays {
+  return {
+    curated: curatedDocs as ReconciliationOverlays['curated'],
+    specialized: bundledSpecializedOverlays,
+  };
+}
 
 export class SchemaRefreshService {
   private currentStage: RefreshStage = 'idle';
@@ -229,10 +250,7 @@ export function defaultRefreshDependencies(): RefreshDependencies {
     activeSchema: () => { throw new Error('Active schema manager is required'); },
     activeMetadata: () => { throw new Error('Active schema manager is required'); },
     activeGeneration: () => { throw new Error('Active schema manager is required'); },
-    overlays: () => ({
-      curated: curatedDocs as ReconciliationOverlays['curated'],
-      specialized: specializedCatalog as ReconciliationOverlays['specialized'],
-    }),
+    overlays: productionRefreshOverlays,
     now: () => new Date(),
     randomId: () => crypto.randomUUID(),
   };

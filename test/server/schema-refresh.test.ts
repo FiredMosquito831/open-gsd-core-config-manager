@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 import { getBundledSchema, getBundledSchemaMetadata } from '../../packages/server/src/schema.js';
-import { SchemaRefreshService, type RefreshDependencies } from '../../packages/server/src/schema-refresh-service.js';
+import { SchemaRefreshService, specializedOverlaysFromSchema, type RefreshDependencies } from '../../packages/server/src/schema-refresh-service.js';
 import type { CanonicalSchema, ParsedSchemaSources } from '../../packages/schema-data/src/source-types.js';
 import { parseCapabilityRegistryLiteral } from '../../packages/server/src/capability-registry-parser.js';
 import { extractDocumentationEvidence } from '../../packages/server/src/documentation-evidence-parser.js';
@@ -55,6 +55,16 @@ function dependencies(overrides: Partial<RefreshDependencies> = {}): RefreshDepe
 }
 
 describe('SchemaRefreshService', () => {
+  it('ignores non-object catalog entries while retaining object-valued specialized metadata', () => {
+    const overlays = specializedOverlaysFromSchema({
+      profiles: ['quality'],
+      model_profile: { 'x-specialized': { editor: 'profile-select', sourceEvidence: ['verified'] } },
+      mode: { 'x-specialized': ['not-descriptor-metadata'] },
+    });
+
+    expect(overlays).toEqual({ model_profile: { editor: 'profile-select', sourceEvidence: ['verified'] } });
+  });
+
   it('uses only fixed latest/tag/archive endpoints, creates an opaque compiled inert proposal, and never activates', async () => {
     let activeCalls = 0;
     const service = new SchemaRefreshService(dependencies({ activate: () => { activeCalls += 1; } }));
