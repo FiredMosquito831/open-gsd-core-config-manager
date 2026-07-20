@@ -70,4 +70,6 @@ None.
 ## Self-Check: PASSED
 
 - Found: `.planning/phases/06-live-schema-reconcile-against-gsd-core/06-01-SUMMARY.md`
-- Task commit and summary metadata commit are recorded after verification.
+- Found task decision commit: `f9fdedb`
+- Found execution metadata commit: `d27acb1`
+- Manifest verification confirmed neither root dependency list nor the lockfile contains `tar`.
