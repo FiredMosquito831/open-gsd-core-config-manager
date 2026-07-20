@@ -68,14 +68,16 @@ function titleFor(key: string): string { return titleCase(key.split('.').at(-1) 
 
 function categoryFor(key: string): string {
   if (key.startsWith('gates.')) return 'Gates';
-  if (key.startsWith('safety.') || key.startsWith('security.')) return 'Security';
+  if (key.startsWith('safety.') || key.startsWith('security.') || key.startsWith('workflow.security_')) return 'Security';
   if (key.startsWith('git.')) return 'Git';
   if (key.startsWith('planning.')) return 'Planning';
   if (key.startsWith('review.') || key.startsWith('plan_review')) return 'Review';
   if (key.startsWith('ship.')) return 'Ship';
   if (key.startsWith('effort.') || key.startsWith('fast_mode.')) return 'Effort';
-  if (key.startsWith('model_') || key.startsWith('models') || key.startsWith('agent_skills')) return 'Model & Routing';
+  if (key.startsWith('model_') || key.startsWith('models') || key === 'model_profile' || key.startsWith('dynamic_routing') || key.startsWith('agent_skills') || key.startsWith('resolve_model_ids')) return 'Model & Routing';
+  if (key.startsWith('claude_md')) return 'Discovery';
   if (key.startsWith('workflow.') || key === 'mode' || key === 'granularity') return 'Workflow';
+  if (key.startsWith('hooks.') || key.startsWith('statusline.') || key.startsWith('features.') || key.startsWith('learnings.') || key.startsWith('graphify.') || key.startsWith('intel.') || key.startsWith('code_quality.') || key.startsWith('parallelization') || key.startsWith('capabilities.') || key.startsWith('executor.') || key.startsWith('manager.') || key.startsWith('mempalace.') || key.startsWith('profile-pipeline.')) return 'Workflow';
   return 'General';
 }
 
@@ -96,8 +98,16 @@ function dynamicLeafType(container: string): string | string[] {
     dynamic_routing: ['string', 'number', 'boolean', 'null'] } as Record<string, string | string[]>)[container] ?? 'string';
 }
 
+function canonicalize(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(canonicalize);
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(Object.keys(value as Record<string, unknown>).sort().map((key) => [key, canonicalize((value as Record<string, unknown>)[key])]));
+  }
+  return value;
+}
+
 function sortSchema(schema: CanonicalSchema): CanonicalSchema {
-  return Object.fromEntries(Object.keys(schema).sort().map((key) => [key, schema[key]!])) as CanonicalSchema;
+  return Object.fromEntries(Object.keys(schema).sort().map((key) => [key, canonicalize(schema[key]!) as CanonicalSchemaEntry])) as CanonicalSchema;
 }
 
 function stable(value: unknown): string {
