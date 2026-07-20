@@ -9,10 +9,10 @@ vi.mock('../../web/src/api/configs.js', () => ({
   getHistorySnapshot: vi.fn(),
   restoreConfigSnapshot: vi.fn(),
 }));
-vi.mock('../../web/src/api/schema.js', () => ({ getSchema: vi.fn() }));
+vi.mock('../../web/src/api/schema.js', () => ({ getSchema: vi.fn(), getSchemaStatus: vi.fn() }));
 
 import { listHistory, loadConfig } from '../../web/src/api/configs.js';
-import { getSchema } from '../../web/src/api/schema.js';
+import { getSchema, getSchemaStatus } from '../../web/src/api/schema.js';
 import { cleanup, screen, fireEvent, render } from '@testing-library/react';
 import { AppShell } from '../../web/src/components/AppShell';
 import { App } from '../../web/src/App';
@@ -21,6 +21,7 @@ import { renderWeb } from './render-helpers';
 beforeEach(() => {
   vi.mocked(loadConfig).mockResolvedValue({ raw: { project: { mode: 'interactive' }, global: null }, effective: {}, unknown: [], meta: { globalDefaultsFound: false, globalDefaultsPath: '' } });
   vi.mocked(getSchema).mockResolvedValue({});
+  vi.mocked(getSchemaStatus).mockResolvedValue({ source: 'bundled', gsdCoreVersion: '1.7.0' });
   vi.mocked(listHistory).mockResolvedValue([]);
   useUiStore.setState({
     activeConfigId: null,
