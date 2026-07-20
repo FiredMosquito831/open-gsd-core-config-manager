@@ -22,7 +22,7 @@ created: 2026-07-20
 | **Framework** | Vitest 4.1.10 |
 | **Config file** | `vitest.config.ts` |
 | **Quick run command** | `npm run test:ordinary -- --run test/server/schema-route.test.ts test/schema-data/completeness.test.ts` |
-| **Full suite command** | `npm test && npm run typecheck && npm run build && npm pack --dry-run` |
+| **Full suite command** | `npm test && npm run typecheck && npm run build && npm pack --dry-run && npx vitest run test/packaging/tarball-contents.test.ts --pool=forks --maxWorkers=1 --no-file-parallelism` |
 | **Estimated runtime** | To be measured during Wave 0 |
 
 ---
@@ -31,7 +31,7 @@ created: 2026-07-20
 
 - **After every task commit:** Run the focused Vitest file(s), plus `npm run typecheck` for contract changes
 - **After every plan wave:** Run `npm run test:ordinary`
-- **Before `/gsd-verify-work`:** `npm test && npm run typecheck && npm run build && npm pack --dry-run` must be green
+- **Before `/gsd-verify-work`:** `npm test && npm run typecheck && npm run build && npm pack --dry-run && npx vitest run test/packaging/tarball-contents.test.ts --pool=forks --maxWorkers=1 --no-file-parallelism` must be green
 - **Max feedback latency:** Focused tests should complete within 60 seconds; measure and revise in Wave 0
 
 ---
@@ -45,15 +45,16 @@ created: 2026-07-20
 | 06-02-02 | 02 | 1 | SCHEMA-05 | Bundled identity drift | Build emits and validates shipped bundled identity metadata while trusted-local loading stays isolated | unit/integration | `npx vitest run test/schema-data/reconcile.test.ts test/schema-data/completeness.test.ts -x` | ⚠️ partial | ⬜ pending |
 | 06-03-01 | 03 | 2 | SCHEMA-05 | Poisoned override persistence | Startup precedence, same-version identity conflict, activation atomicity, corrupt fallback, quarantine, and reset retain usable bundle | integration | `npx vitest run test/server/active-schema-manager.test.ts -x` | ❌ W0 | ⬜ pending |
 | 06-03-02 | 03 | 2 | SCHEMA-05 | Split active generations | One-envelope manager compiles/persists before one snapshot swap and resets durably before bundle switch | integration | `npx vitest run test/server/active-schema-manager.test.ts test/server/schema-route.test.ts -x` | ⚠️ partial | ⬜ pending |
-| 06-04-01 | 04 | 3 | SCHEMA-05 | Archive traversal / format mismatch / remote code | Official-format and hostile fixtures prove bounded archive compatibility plus literal AST rejection without execution | unit/security | `npx vitest run test/server/upstream-archive.test.ts test/server/capability-registry-parser.test.ts -x` | ❌ W0 | ⬜ pending |
-| 06-04-02 | 04 | 3 | SCHEMA-05 | Documentation drift ambiguity | Heading/anchor/key extraction is deterministic, ambiguity fails closed or becomes evidence-unavailable, and one prose edit changes one key fingerprint | unit/security | `npx vitest run test/server/documentation-evidence-parser.test.ts -x` | ❌ W0 | ⬜ pending |
-| 06-05-01 | 05 | 4 | SCHEMA-05 | Mutable identity / partial proposal | Stable-release client rejects prerelease, draft, malformed, same-version conflict, and failed evidence without creating a proposal | unit | `npx vitest run test/server/schema-refresh.test.ts -x` | ❌ W0 | ⬜ pending |
-| 06-05-02 | 05 | 4 | SCHEMA-05 | Curated prose overwrite | Prose-only source change creates only corresponding documentation note and retains curated descriptor through proposal | integration | `npx vitest run test/server/schema-refresh.test.ts test/schema-data/reconcile.test.ts -x` | ❌ W0 | ⬜ pending |
-| 06-06-01 | 06 | 5 | SCHEMA-05 | Unauthorized activation / split generations | Guarded API rejects selectors/content and activation updates rendering plus authoritative validation together | API integration | `npx vitest run test/server/schema-route.test.ts test/server/active-schema-manager.test.ts test/server/schema-refresh.test.ts -x` | ⚠️ partial | ⬜ pending |
-| 06-06-02 | 06 | 5 | SCHEMA-05 | Bypassed schema authority | Config and history operations consume one manager snapshot per transaction | integration | `npx vitest run test/server/config-routes.test.ts test/server/history-route.test.ts -x` | ✅ existing | ⬜ pending |
-| 06-07-01 | 07 | 6 | SCHEMA-05 | Stale or misleading UI | Workspace shows source, version, date, review groups including documentation notes, no-op, explicit activation/reset, and coherent cache switching | component | `npx vitest run test/web/schema-workspace.test.tsx -x` | ❌ W0 | ⬜ pending |
-| 06-07-02 | 07 | 6 | SCHEMA-05 | Split client generations | Activation/reset reload schema and active config before editor resume | component/integration | `npx vitest run test/web/schema-workspace.test.tsx test/server/schema-route.test.ts -x` | ❌ W0 | ⬜ pending |
-| 06-08-01 | 08 | 7 | SCHEMA-05 | Live/package regression | Opt-in inert live compatibility plus full suite/build/pack and held-out visual checks close assembled phase | system + human | `npm test && npm run typecheck && npm run build && npm pack --dry-run` | ⚠️ partial | ⬜ pending |
+| 06-04-01 | 04 | 3 | SCHEMA-05 | Archive traversal / format mismatch / remote code | Frozen official-format, valid-source, hostile archive, literal AST, and documentation fixtures define failing-first public contracts without network | contract/unit/security | `npx vitest run test/server/upstream-archive.test.ts test/server/capability-registry-parser.test.ts test/server/documentation-evidence-parser.test.ts -x` | ❌ W0 | ⬜ pending |
+| 06-05-01 | 05 | 4 | SCHEMA-05 | Remote code / documentation ambiguity | AST and Markdown implementations satisfy inert literal, deterministic per-key evidence, ambiguity, and resource-cap contracts | unit/security | `npx vitest run test/server/capability-registry-parser.test.ts test/server/documentation-evidence-parser.test.ts -x` | ❌ W0 | ⬜ pending |
+| 06-05-02 | 05 | 4 | SCHEMA-05 | Archive traversal / dependency branch mismatch | Exact approved branch passes official-format and hostile bounded archive contracts without extraction | unit/security | `npx vitest run test/server/upstream-archive.test.ts -x` | ❌ W0 | ⬜ pending |
+| 06-06-01 | 06 | 5 | SCHEMA-05 | Mutable identity / partial proposal | Stable-release client rejects prerelease, draft, malformed, same-version conflict, and failed evidence without creating a proposal | unit | `npx vitest run test/server/schema-refresh.test.ts -x` | ❌ W0 | ⬜ pending |
+| 06-06-02 | 06 | 5 | SCHEMA-05 | Curated prose overwrite | Prose-only source change creates only corresponding documentation note and retains curated descriptor through proposal | integration | `npx vitest run test/server/schema-refresh.test.ts test/schema-data/reconcile.test.ts -x` | ❌ W0 | ⬜ pending |
+| 06-07-01 | 07 | 6 | SCHEMA-05 | Unauthorized activation / split generations | Guarded API rejects selectors/content and activation updates rendering plus authoritative validation together | API integration | `npx vitest run test/server/schema-route.test.ts test/server/active-schema-manager.test.ts test/server/schema-refresh.test.ts -x` | ⚠️ partial | ⬜ pending |
+| 06-07-02 | 07 | 6 | SCHEMA-05 | Bypassed schema authority | Config and history operations consume one manager snapshot per transaction | integration | `npx vitest run test/server/config-routes.test.ts test/server/history-route.test.ts -x` | ✅ existing | ⬜ pending |
+| 06-08-01 | 08 | 7 | SCHEMA-05 | Stale or misleading UI | Workspace shows source, version, date, review groups including documentation notes, no-op, explicit activation/reset, and coherent cache switching | component | `npx vitest run test/web/schema-workspace.test.tsx -x` | ❌ W0 | ⬜ pending |
+| 06-08-02 | 08 | 7 | SCHEMA-05 | Split client generations | Activation/reset reload schema and active config before editor resume | component/integration | `npx vitest run test/web/schema-workspace.test.tsx test/server/schema-route.test.ts -x` | ❌ W0 | ⬜ pending |
+| 06-09-01 | 09 | 8 | SCHEMA-05 | Live/package regression | Opt-in inert live compatibility plus full suite/build/pack and the existing extracted-tarball smoke prove bundled schema and identity metadata load without repository-source lookup | system + human | `npm test && npm run typecheck && npm run build && npm pack --dry-run && npx vitest run test/packaging/tarball-contents.test.ts --pool=forks --maxWorkers=1 --no-file-parallelism` | ⚠️ partial | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
