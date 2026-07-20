@@ -26,12 +26,17 @@ import {
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createRequire } from 'node:module';
 import { terminateProcessTree } from '../helpers/process-tree.js';
 
+const require = createRequire(import.meta.url);
 const REPO_ROOT = resolve(fileURLToPath(new URL('../..', import.meta.url)));
 const CLI_ENTRY = join(REPO_ROOT, 'dist', 'cli.js');
 const CLIENT_ENTRY = join(REPO_ROOT, 'dist', 'client', 'index.html');
-const REPO_NODE_MODULES = join(REPO_ROOT, 'node_modules');
+// Worktrees in this environment may have an empty local node_modules while
+// resolving dependencies from the main checkout. Derive the actual installed
+// dependency root, rather than assuming it lives directly below this worktree.
+const REPO_NODE_MODULES = resolve(require.resolve('@fastify/static/package.json'), '..', '..', '..');
 
 /** Matches 02-UI-SPEC.md's frozen launch-banner URL shape. */
 const BANNER_URL_PATTERN =
@@ -186,7 +191,10 @@ describe('extracted-tarball smoke run (DIST-01, DIST-03, DIST-04)', () => {
       // packages/** source that failed to inline -- still fails to
       // resolve here, which is exactly the signal this test hunts.
       nodeModulesLink = join(packageDir, 'node_modules');
-      symlinkSync(REPO_NODE_MODULES, nodeModulesLink, 'junction');
+      // junction is required on Windows without elevation; POSIX Node module
+      // resolution requires a normal directory link rather than that Windows-
+      // specific link type.
+      symlinkSync(REPO_NODE_MODULES, nodeModulesLink, process.platform === 'win32' ? 'junction' : 'dir');
 
       // 4. Spawn the extracted CLI directly -- never the repo's dist/cli.js.
       // The trailing 'ipc' channel is the same additive, production-shipped
@@ -225,7 +233,10 @@ describe('extracted-tarball smoke run (DIST-01, DIST-03, DIST-04)', () => {
         const timer = setTimeout(() => {
           void terminateProcessTree(child!);
           rej(new Error(`smoke run: timed out waiting for launch banner. stderr:\n${stderrBuf}`));
-        }, 20_000);
+        // The production CLI bundles the constrained TypeScript AST parser;
+        // on WSL cold starts can exceed the former 20-second test-only window.
+        // This is still bounded and does not change the launched artifact.
+        }, 60_000);
 
         function onData(chunk: Buffer) {
           const match = BANNER_URL_PATTERN.exec(stdoutBuf + chunk.toString('utf8'));
@@ -268,7 +279,33 @@ describe('extracted-tarball smoke run (DIST-01, DIST-03, DIST-04)', () => {
       expect(healthBody.version).toBe(rootPkg.version);
       expect(healthBody.version).not.toBe('0.0.0');
 
-      // 8. SIGINT-equivalent (see the spawn comment above) -- assert clean
+      // 8. GET the bundled fallback and its client-safe identity from the
+      // extracted process. The package contains no packages/** sources, so
+      // these responses prove tsup inlined both schema artifacts rather than
+      // resolving them from the repository at runtime.
+      const schemaRes = await fetch(`http://127.0.0.1:${port}/api/schema`, {
+        headers: { 'x-gsd-token': token },
+      });
+      expect(schemaRes.status).toBe(200);
+      const schemaBody = (await schemaRes.json()) as { ok: boolean; schema: Record<string, unknown> };
+      expect(schemaBody.ok).toBe(true);
+      expect(Object.keys(schemaBody.schema).length).toBeGreaterThan(0);
+
+      const schemaStatusRes = await fetch(`http://127.0.0.1:${port}/api/schema/status`, {
+        headers: { 'x-gsd-token': token },
+      });
+      expect(schemaStatusRes.status).toBe(200);
+      const schemaStatusBody = (await schemaStatusRes.json()) as {
+        ok: boolean;
+        status: { source: string; gsdCoreVersion: string };
+      };
+      expect(schemaStatusBody).toMatchObject({
+        ok: true,
+        status: { source: 'bundled', gsdCoreVersion: expect.stringMatching(/^\d+\.\d+\.\d+$/) },
+      });
+      expect(JSON.stringify(schemaStatusBody)).not.toContain(REPO_ROOT);
+
+      // 9. SIGINT-equivalent (see the spawn comment above) -- assert clean
       // exit and the ordered shutdown copy.
       child.send?.('SIGINT');
       const exitCode = await new Promise<number | null>((res) => {
@@ -278,6 +315,6 @@ describe('extracted-tarball smoke run (DIST-01, DIST-03, DIST-04)', () => {
       expect(stdoutBuf).toContain('Shutting down');
       expect(stdoutBuf).toContain('Server stopped. Port released, no changes lost.');
     },
-    30_000,
+    75_000,
   );
 });
