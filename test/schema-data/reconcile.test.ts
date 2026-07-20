@@ -76,10 +76,10 @@ describe('diffCanonicalSchemas', () => {
   it('ignores object insertion order, enum order, and dynamic-pattern key order', () => {
     const previous = {
       mode: { type: 'string', enum: ['interactive', 'yolo'], default: 'interactive', title: 'Mode', 'x-category': 'Workflow', 'x-description': 'Curated', 'x-provenance': 'manifest' },
-      agents: { type: 'object', title: 'Agents', 'x-category': 'Workflow', 'x-description': '', 'x-provenance': 'manifest', patternProperties: { '^agents\\.[a-z]+$': { type: 'string' }, '^agents\\.[0-9]+$': { type: 'string' } } },
+      agents: { type: 'object', title: 'Agents', 'x-category': 'Workflow', 'x-description': '', 'x-provenance': 'manifest', patternProperties: { '^agents\\.[a-z]+$': { type: 'string', title: 'Agent', 'x-category': 'Workflow', 'x-description': '', 'x-provenance': 'manifest' }, '^agents\\.[0-9]+$': { type: 'string', title: 'Agent', 'x-category': 'Workflow', 'x-description': '', 'x-provenance': 'manifest' } } },
     };
     const proposed = {
-      agents: { 'x-provenance': 'manifest', 'x-description': '', 'x-category': 'Workflow', title: 'Agents', type: 'object', patternProperties: { '^agents\\.[0-9]+$': { type: 'string' }, '^agents\\.[a-z]+$': { type: 'string' } } },
+      agents: { 'x-provenance': 'manifest', 'x-description': '', 'x-category': 'Workflow', title: 'Agents', type: 'object', patternProperties: { '^agents\\.[0-9]+$': { type: 'string', title: 'Agent', 'x-category': 'Workflow', 'x-description': '', 'x-provenance': 'manifest' }, '^agents\\.[a-z]+$': { type: 'string', title: 'Agent', 'x-category': 'Workflow', 'x-description': '', 'x-provenance': 'manifest' } } },
       mode: { 'x-provenance': 'manifest', 'x-description': 'Curated', 'x-category': 'Workflow', title: 'Mode', default: 'interactive', enum: ['yolo', 'interactive'], type: 'string' },
     };
     expect(diffCanonicalSchemas(previous, proposed, { previous: {}, proposed: {} }).changes).toEqual([]);
@@ -107,7 +107,7 @@ describe('diffCanonicalSchemas', () => {
 
 describe('validateBundledSchemaMetadata', () => {
   it.each([
-    [{ envelopeVersion: 1, gsdCoreVersion: '1.7.0', tag: 'v1.7.0', commit: 'b1c9381', generatedAt: '2026-07-20T00:00:00.000Z' }, true],
+    [{ envelopeVersion: 1, source: 'bundled', gsdCoreVersion: '1.7.0', tag: 'v1.7.0', commit: 'b1c9381', generatedAt: '2026-07-20T00:00:00.000Z' }, true],
     [{ envelopeVersion: 1, gsdCoreVersion: '1.7.0-next.1', tag: 'v1.7.0-next.1', generatedAt: '2026-07-20T00:00:00.000Z' }, false],
     [{ envelopeVersion: 1, gsdCoreVersion: 'not-a-version', tag: 'v1.7.0', generatedAt: 'bad' }, false],
   ])('accepts only stable bundled identities', (metadata, valid) => {
