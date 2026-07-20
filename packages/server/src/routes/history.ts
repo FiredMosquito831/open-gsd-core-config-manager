@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises';
 import type { FastifyPluginAsync } from 'fastify';
 import type { ApiErr, HistoryRestoreResult, HistorySnapshotDetail, HistorySnapshotMeta } from '../api-types.js';
 import { isRegularFileOrMissing, type ConfigRegistry } from '../registry.js';
-import { getValidator } from '../schema.js';
+import type { ActiveSchemaManager } from '../active-schema-manager.js';
 import {
   listSnapshots,
   readSnapshotBySequence,
@@ -13,6 +13,7 @@ import { saveWithSnapshot } from '../snapshot-store/save-with-snapshot.js';
 
 export interface HistoryRoutesOptions {
   registry: ConfigRegistry;
+  activeSchemaManager: ActiveSchemaManager;
   snapshotRoot?: string;
   warn?: (message: string) => void;
 }
@@ -52,7 +53,7 @@ async function currentProjectDocument(path: string): Promise<object> {
 }
 
 export const historyRoutes: FastifyPluginAsync<HistoryRoutesOptions> = async (app, opts) => {
-  const { registry, snapshotRoot, warn } = opts;
+  const { registry, activeSchemaManager, snapshotRoot, warn } = opts;
 
   app.get<{ Params: { id: string } }>('/configs/:id/history', async (req, reply) => {
     const tracked = registry.resolve(req.params.id);
@@ -97,7 +98,8 @@ export const historyRoutes: FastifyPluginAsync<HistoryRoutesOptions> = async (ap
     try {
       const snapshot = await readSnapshotBySequence(tracked.path, seq, snapshotRoot);
       if (!isProjectDocument(snapshot.document)) return reply.code(422).send(errBody('Snapshot unavailable'));
-      const result = await saveWithSnapshot(tracked.path, snapshot.document, getValidator(), { root: snapshotRoot, warn });
+      const active = activeSchemaManager.snapshot();
+      const result = await saveWithSnapshot(tracked.path, snapshot.document, active.validator, { root: snapshotRoot, warn });
       if (!result.ok) return reply.code(422).send({ ok: false, errors: result.errors });
       const restore: HistoryRestoreResult = { snapshotId: result.snapshotId, warning: result.warning };
       return { ok: true, ...restore };

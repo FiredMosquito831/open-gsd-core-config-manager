@@ -42,6 +42,8 @@ import { schemaRoutes } from './routes/schema.js';
 import { workspaceRoutes } from './routes/workspace.js';
 import { createRegistry, type ConfigRegistry } from './registry.js';
 import { createWorkspaceStore, type WorkspaceStore } from './workspace-store.js';
+import { ActiveSchemaManager } from './active-schema-manager.js';
+import { defaultRefreshDependencies, SchemaRefreshService } from './schema-refresh-service.js';
 
 // Exposes the tracked-config registry on the built FastifyInstance (Plan 05)
 // so the CLI (Plan 06) can reach the same registry instance `buildApp`
@@ -66,14 +68,27 @@ export interface BuildAppOptions {
   snapshotRoot?: string;
   /** Sink for saveWithSnapshot's D-12 non-fatal snapshot-failure warning (defaults to console.warn). */
   warn?: (message: string) => void;
+  /** One injected authoritative schema manager shared by every schema-sensitive operation. */
+  activeSchemaManager?: ActiveSchemaManager;
+  /** One injected fixed-source refresh transaction service. */
+  schemaRefreshService?: SchemaRefreshService;
+  /** Test seam for deterministic lifecycle timestamps. */
+  now?: () => Date;
 }
 
 export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> {
   const app = Fastify({ logger: opts.logger ?? false });
-  const workspaceStore = opts.workspaceStore ?? createWorkspaceStore({ appDataRoot: opts.workspaceRoot });
+  const warn = opts.warn ?? console.warn;
+  const activeSchemaManager = opts.activeSchemaManager ?? await ActiveSchemaManager.create({ appDataRoot: opts.workspaceRoot, now: opts.now, warn });
+  const workspaceStore = opts.workspaceStore ?? createWorkspaceStore({ appDataRoot: opts.workspaceRoot, activeSchemaManager });
   const registry = opts.registry ?? workspaceStore.registry;
   app.decorate('configRegistry', registry);
-  const warn = opts.warn ?? console.warn;
+  const schemaRefreshService = opts.schemaRefreshService ?? new SchemaRefreshService({
+    ...defaultRefreshDependencies(),
+    activeSchema: () => activeSchemaManager.snapshot().schema,
+    activeMetadata: () => activeSchemaManager.snapshot().metadata,
+    now: opts.now ?? (() => new Date()),
+  });
 
   // Project-wide error handler (CR-01 fix): every guard above sends its own
   // `reply.code(403).send(...)` directly rather than throwing, so this
@@ -105,9 +120,9 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
       registerOriginGuard(api, opts.ctx);
       registerTokenGuard(api, opts.ctx);
       await api.register(healthRoutes);
-      await api.register(schemaRoutes);
-      await api.register(configRoutes, { registry, snapshotRoot: opts.snapshotRoot, warn: opts.warn });
-      await api.register(historyRoutes, { registry, snapshotRoot: opts.snapshotRoot, warn: opts.warn });
+      await api.register(schemaRoutes, { activeSchemaManager, schemaRefreshService });
+      await api.register(configRoutes, { registry, activeSchemaManager, snapshotRoot: opts.snapshotRoot, warn: opts.warn });
+      await api.register(historyRoutes, { registry, activeSchemaManager, snapshotRoot: opts.snapshotRoot, warn: opts.warn });
       await api.register(workspaceRoutes, { workspaceStore });
     },
     { prefix: '/api' },

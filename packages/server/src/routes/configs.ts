@@ -20,13 +20,14 @@
  */
 import type { FastifyPluginAsync } from 'fastify';
 import { load } from '../../../config-io/src/index.js';
-import { getBundledSchema, getValidator } from '../schema.js';
+import type { ActiveSchemaManager } from '../active-schema-manager.js';
 import { saveWithSnapshot } from '../snapshot-store/save-with-snapshot.js';
 import { RegistryError, isRegularFileOrMissing, type ConfigRegistry } from '../registry.js';
 import type { ApiErr } from '../api-types.js';
 
 export interface ConfigRoutesOptions {
   registry: ConfigRegistry;
+  activeSchemaManager: ActiveSchemaManager;
   snapshotRoot?: string;
   warn?: (message: string) => void;
 }
@@ -48,7 +49,7 @@ const SAVE_BODY_SCHEMA = {
 } as const;
 
 export const configRoutes: FastifyPluginAsync<ConfigRoutesOptions> = async (app, opts) => {
-  const { registry, snapshotRoot, warn } = opts;
+  const { registry, activeSchemaManager, snapshotRoot, warn } = opts;
 
   app.get('/configs', async () => ({ ok: true, configs: registry.list() }));
 
@@ -81,7 +82,8 @@ export const configRoutes: FastifyPluginAsync<ConfigRoutesOptions> = async (app,
     }
 
     try {
-      const data = await load(tracked.path, { schema: getBundledSchema() });
+      const snapshot = activeSchemaManager.snapshot();
+      const data = await load(tracked.path, { schema: snapshot.schema });
       return { ok: true, data };
     } catch (err) {
       // The registry entry outlived the file on disk (deleted out from
@@ -111,7 +113,8 @@ export const configRoutes: FastifyPluginAsync<ConfigRoutesOptions> = async (app,
       // Only `req.body.config` is ever used — any other body property
       // (e.g. a client-supplied `path`) is ignored, never read as a
       // filesystem target.
-      const result = await saveWithSnapshot(tracked.path, req.body.config, getValidator(), {
+      const snapshot = activeSchemaManager.snapshot();
+      const result = await saveWithSnapshot(tracked.path, req.body.config, snapshot.validator, {
         root: snapshotRoot,
         warn,
       });

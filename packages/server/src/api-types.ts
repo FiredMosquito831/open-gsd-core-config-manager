@@ -64,3 +64,38 @@ export interface HistoryRestoreResult {
   snapshotId?: string;
   warning?: string;
 }
+
+/** Client-safe lifecycle state for the authoritative active schema generation. */
+export interface SchemaStatusDto {
+  source: 'bundled' | 'refreshed';
+  gsdCoreVersion: string;
+  activatedAt?: string;
+  warning?: string;
+  lastChecked?: string;
+  commitPrefix?: string;
+  archiveSha256Prefix?: string;
+}
+
+/** One normalized semantic change retained for proposal review. */
+export interface SchemaChangeDto {
+  path: string;
+  kind: string;
+  before?: unknown;
+  after?: unknown;
+}
+
+/** Review-safe, server-held proposal evidence. Schema content is intentionally absent. */
+export interface SchemaProposalDto {
+  id: string;
+  expiresAt: string;
+  checkedAt: string;
+  gsdCoreVersion: string;
+  changes: readonly SchemaChangeDto[];
+  documentationDiagnostics: readonly unknown[];
+}
+
+export type SchemaRefreshResponse = ApiOk<{ status: SchemaStatusDto; proposal?: SchemaProposalDto; noChange?: true }>
+  | ApiErr;
+export type SchemaActivationResponse = ApiOk<{ status: SchemaStatusDto }> | ApiErr;
+export type SchemaCancellationResponse = ApiOk<{ cancelled: true }> | ApiErr;
+export type SchemaResetResponse = ApiOk<{ status: SchemaStatusDto }> | ApiErr;

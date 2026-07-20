@@ -30,7 +30,7 @@ async function withCreateLock<T>(key: string, fn: () => Promise<T>): Promise<T> 
 import type { TrackedWorkspaceConfig } from './api-types.js';
 import { createRegistry, RegistryError, type ConfigRegistry } from './registry.js';
 import { saveWithSnapshot } from './snapshot-store/save-with-snapshot.js';
-import { getValidator } from './schema.js';
+import type { ActiveSchemaManager } from './active-schema-manager.js';
 import { appDataRoot } from './snapshot-store/paths.js';
 
 /** Persisted workspace data shape (versioned for future migrations). */
@@ -44,6 +44,8 @@ interface WorkspaceStoreOptions {
   appDataRoot?: string;
   /** Optional pre-existing registry (tests may inject one). */
   registry?: ConfigRegistry;
+  /** Shared active schema authority used when creating a config. */
+  activeSchemaManager?: ActiveSchemaManager;
 }
 
 export interface WorkspaceStore {
@@ -118,6 +120,7 @@ function isExcludedDir(name: string): boolean {
 /** Create a persisted workspace store. */
 export function createWorkspaceStore(opts: WorkspaceStoreOptions = {}): WorkspaceStore {
   const root = opts.appDataRoot ?? defaultAppDataRoot();
+  const activeSchemaManager = opts.activeSchemaManager;
   const persisted = loadPersisted(root);
   const registry = opts.registry ?? createRegistry({ seed: persisted.map((p) => ({ id: p.id, path: p.path, name: nameFor(p.path) })) });
   const entries = new Map<string, TrackedWorkspaceConfig>();
@@ -306,7 +309,9 @@ export function createWorkspaceStore(opts: WorkspaceStoreOptions = {}): Workspac
         mkdirSync(dirname(targetPath), { recursive: true });
         const minimalConfig = { mode: 'interactive' };
 
-        const result = await saveWithSnapshot(targetPath, minimalConfig, getValidator(), { root });
+        const validator = activeSchemaManager?.snapshot().validator;
+        if (!validator) throw new RegistryError('Schema authority is unavailable');
+        const result = await saveWithSnapshot(targetPath, minimalConfig, validator, { root });
         if (!result.ok) {
           // Validation should not fail for a minimal known-good config, but if
           // it does, surface it as a generic creation failure.
