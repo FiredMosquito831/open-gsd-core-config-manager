@@ -23,26 +23,30 @@
  * seam this module uses.
  */
 import bundledSchema from '../../schema-data/bundled-schema.json' with { type: 'json' };
+import bundledSchemaMetadata from '../../schema-data/bundled-schema-meta.json' with { type: 'json' };
 import { buildAjvSchema, createValidator } from '../../config-io/src/index.js';
 import type { SchemaEntry, ValidationResult } from '../../config-io/src/types.js';
+import type { CanonicalSchemaMetadata } from '../../schema-data/src/source-types.js';
 
 const SCHEMA = bundledSchema as unknown as Record<string, SchemaEntry>;
+const METADATA = bundledSchemaMetadata as CanonicalSchemaMetadata;
 
-/** Returns the bundled canonical schema (inlined at build time — never read from disk at runtime). */
+/** Returns the immutable bundled canonical schema inlined at build time. */
 export function getBundledSchema(): Record<string, SchemaEntry> {
   return SCHEMA;
 }
 
-let cachedValidator: ((data: unknown) => ValidationResult) | undefined;
+/** Returns immutable shipped provenance without any runtime source-tree reads. */
+export function getBundledSchemaMetadata(): CanonicalSchemaMetadata {
+  return METADATA;
+}
 
 /**
- * Returns the compiled Ajv validator for the bundled schema, memoized at
- * module scope — Ajv compilation is expensive and the schema never changes
- * at runtime.
+ * Compatibility-only bundled validator. Runtime consumers move to
+ * ActiveSchemaManager snapshots so renderer and validation share one generation.
  */
+let cachedValidator: ((data: unknown) => ValidationResult) | undefined;
 export function getValidator(): (data: unknown) => ValidationResult {
-  if (!cachedValidator) {
-    cachedValidator = createValidator(buildAjvSchema(SCHEMA));
-  }
+  if (!cachedValidator) cachedValidator = createValidator(buildAjvSchema(SCHEMA));
   return cachedValidator;
 }

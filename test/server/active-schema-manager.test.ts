@@ -124,7 +124,7 @@ describe('ActiveSchemaManager', () => {
     const manager = await ActiveSchemaManager.create({ appDataRoot, store });
     const previous = manager.snapshot();
 
-    await expect(manager.activateValidatedProposal({ schema: { broken: { type: 'not-a-type' } }, metadata: newerMetadata() })).rejects.toThrow();
+    await expect(manager.activateValidatedProposal({ schema: { broken: { type: 'not-a-type' } } as never, metadata: newerMetadata() })).rejects.toThrow();
     expect(manager.snapshot()).toBe(previous);
     await expect(manager.activateValidatedProposal(proposal())).rejects.toThrow();
     expect(manager.snapshot()).toBe(previous);
