@@ -12,6 +12,7 @@ import { SaveBar } from './SaveBar';
 import { ValidationSummary } from './ValidationSummary';
 import { RuntimeInstallNotice } from '../specialized/RuntimeInstallNotice';
 import { HistoryWorkspace } from '../history/HistoryWorkspace';
+import { SchemaWorkspace } from '../schema/SchemaWorkspace';
 import type { LoadResult, SchemaEntry } from '../../../../packages/config-io/src/types';
 
 function RestoreNotice() {
@@ -27,12 +28,13 @@ function RestoreNotice() {
 }
 
 interface ConfigEditorProps {
-  workspaceMode?: 'editor' | 'history';
+  workspaceMode?: 'editor' | 'history' | 'schema';
 }
 
 export function ConfigEditor({ workspaceMode = 'editor' }: ConfigEditorProps) {
   const { activeConfigId, searchQuery, searchOpen, setActiveChapter, setHighlightTarget, setSearchOpen, openHistory } = useUiStore();
   const queryClient = useQueryClient();
+  if (workspaceMode === 'schema') return <SchemaWorkspace />;
   const configQuery = useQuery({ queryKey: ['config', activeConfigId], queryFn: () => loadConfig(activeConfigId!), enabled: !!activeConfigId });
   const schemaQuery = useQuery({ queryKey: ['schema'], queryFn: getSchema });
 
@@ -48,7 +50,7 @@ interface EditorContentsProps {
   configId: string;
   loadResult: LoadResult;
   schema: Record<string, SchemaEntry>;
-  workspaceMode: 'editor' | 'history';
+  workspaceMode: 'editor' | 'history' | 'schema';
   onSaved(refreshed: LoadResult): void;
   searchQuery: string;
   searchOpen: boolean;

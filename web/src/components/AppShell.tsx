@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { SchemaStatusControl } from './schema/SchemaStatusControl';
 
 export interface AppShellProps {
   /** Left pane: tracked-config sidebar. */
@@ -8,7 +9,7 @@ export interface AppShellProps {
   /** Main pane surface. */
   editor: ReactNode;
   /** Dedicated workspace mode controls chapter/search visibility and landmark name. */
-  mode?: 'editor' | 'history';
+  mode?: 'editor' | 'history' | 'schema';
   /** Whether the left sidebar pane is currently open. */
   leftOpen: boolean;
   /** Whether the middle chapter pane is currently open. */
@@ -65,6 +66,7 @@ export function AppShell({
         >
           <SidebarIcon />
         </button>
+        <SchemaStatusControl />
         {mode === 'editor' && <button
           type="button"
           className="gsd-rail-button"
@@ -93,7 +95,7 @@ export function AppShell({
         <div className="gsd-app-shell__pane-content">{chapterNav}</div>
       </nav>}
 
-      <main className="gsd-app-shell__main" aria-label={mode === 'history' ? 'Version history' : 'Editor'}>
+      <main className="gsd-app-shell__main" aria-label={mode === 'history' ? 'Version history' : mode === 'schema' ? 'Schema maintenance' : 'Editor'}>
         <div className="gsd-app-shell__pane-content">
           {mode === 'editor' && <div className="gsd-global-search" role="search">
             <label className="gsd-global-search__label" htmlFor="gsd-global-search-input">
