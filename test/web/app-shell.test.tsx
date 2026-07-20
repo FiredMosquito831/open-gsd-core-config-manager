@@ -45,7 +45,8 @@ function renderApp() {
 }
 
 describe('AppShell', () => {
-  it('renders three pane landmarks and toggle controls', () => {
+  it('renders three pane landmarks and toggle controls when a legacy status mock returns undefined', () => {
+    vi.mocked(getSchemaStatus).mockReturnValueOnce(undefined as never);
     render(
       <AppShell
         sidebar={<div>Sidebar content</div>}

@@ -7,7 +7,17 @@ export function SchemaStatusControl() {
   const openSchemaMaintenance = useUiStore((state) => state.openSchemaMaintenance);
   const [status, setStatus] = useState<SchemaStatusDto>();
   const [busy, setBusy] = useState(true);
-  useEffect(() => { let mounted = true; void getSchemaStatus().then((value) => { if (mounted) setStatus(value); }).catch(() => undefined).finally(() => { if (mounted) setBusy(false); }); return () => { mounted = false; }; }, []);
+  useEffect(() => {
+    let mounted = true;
+    // Keep the rail control inert when legacy shallow test mocks omit a return
+    // value, while real request errors still settle the busy state safely.
+    void Promise.resolve().then(() => getSchemaStatus()).then((value) => {
+      if (mounted) setStatus(value);
+    }).catch(() => undefined).finally(() => {
+      if (mounted) setBusy(false);
+    });
+    return () => { mounted = false; };
+  }, []);
   const source = status?.source === 'refreshed' ? 'Refreshed' : 'Bundled';
   const version = status?.gsdCoreVersion ?? 'schema unavailable';
   const date = status?.activatedAt ? new Date(status.activatedAt).toLocaleDateString() : 'date unavailable';
