@@ -61,7 +61,16 @@ If this exact safe official-format compatibility cannot be proven, Phase 6 execu
 
 ## Deviations from Plan
 
-None - plan executed exactly as written. The plan's `reject-tar` branch explicitly requires the recorded dependency-free reader contract and escalation condition.
+### Auto-fixed Issues
+
+**1. [Rule 1 - Bug] Corrected premature SCHEMA-05 completion tracking**
+- **Found during:** Plan-state update
+- **Issue:** The generic `requirements.mark-complete SCHEMA-05` operation marked the entire feature requirement complete even though this plan only records its archive dependency decision gate.
+- **Fix:** Restored SCHEMA-05 to pending in `REQUIREMENTS.md`; Plan 06 remains in progress at 1/9 plans completed.
+- **Files modified:** `.planning/REQUIREMENTS.md`, `.planning/STATE.md`, `.planning/ROADMAP.md`
+- **Commit:** `d27acb1`
+
+The plan's `reject-tar` branch otherwise executed exactly as written and requires the recorded dependency-free reader contract and escalation condition.
 
 ## Known Stubs
 
