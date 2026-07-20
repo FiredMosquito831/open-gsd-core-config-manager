@@ -69,6 +69,7 @@ export interface HistoryRestoreResult {
 export interface SchemaStatusDto {
   source: 'bundled' | 'refreshed';
   gsdCoreVersion: string;
+  generatedAt?: string;
   activatedAt?: string;
   warning?: string;
   lastChecked?: string;

@@ -18,6 +18,7 @@ describe.skipIf(!LIVE_COMPATIBILITY)('live latest-stable schema compatibility', 
       ...defaultRefreshDependencies(),
       activeSchema: () => bundledSchema,
       activeMetadata: () => bundledMetadata,
+      activeGeneration: () => 0,
       overlays: () => ({
         curated: Object.fromEntries(Object.entries(bundledSchema).map(([key, entry]) => [key, {
           'x-description': entry['x-description'],
@@ -32,7 +33,7 @@ describe.skipIf(!LIVE_COMPATIBILITY)('live latest-stable schema compatibility', 
     const result = await service.refresh();
 
     expect(activationAttempts).toBe(0);
-    expect(result.kind).not.toBe('failure');
+    if (result.kind === 'failure') throw new Error(result.error);
     if (result.kind === 'proposal') {
       expect(result.proposal.id).toMatch(/^[a-z0-9-]+$/i);
       expect(result.proposal.metadata).toMatchObject({
@@ -42,9 +43,10 @@ describe.skipIf(!LIVE_COMPATIBILITY)('live latest-stable schema compatibility', 
         archiveSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
       });
       expect(result.proposal.schema).toBeTypeOf('object');
-    } else {
-      expect(result.gsdCoreVersion).toMatch(/^\d+\.\d+\.\d+$/);
-      expect(Date.parse(result.checkedAt)).not.toBeNaN();
+      return;
     }
+    if (!('checkedAt' in result)) throw new Error('Refresh unexpectedly failed');
+    expect(result.gsdCoreVersion).toMatch(/^\d+\.\d+\.\d+$/);
+    expect(Date.parse(result.checkedAt)).not.toBeNaN();
   }, 60_000);
 });

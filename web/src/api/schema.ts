@@ -9,8 +9,13 @@ export function getSchema() {
 }
 
 /** Server-owned schema lifecycle calls accept no source selectors or schema content. */
+export interface SchemaStatusResult {
+  status: SchemaStatusDto;
+  proposal?: SchemaProposalDto;
+}
+
 export function getSchemaStatus() {
-  return apiFetch<{ status: SchemaStatusDto }>('/api/schema/status').then((response) => response.status);
+  return apiFetch<SchemaStatusResult>('/api/schema/status');
 }
 
 export function refreshSchema() {

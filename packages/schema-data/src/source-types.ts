@@ -9,6 +9,8 @@ export interface SourceIdentity {
 export interface CanonicalSchemaMetadata extends SourceIdentity {
   envelopeVersion: 1;
   source: 'bundled' | 'refreshed';
+  /** Inert hashes of the upstream documentation used for the active generation. */
+  upstreamDocumentationFingerprints?: Record<string, string>;
 }
 
 export interface DynamicKeyPattern {

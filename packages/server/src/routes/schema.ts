@@ -46,11 +46,19 @@ function proposalDto(proposal: ReturnType<SchemaRefreshService['proposal']>): Sc
 
 export const schemaRoutes: FastifyPluginAsync<SchemaRoutesOptions> = async (app, opts) => {
   const { activeSchemaManager: manager, schemaRefreshService: refresh } = opts;
+  let lifecycleTail = Promise.resolve();
+  const serializeLifecycle = async <T>(operation: () => Promise<T>): Promise<T> => {
+    const previous = lifecycleTail;
+    let release!: () => void;
+    lifecycleTail = new Promise<void>((resolve) => { release = resolve; });
+    await previous;
+    try { return await operation(); } finally { release(); }
+  };
 
   app.get('/schema', async () => ({ ok: true, schema: manager.snapshot().schema }));
   app.get('/schema/status', async () => ({ ok: true, status: statusDto(manager, refresh), proposal: proposalDto(refresh.proposal()) }));
 
-  app.post('/schema/refresh', { schema: { body: EMPTY_BODY_SCHEMA } }, async (_req, reply) => {
+  app.post('/schema/refresh', { schema: { body: EMPTY_BODY_SCHEMA } }, async (_req, reply) => serializeLifecycle(async () => {
     const result = await refresh.refresh();
     if (result.kind === 'failure') return reply.code(422).send(errBody(result.error));
     return {
@@ -58,29 +66,28 @@ export const schemaRoutes: FastifyPluginAsync<SchemaRoutesOptions> = async (app,
       status: statusDto(manager, refresh),
       ...(result.kind === 'proposal' ? { proposal: proposalDto(result.proposal) } : { noChange: true }),
     };
-  });
+  }));
 
-  app.post<{ Params: { id: string } }>('/schema/proposals/:id/activate', { schema: { params: { type: 'object', required: ['id'], additionalProperties: false, properties: { id: OPAQUE_ID } }, body: EMPTY_BODY_SCHEMA } }, async (req, reply) => {
+  app.post<{ Params: { id: string } }>('/schema/proposals/:id/activate', { schema: { params: { type: 'object', required: ['id'], additionalProperties: false, properties: { id: OPAQUE_ID } }, body: EMPTY_BODY_SCHEMA } }, async (req, reply) => serializeLifecycle(async () => {
     const proposal = refresh.proposal();
-    if (!proposal || proposal.id !== req.params.id) return reply.code(404).send(errBody('Schema proposal is unavailable.'));
+    if (!proposal || proposal.id !== req.params.id || proposal.basedOnGeneration !== manager.currentGeneration()) return reply.code(404).send(errBody('Schema proposal is unavailable.'));
+    // Consume before persistence so no concurrent lifecycle action can reuse it.
+    if (!refresh.cancelProposal(proposal.id)) return reply.code(404).send(errBody('Schema proposal is unavailable.'));
     try {
-      // The refresh service already compiled this canonical descriptor map;
-      // retain only its server-held content while crossing the manager seam.
       await manager.activateValidatedProposal(proposal as unknown as Parameters<ActiveSchemaManager['activateValidatedProposal']>[0]);
-      refresh.cancelProposal(proposal.id);
       return { ok: true, status: statusDto(manager, refresh) };
     } catch (error) {
       app.log.warn(error, 'Schema proposal activation failed');
       return reply.code(422).send(errBody('Unable to activate the schema proposal.'));
     }
-  });
+  }));
 
-  app.delete<{ Params: { id: string } }>('/schema/proposals/:id', { schema: { params: { type: 'object', required: ['id'], additionalProperties: false, properties: { id: OPAQUE_ID } } } }, async (req, reply) => {
+  app.delete<{ Params: { id: string } }>('/schema/proposals/:id', { schema: { params: { type: 'object', required: ['id'], additionalProperties: false, properties: { id: OPAQUE_ID } } } }, async (req, reply) => serializeLifecycle(async () => {
     if (!refresh.cancelProposal(req.params.id)) return reply.code(404).send(errBody('Schema proposal is unavailable.'));
     return { ok: true, cancelled: true };
-  });
+  }));
 
-  app.post('/schema/reset', { schema: { body: EMPTY_BODY_SCHEMA } }, async (_req, reply) => {
+  app.post('/schema/reset', { schema: { body: EMPTY_BODY_SCHEMA } }, async (_req, reply) => serializeLifecycle(async () => {
     try {
       await manager.resetToBundled();
       return { ok: true, status: statusDto(manager, refresh) };
@@ -88,5 +95,5 @@ export const schemaRoutes: FastifyPluginAsync<SchemaRoutesOptions> = async (app,
       app.log.warn(error, 'Schema reset failed');
       return reply.code(422).send(errBody('Unable to reset the active schema.'));
     }
-  });
+  }));
 };

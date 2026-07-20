@@ -9,6 +9,8 @@ const FALLBACK_WARNING = 'Saved schema override was ignored; the bundled schema 
 export interface SchemaStatus {
   source: 'bundled' | 'refreshed';
   gsdCoreVersion: string;
+  /** Build-time generation date for the immutable bundled baseline. */
+  generatedAt?: string;
   activatedAt?: string;
   warning?: string;
 }
@@ -77,6 +79,7 @@ function bundledSnapshot(warning?: string): ActiveSchemaSnapshot {
   return compileSnapshot(getBundledSchema(), metadata, {
     source: 'bundled',
     gsdCoreVersion: metadata.gsdCoreVersion,
+    generatedAt: metadata.generatedAt,
     ...(warning ? { warning } : {}),
   });
 }
@@ -89,6 +92,7 @@ function isPersistedOverride(value: unknown): value is PersistedSchemaOverride {
 
 export class ActiveSchemaManager {
   private active: ActiveSchemaSnapshot;
+  private generation = 0;
   private constructor(
     initial: ActiveSchemaSnapshot,
     private readonly store: SchemaOverrideStore,
@@ -127,6 +131,10 @@ export class ActiveSchemaManager {
     return this.active;
   }
 
+  currentGeneration(): number {
+    return this.generation;
+  }
+
   async activateValidatedProposal(proposal: SchemaProposal): Promise<SchemaStatus> {
     const activatedAt = this.now().toISOString();
     const snapshot = compileSnapshot(proposal.schema, { ...proposal.metadata, source: 'refreshed' }, {
@@ -142,6 +150,7 @@ export class ActiveSchemaManager {
     };
     await this.store.write(envelope);
     this.active = snapshot;
+    this.generation += 1;
     return snapshot.status;
   }
 
@@ -149,6 +158,7 @@ export class ActiveSchemaManager {
     const snapshot = bundledSnapshot();
     await this.store.remove();
     this.active = snapshot;
+    this.generation += 1;
     return snapshot.status;
   }
 }

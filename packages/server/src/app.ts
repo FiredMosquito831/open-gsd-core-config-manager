@@ -87,6 +87,7 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
     ...defaultRefreshDependencies(),
     activeSchema: () => activeSchemaManager.snapshot().schema,
     activeMetadata: () => activeSchemaManager.snapshot().metadata,
+    activeGeneration: () => activeSchemaManager.currentGeneration(),
     now: opts.now ?? (() => new Date()),
   });
 

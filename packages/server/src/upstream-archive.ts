@@ -78,7 +78,9 @@ export function inspectPinnedArchive(response: Uint8Array, limits: ArchiveLimits
 
   let bytes: Uint8Array;
   try {
-    bytes = gunzipSync(response);
+    // maxOutputLength bounds zlib's output buffer while it inflates, rather
+    // than checking only after a tar bomb has already been materialized.
+    bytes = gunzipSync(response, { maxOutputLength: limits.maxDecompressedBytes });
   } catch {
     fail('gzip decompression failed');
   }

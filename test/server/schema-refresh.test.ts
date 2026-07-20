@@ -41,6 +41,7 @@ function dependencies(overrides: Partial<RefreshDependencies> = {}): RefreshDepe
     compile: (schema) => createValidator(buildAjvSchema(schema as unknown as Record<string, import('../../packages/config-io/src/types.js').SchemaEntry>)),
     activeSchema: () => getBundledSchema(),
     activeMetadata: () => getBundledSchemaMetadata(),
+    activeGeneration: () => 0,
     overlays: () => ({
       curated: Object.fromEntries(Object.entries(getBundledSchema()).map(([key, entry]) => [key, {
         'x-description': entry['x-description'], 'x-category': entry['x-category'], 'x-options': entry['x-options'],

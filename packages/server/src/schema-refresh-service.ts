@@ -13,6 +13,8 @@ import type {
 import { parseCapabilityRegistryLiteral, type CapabilityParserLimits } from './capability-registry-parser.js';
 import { extractDocumentationEvidence, type DocumentationEvidence, type DocumentationEvidenceLimits } from './documentation-evidence-parser.js';
 import { inspectPinnedArchive, type ArchiveLimits, type InspectedArchive } from './upstream-archive.js';
+import curatedDocs from '../../schema-data/curated-docs.json' with { type: 'json' };
+import specializedCatalog from '../../schema-data/specialized-catalog.json' with { type: 'json' };
 
 const API_ROOT = 'https://api.github.com/repos/open-gsd/gsd-core';
 const COMMIT = /^[a-f0-9]{40}$/iu;
@@ -47,6 +49,8 @@ export interface SchemaProposal {
   changes: SchemaChangeSet;
   documentationDiagnostics: DocumentationEvidence['diagnostics'];
   checkedAt: string;
+  /** Active schema generation used as the reconciliation baseline. */
+  basedOnGeneration: number;
 }
 
 export interface RefreshDependencies {
@@ -60,6 +64,7 @@ export interface RefreshDependencies {
   compile: (schema: CanonicalSchema) => unknown;
   activeSchema: () => CanonicalSchema;
   activeMetadata: () => CanonicalSchemaMetadata;
+  activeGeneration: () => number;
   overlays: () => ReconciliationOverlays;
   now: () => Date;
   randomId: () => string;
@@ -151,10 +156,15 @@ export class SchemaRefreshService {
       const sources: ParsedSchemaSources = { manifest, defaults: sourceDefaults, capabilitySchema, fixtureValues: [], upstreamDocumentationFingerprints: docs.fingerprints };
 
       this.currentStage = 'preparing';
+      const activeGeneration = this.deps.activeGeneration();
       const activeSchema = this.deps.activeSchema();
       const candidate = this.deps.reconcile(sources, activeSchema, this.deps.overlays(), identity);
       this.deps.compile(candidate.schema);
-      const changes = this.deps.diff(activeSchema, candidate.schema, { previous: Object.create(null), proposed: docs.fingerprints });
+      const changes = this.deps.diff(activeSchema, candidate.schema, {
+        previous: this.deps.activeMetadata().upstreamDocumentationFingerprints ?? Object.create(null),
+        proposed: docs.fingerprints,
+      });
+      candidate.metadata.upstreamDocumentationFingerprints = { ...docs.fingerprints };
       const checkedAt = this.deps.now().toISOString();
       if (changes.changes.length === 0) {
         this.checked = checkedAt;
@@ -162,7 +172,7 @@ export class SchemaRefreshService {
         return { kind: 'no-change', checkedAt, gsdCoreVersion: version };
       }
       const expiresAt = new Date(this.deps.now().getTime() + 5 * 60_000).toISOString();
-      const proposal: SchemaProposal = { id: this.deps.randomId(), expiresAt, schema: candidate.schema, metadata: candidate.metadata, changes, documentationDiagnostics: docs.diagnostics, checkedAt };
+      const proposal: SchemaProposal = { id: this.deps.randomId(), expiresAt, schema: candidate.schema, metadata: candidate.metadata, changes, documentationDiagnostics: docs.diagnostics, checkedAt, basedOnGeneration: activeGeneration };
       this.retained = proposal;
       this.checked = checkedAt;
       this.currentStage = 'proposal';
@@ -187,9 +197,27 @@ export function defaultRefreshDependencies(): RefreshDependencies {
     },
     fetchBytes: async (path) => {
       const response = await fetch(path, { headers: { Accept: 'application/vnd.github+json' }, signal: AbortSignal.timeout(30_000) });
-      if (!response.ok) fail();
-      const bytes = new Uint8Array(await response.arrayBuffer());
-      if (bytes.byteLength > archiveLimits.maxCompressedBytes) fail();
+      if (!response.ok || !response.body) fail();
+      const reader = response.body.getReader();
+      const chunks: Uint8Array[] = [];
+      let size = 0;
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          size += value.byteLength;
+          if (size > archiveLimits.maxCompressedBytes) {
+            await reader.cancel();
+            fail();
+          }
+          chunks.push(value);
+        }
+      } finally {
+        reader.releaseLock();
+      }
+      const bytes = new Uint8Array(size);
+      let offset = 0;
+      for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength; }
       return bytes;
     },
     inspectArchive: inspectPinnedArchive,
@@ -200,7 +228,11 @@ export function defaultRefreshDependencies(): RefreshDependencies {
     compile: (schema) => createValidator(buildAjvSchema(schema as Record<string, SchemaEntry>)),
     activeSchema: () => { throw new Error('Active schema manager is required'); },
     activeMetadata: () => { throw new Error('Active schema manager is required'); },
-    overlays: () => ({ curated: Object.create(null), specialized: Object.create(null) }),
+    activeGeneration: () => { throw new Error('Active schema manager is required'); },
+    overlays: () => ({
+      curated: curatedDocs as ReconciliationOverlays['curated'],
+      specialized: specializedCatalog as ReconciliationOverlays['specialized'],
+    }),
     now: () => new Date(),
     randomId: () => crypto.randomUUID(),
   };
