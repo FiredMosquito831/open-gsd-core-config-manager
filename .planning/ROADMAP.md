@@ -200,13 +200,13 @@ Plans:
   3. Curated beginner-friendly descriptions for unchanged keys are preserved across a refresh — never blindly overwritten.
   4. A "schema last refreshed" indicator is visible so users always know how current their schema is.
 
-**Plans**: 4/9 plans executed
+**Plans**: 5/9 plans executed
 
 - [x] 06-01-PLAN.md
 - [x] 06-02-PLAN.md
 - [x] 06-03-PLAN.md
 - [x] 06-04-PLAN.md
-- [ ] 06-05-PLAN.md
+- [x] 06-05-PLAN.md
 - [ ] 06-06-PLAN.md
 - [ ] 06-07-PLAN.md
 - [ ] 06-08-PLAN.md
@@ -226,4 +226,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 3. Generic Schema-Driven UI Shell | 6/6 | Complete    | 2026-07-17 |
 | 4. Pool Editors & Model Profile Specialization | 2/5 | In Progress|  |
 | 5. Version History UI | 9/9 | Complete    | 2026-07-20 |
-| 6. Live Schema Reconcile Against gsd-core | 4/9 | In Progress|  |
+| 6. Live Schema Reconcile Against gsd-core | 5/9 | In Progress|  |
