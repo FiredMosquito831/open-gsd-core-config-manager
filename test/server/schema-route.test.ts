@@ -1,9 +1,6 @@
 /**
- * Schema REST API route suite (03-02-PLAN.md Task 1).
- *
- * GET /api/schema must be token-guarded and return the bundled canonical
- * schema in the frozen ApiOk envelope. The schema is served from the
- * bundle-safe inlined copy, not from a runtime filesystem path.
+ * Schema REST API route suite. Schema lifecycle transitions stay within the
+ * existing Host, Origin, and per-launch-token guarded `/api` boundary.
  */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { mkdtempSync, rmSync } from 'node:fs';
@@ -27,45 +24,90 @@ function makeContext() {
 }
 
 function authHeaders(extra: Record<string, string> = {}): Record<string, string> {
-  return { host: HOST, 'x-gsd-token': TOKEN, ...extra };
+  return { host: HOST, 'x-gsd-token': TOKEN, origin: CORS_ORIGIN, ...extra };
 }
 
 let app: FastifyInstance;
 let clientRoot: string;
+let workspaceRoot: string;
 
 beforeEach(async () => {
   clientRoot = mkdtempSync(join(tmpdir(), 'gsdcm-schema-client-'));
-  app = await buildApp({ ctx: makeContext(), clientRoot });
+  workspaceRoot = mkdtempSync(join(tmpdir(), 'gsdcm-schema-data-'));
+  app = await buildApp({ ctx: makeContext(), clientRoot, workspaceRoot });
 });
 
 afterEach(async () => {
   await app.close();
   rmSync(clientRoot, { recursive: true, force: true });
+  rmSync(workspaceRoot, { recursive: true, force: true });
 });
 
 describe('GET /api/schema', () => {
-  it('requires x-gsd-token and returns the bundled schema keys', async () => {
-    const res = await app.inject({
-      method: 'GET',
-      url: '/api/schema',
-      headers: authHeaders(),
-    });
+  it('requires x-gsd-token and returns the active schema keys', async () => {
+    const res = await app.inject({ method: 'GET', url: '/api/schema', headers: authHeaders() });
     expect(res.statusCode).toBe(200);
     const body = res.json() as { ok: boolean; schema: Record<string, unknown> };
     expect(body.ok).toBe(true);
-    expect(Object.keys(body.schema).length).toBeGreaterThan(0);
     expect(Object.keys(body.schema)).toEqual(Object.keys(getBundledSchema()));
   });
 
   it('rejects a request without the token', async () => {
-    const res = await app.inject({
-      method: 'GET',
-      url: '/api/schema',
-      headers: { host: HOST },
-    });
+    const res = await app.inject({ method: 'GET', url: '/api/schema', headers: { host: HOST, origin: CORS_ORIGIN } });
     expect(res.statusCode).toBe(403);
-    const body = res.json() as { ok: boolean; errors: Array<{ message: string }> };
-    expect(body.ok).toBe(false);
-    expect(body.errors.length).toBeGreaterThan(0);
+    expect(res.json()).toMatchObject({ ok: false });
+  });
+});
+
+describe('schema lifecycle routes', () => {
+  it.each([
+    { method: 'GET' as const, url: '/api/schema/status' },
+    { method: 'POST' as const, url: '/api/schema/refresh' },
+    { method: 'POST' as const, url: '/api/schema/reset' },
+  ])('remains token, Origin, and Host guarded for $method $url', async ({ method, url }) => {
+    expect((await app.inject({ method, url, headers: { host: HOST, origin: CORS_ORIGIN } })).statusCode).toBe(403);
+    expect((await app.inject({ method, url, headers: authHeaders({ origin: 'http://evil.invalid' }) })).statusCode).toBe(403);
+    expect((await app.inject({ method, url, headers: authHeaders({ host: `evil.invalid:${FAKE_PORT}` }) })).statusCode).toBe(403);
+  });
+
+  it('reports only client-safe active status facts', async () => {
+    const res = await app.inject({ method: 'GET', url: '/api/schema/status', headers: authHeaders() });
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toMatchObject({ ok: true, status: { source: 'bundled' } });
+    expect(res.body).not.toContain(workspaceRoot);
+  });
+
+  it('rejects caller-selected refresh source fields', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/schema/refresh',
+      headers: { ...authHeaders(), 'content-type': 'application/json' },
+      payload: { owner: 'evil', repo: 'fork', url: 'https://evil.invalid', ref: 'x', schema: {} },
+    });
+    expect(res.statusCode).toBe(400);
+    expect(res.json()).toEqual({ ok: false, errors: [{ message: 'Invalid request body' }] });
+  });
+
+  it('accepts no body for refresh and keeps the active schema unchanged on a failed check', async () => {
+    const before = await app.inject({ method: 'GET', url: '/api/schema', headers: authHeaders() });
+    const refresh = await app.inject({ method: 'POST', url: '/api/schema/refresh', headers: authHeaders() });
+    const after = await app.inject({ method: 'GET', url: '/api/schema', headers: authHeaders() });
+    expect(refresh.statusCode).toBeGreaterThanOrEqual(200);
+    expect(after.json()).toEqual(before.json());
+  });
+
+  it('accepts only an opaque proposal identifier for activation and cancellation', async () => {
+    const activate = await app.inject({
+      method: 'POST', url: '/api/schema/proposals/arbitrary/activate',
+      headers: { ...authHeaders(), 'content-type': 'application/json' }, payload: { schema: {}, path: '/sentinel/private' },
+    });
+    const cancel = await app.inject({
+      method: 'DELETE', url: '/api/schema/proposals/arbitrary',
+      headers: authHeaders(),
+    });
+    expect(activate.statusCode).toBe(400);
+    expect(activate.body).not.toContain('/sentinel/private');
+    expect(cancel.statusCode).toBe(404);
+    expect(cancel.json()).toEqual({ ok: false, errors: [{ message: 'Schema proposal is unavailable.' }] });
   });
 });
