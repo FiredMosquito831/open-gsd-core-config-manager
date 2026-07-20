@@ -71,10 +71,11 @@ export const schemaRoutes: FastifyPluginAsync<SchemaRoutesOptions> = async (app,
   app.post<{ Params: { id: string } }>('/schema/proposals/:id/activate', { schema: { params: { type: 'object', required: ['id'], additionalProperties: false, properties: { id: OPAQUE_ID } }, body: EMPTY_BODY_SCHEMA } }, async (req, reply) => serializeLifecycle(async () => {
     const proposal = refresh.proposal();
     if (!proposal || proposal.id !== req.params.id || proposal.basedOnGeneration !== manager.currentGeneration()) return reply.code(404).send(errBody('Schema proposal is unavailable.'));
-    // Consume before persistence so no concurrent lifecycle action can reuse it.
-    if (!refresh.cancelProposal(proposal.id)) return reply.code(404).send(errBody('Schema proposal is unavailable.'));
     try {
       await manager.activateValidatedProposal(proposal as unknown as Parameters<ActiveSchemaManager['activateValidatedProposal']>[0]);
+      // Lifecycle operations remain serialized until this succeeds, so retaining
+      // the proposal across a persistence failure permits a safe retry.
+      refresh.cancelProposal(proposal.id);
       return { ok: true, status: statusDto(manager, refresh) };
     } catch (error) {
       app.log.warn(error, 'Schema proposal activation failed');
@@ -90,6 +91,8 @@ export const schemaRoutes: FastifyPluginAsync<SchemaRoutesOptions> = async (app,
   app.post('/schema/reset', { schema: { body: EMPTY_BODY_SCHEMA } }, async (_req, reply) => serializeLifecycle(async () => {
     try {
       await manager.resetToBundled();
+      const proposal = refresh.proposal();
+      if (proposal) refresh.cancelProposal(proposal.id);
       return { ok: true, status: statusDto(manager, refresh) };
     } catch (error) {
       app.log.warn(error, 'Schema reset failed');
