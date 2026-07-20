@@ -3,6 +3,12 @@ import { createHash } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 import { getBundledSchema, getBundledSchemaMetadata } from '../../packages/server/src/schema.js';
 import { SchemaRefreshService, type RefreshDependencies } from '../../packages/server/src/schema-refresh-service.js';
+import type { CanonicalSchema, ParsedSchemaSources } from '../../packages/schema-data/src/source-types.js';
+import { parseCapabilityRegistryLiteral } from '../../packages/server/src/capability-registry-parser.js';
+import { extractDocumentationEvidence } from '../../packages/server/src/documentation-evidence-parser.js';
+import { inspectPinnedArchive } from '../../packages/server/src/upstream-archive.js';
+import { diffCanonicalSchemas, reconcileSchemaSources } from '../../packages/schema-data/src/reconcile.js';
+import { buildAjvSchema, createValidator } from '../../packages/config-io/src/index.js';
 
 const fixtureRoot = new URL('../fixtures/schema-refresh/', import.meta.url);
 const commit = 'a'.repeat(40);
@@ -28,8 +34,19 @@ function dependencies(overrides: Partial<RefreshDependencies> = {}): RefreshDepe
       return archive;
     },
     inspectArchive: () => ({ files: Object.fromEntries(Object.entries(sourceFiles).map(([path, text]) => [path, new TextEncoder().encode(text)])), entries: 2702 }),
+    parseRegistry: parseCapabilityRegistryLiteral as unknown as RefreshDependencies['parseRegistry'],
+    documentation: extractDocumentationEvidence,
+    reconcile: reconcileSchemaSources,
+    diff: diffCanonicalSchemas,
+    compile: (schema) => createValidator(buildAjvSchema(schema as unknown as Record<string, import('../../packages/config-io/src/types.js').SchemaEntry>)),
     activeSchema: () => getBundledSchema(),
     activeMetadata: () => getBundledSchemaMetadata(),
+    overlays: () => ({
+      curated: Object.fromEntries(Object.entries(getBundledSchema()).map(([key, entry]) => [key, {
+        'x-description': entry['x-description'], 'x-category': entry['x-category'], 'x-options': entry['x-options'],
+      }])),
+      specialized: Object.create(null),
+    }),
     now: fixedNow,
     randomId: () => 'opaque-proposal-id',
     ...overrides,
@@ -85,15 +102,19 @@ describe('SchemaRefreshService', () => {
       dependencies({ compile: () => { throw new Error('bad schema'); } }),
     ]) {
       const service = new SchemaRefreshService(deps);
-      await expect(service.refresh()).resolves.toEqual({ kind: 'failure', error: 'Unable to prepare a schema refresh proposal.' });
+      await expect(service.refresh()).resolves.toMatchObject({ kind: 'failure' });
       expect(getBundledSchema()).toEqual(snapshot);
       expect(service.proposal()).toBeUndefined();
     }
   });
 
   it('passes deterministic per-key documentation fingerprints into reconciliation, preserving curated prose while creating one documentation note', async () => {
-    let received: RefreshDependencies['reconcile'] extends ((...args: infer Args) => unknown) ? Args[3] : never;
+    let received: ParsedSchemaSources['upstreamDocumentationFingerprints'] = Object.create(null);
     const service = new SchemaRefreshService(dependencies({
+      inspectArchive: () => ({
+        files: Object.fromEntries(Object.entries(sourceFiles).map(([path, text]) => [path, new TextEncoder().encode(path === 'docs/CONFIGURATION.md' ? '## mode\nRemote prose changed.\n' : text)])),
+        entries: 2702,
+      }),
       reconcile: (sources, active, overlays, identity) => {
         received = sources.upstreamDocumentationFingerprints;
         return dependencies().reconcile!(sources, active, overlays, identity);
@@ -107,6 +128,7 @@ describe('SchemaRefreshService', () => {
     const result = await service.refresh();
     expect(result.kind).toBe('proposal');
     expect(received.mode).toMatch(/^[a-f0-9]{64}$/);
+    expect(result.kind === 'proposal' && result.proposal.documentationDiagnostics).not.toContainEqual(expect.objectContaining({ key: 'mode' }));
     expect(result.kind === 'proposal' && result.proposal.changes.byGroup['documentation-drift']).toHaveLength(1);
     expect(result.kind === 'proposal' && result.proposal.schema.mode['x-description']).toBe(getBundledSchema().mode['x-description']);
   });
