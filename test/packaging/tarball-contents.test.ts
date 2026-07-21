@@ -112,6 +112,16 @@ describe('tarball contents (DIST-03)', () => {
     const result = packDryRun();
     expect(result.files.some((f) => f.path === binPath)).toBe(true);
   });
+
+  it('the gsd-config-editor alias bin also ships and resolves to the same CLI entry', () => {
+    const pkg = JSON.parse(readFileSync(join(REPO_ROOT, 'package.json'), 'utf8')) as {
+      bin: Record<string, string>;
+    };
+    expect(pkg.bin['gsd-config-editor']).toBe('./dist/cli.js');
+    const binPath = pkg.bin['gsd-config-editor'].replace(/^\.\//, '');
+    const result = packDryRun();
+    expect(result.files.some((f) => f.path === binPath)).toBe(true);
+  });
 });
 
 /**

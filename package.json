@@ -4,7 +4,8 @@
   "type": "module",
   "description": "Zero-config-friendly desktop-grade tool for viewing, understanding, and safely editing GSD (open-gsd/gsd-core) configuration files.",
   "bin": {
-    "gsd-config-manager": "./dist/cli.js"
+    "gsd-config-manager": "./dist/cli.js",
+    "gsd-config-editor": "./dist/cli.js"
   },
   "files": [
     "dist/cli.js",
