@@ -7,8 +7,8 @@ current_phase_name: Live Schema Reconcile Against gsd-core
 status: executing
 stopped_at: Phase 6 context gathered
 last_updated: "2026-07-20T14:27:25.486Z"
-last_activity: 2026-07-20
-last_activity_desc: Phase 06 execution started
+last_activity: 2026-07-21
+last_activity_desc: Completed quick task 260721-4vz: gsd-config-editor bin alias command
 progress:
   total_phases: 6
   completed_phases: 5
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-07-20)
 Phase: 06 (Live Schema Reconcile Against gsd-core) — EXECUTING
 Plan: 1 of 9
 Status: Executing Phase 06
-Last activity: 2026-07-20 — Phase 06 execution started
+Last activity: 2026-07-21 — Completed quick task 260721-4vz: gsd-config-editor bin alias command
 
 Progress: [██████████] 100%
 
@@ -154,6 +154,12 @@ None yet.
 - Phase 1 (schema build) must resolve known gsd-core schema ambiguities (`model_overrides` vs `model_profile_overrides`, top-level vs `planning.*` duplicate keys, `granularities` purpose) against canonical source, not docs prose — flagged by research as needing deeper research during planning.
 - Phase 4 (pool/model-profile editors) needs careful UX design for the 5-layer model-resolution precedence and the `gsd install` runtime-baking gotcha on Codex/OpenCode installs.
 - Phase 6 (live reconcile) needs research into gsd-core's actual exported shapes/paths at fetch time, since repo structure may shift between versions.
+
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 260721-4vz | Make it an npm package with its own command `gsd-config-editor` that starts the server and browser and shows server started on which port/link | 2026-07-21 | cb72e11 | [260721-4vz-make-it-an-npm-package-with-its-own-comm](./quick/260721-4vz-make-it-an-npm-package-with-its-own-comm/) |
 
 ## Deferred Items
 
