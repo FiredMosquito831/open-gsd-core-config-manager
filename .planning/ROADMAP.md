@@ -18,7 +18,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 3: Generic Schema-Driven UI Shell** - Every config chapter rendered with plain-language docs, tracked-file sidebar, search, and inline validation (completed 2026-07-17)
 - [ ] **Phase 4: Pool Editors & Model Profile Specialization** - Guided editors for array/map pools and GSD model profiles, with effective-value/precedence display
 - [x] **Phase 5: Version History UI** - Browse, diff, and one-click revert of past config snapshots (completed 2026-07-20)
-- [ ] **Phase 6: Live Schema Reconcile Against gsd-core** - On-demand schema refresh from the live gsd-core repo without losing curated docs
+- [x] **Phase 6: Live Schema Reconcile Against gsd-core** - On-demand schema refresh from the live gsd-core repo without losing curated docs (completed 2026-07-21)
 
 ## Phase Details
 
@@ -226,4 +226,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 3. Generic Schema-Driven UI Shell | 6/6 | Complete    | 2026-07-17 |
 | 4. Pool Editors & Model Profile Specialization | 2/5 | In Progress|  |
 | 5. Version History UI | 9/9 | Complete    | 2026-07-20 |
-| 6. Live Schema Reconcile Against gsd-core | 9/9 | In Progress|  |
+| 6. Live Schema Reconcile Against gsd-core | 9/9 | Complete    | 2026-07-21 |
