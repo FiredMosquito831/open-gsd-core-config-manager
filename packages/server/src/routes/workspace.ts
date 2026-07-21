@@ -134,8 +134,13 @@ export const workspaceRoutes: FastifyPluginAsync<WorkspaceRoutesOptions> = async
     { schema: { body: SCAN_BODY_SCHEMA } },
     async (req, reply) => {
       try {
-        const candidates = workspaceStore.scan(req.body.rootPath);
-        return { ok: true, candidates };
+        // Asynchronous on purpose: see packages/server/src/workspace-store.ts
+        // (scan()). The scan awaits fs/promises.readdir/lstat between dirs so
+        // this handler does NOT block the Fastify event loop, which is what
+        // previously starved /api/schema/status, /api/workspace/configs and
+        // /api/health and surfaced the "vschema unavailable" sidebar brick.
+        const { candidates, truncated, scannedDirs } = await workspaceStore.scan(req.body.rootPath);
+        return { ok: true, candidates, ...(truncated ? { truncated: true, scannedDirs } : {}) };
       } catch (err) {
         if (err instanceof RegistryError) {
           return reply.code(400).send(errBody(err.message));

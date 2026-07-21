@@ -1,6 +1,7 @@
-import { useState, type FormEvent, type ChangeEvent } from 'react';
+import { useEffect, useState, type FormEvent, type ChangeEvent } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { previewCreateConfig, createConfig } from '../../api/workspace';
+import { pickerStatus, pickDirectory } from '../../api/picker';
 import { Button } from '../common/Button';
 
 interface CreateConfigDialogProps {
@@ -12,12 +13,35 @@ export function CreateConfigDialog({ onClose }: CreateConfigDialogProps) {
   const [preview, setPreview] = useState<{ targetPath: string; exists: boolean } | null>(null);
   const [confirmed, setConfirmed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [browsing, setBrowsing] = useState(false);
+  const [pickerAvailable, setPickerAvailable] = useState(true);
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    let alive = true;
+    pickerStatus()
+      .then((s) => { if (alive) setPickerAvailable(s.supported); })
+      .catch(() => { /* keep default true */ });
+    return () => { alive = false; };
+  }, []);
 
   const handlePreview = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setPreview(await previewCreateConfig(projectDir));
     setConfirmed(false);
+  };
+
+  const handleBrowse = async () => {
+    setBrowsing(true);
+    try {
+      const chosen = await pickDirectory();
+      if (chosen) {
+        setProjectDir(chosen);
+        setPreview(null);
+      }
+    } finally {
+      setBrowsing(false);
+    }
   };
 
   const handleCreate = async () => {
@@ -38,13 +62,20 @@ export function CreateConfigDialog({ onClose }: CreateConfigDialogProps) {
         <form className="gsd-dialog__form" onSubmit={handlePreview}>
           <label className="gsd-dialog__label">
             Project folder (absolute path)
-            <input
-              className="gsd-dialog__input"
-              type="text"
-              value={projectDir}
-              onChange={(event: ChangeEvent<HTMLInputElement>) => setProjectDir(event.target.value)}
-              placeholder="/home/projects/my-project"
-            />
+            <div className="gsd-dialog__path-row">
+              <input
+                className="gsd-dialog__input"
+                type="text"
+                value={projectDir}
+                onChange={(event: ChangeEvent<HTMLInputElement>) => setProjectDir(event.target.value)}
+                placeholder="/home/projects/my-project"
+              />
+              {pickerAvailable && (
+                <Button type="button" variant="secondary" disabled={browsing} onClick={handleBrowse}>
+                  {browsing ? 'Opening…' : 'Browse…'}
+                </Button>
+              )}
+            </div>
           </label>
           <Button type="submit" variant="secondary" disabled={!projectDir}>
             Preview target path

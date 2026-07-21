@@ -70,8 +70,9 @@ export function AddConfigMenu() {
       {mode === 'file' && (
         <PathEntryDialog
           title="Add config from file picker"
-          description="Browsers hide the real file path for security. Paste the absolute path below, or use Scan chosen folder to discover configs automatically."
+          description="Pick a GSD config.json with the OS file picker, paste its absolute path, or use Scan chosen folder to discover configs automatically."
           submitLabel="Add config"
+          pickKind="file"
           onSubmit={handleTrack}
           onCancel={closeMenu}
         />
@@ -80,6 +81,7 @@ export function AddConfigMenu() {
         <PathEntryDialog
           title="Add config by absolute path"
           submitLabel="Add config"
+          pickKind="file"
           onSubmit={handleTrack}
           onCancel={closeMenu}
         />
@@ -87,8 +89,12 @@ export function AddConfigMenu() {
       {mode === 'scan' && !scanCandidates && (
         <PathEntryDialog
           title="Scan folder for configs"
-          description="Enter an absolute folder path. The scan will find .planning/config.json files inside."
+          description="Pick a folder with the OS file picker, or enter an absolute path. The scan will find .planning/config.json files inside."
           submitLabel="Scan"
+          submittingLabel="Scanning…"
+          pickKind="directory"
+          pathLabel="Folder to scan"
+          placeholder="/home/projects"
           onSubmit={handleScan}
           onCancel={closeMenu}
         />

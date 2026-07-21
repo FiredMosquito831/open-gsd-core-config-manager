@@ -550,6 +550,19 @@ body {
   outline-offset: 1px;
 }
 
+/* Input + "Browse…" button laid out on one row so a pasted/picked path and
+   its native-picker trigger sit side by side inside a single labeled field. */
+.gsd-dialog__path-row {
+  display: flex;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.gsd-dialog__path-row .gsd-dialog__input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
 .gsd-dialog__error {
   color: var(--gsd-danger);
   font-size: 0.875rem;

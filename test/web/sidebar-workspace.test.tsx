@@ -177,7 +177,7 @@ describe('add menu', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add' }));
     fireEvent.click(screen.getByRole('menuitem', { name: 'File picker' }));
 
-    expect(screen.getByText(/Browsers hide the real file path/i)).toBeTruthy();
+    expect(screen.getByText(/OS file picker/i)).toBeTruthy();
 
     const input = screen.getByPlaceholderText('/home/projects/my-project/.planning/config.json');
     fireEvent.change(input, { target: { value: '/delta/.planning/config.json' } });
@@ -236,7 +236,7 @@ describe('scan', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add' }));
     fireEvent.click(screen.getByRole('menuitem', { name: 'Scan chosen folder' }));
 
-    const input = screen.getByPlaceholderText('/home/projects/my-project/.planning/config.json');
+    const input = screen.getByPlaceholderText('/home/projects');
     fireEvent.change(input, { target: { value: '/projects' } });
     fireEvent.click(screen.getByRole('button', { name: 'Scan' }));
 

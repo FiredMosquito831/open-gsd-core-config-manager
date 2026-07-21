@@ -11,7 +11,8 @@
  * `invalid`) is derived at load time so a file that disappears or becomes
  * invalid between launches is still surfaced with a problem state (D-14).
  */
-import { existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { readdir, lstat } from 'node:fs/promises';
 import { dirname, join, resolve, basename, isAbsolute } from 'node:path';
 
 const createLocks = new Map<string, Promise<unknown>>();
@@ -59,8 +60,15 @@ export interface WorkspaceStore {
   reorder(ids: string[]): void;
   /** Relocate an existing entry to a new path, keeping its id stable. */
   locate(id: string, rawPath: string): TrackedWorkspaceConfig;
-  /** Scan a folder for `.planning/config.json` files; does not mutate state. */
-  scan(rootPath: string): Array<{ projectName: string; path: string; status: 'new' | 'tracked' | 'invalid' }>;
+  /**
+   * Scan a folder for `.planning/config.json` files; does not mutate state.
+   * Asynchronous so the Fastify event loop is yielded between directory
+   * reads (`fs/promises.readdir` + `fs/promises.lstat`), keeping every other
+   * `/api` request (schema-status, workspace/configs, health) responsive
+   * while a scan is in flight instead of starving it for minutes when the
+   * chosen root contains a deep nested tree (the original brick root cause).
+   */
+  scan(rootPath: string): Promise<{ candidates: Array<{ projectName: string; path: string; status: 'new' | 'tracked' | 'invalid' }>; truncated: boolean; scannedDirs: number }>;
   /** Preview the server-computed target path for a new config. */
   createPreview(projectDir: string): { targetPath: string; exists: boolean };
   /** Create a new config file, track it, and persist the workspace. */
@@ -113,9 +121,52 @@ function savePersisted(root: string, configs: PersistedWorkspace['configs']): vo
   writeFileSync(file, JSON.stringify(data, null, 2), 'utf8');
 }
 
+/**
+ * Top-level directory names to skip during the directory-walk scan.
+ *
+ * Why `.claude` and the other AI-tool tooling directories are excluded:
+ * live "auto-detect" scans paste a project root that often contains a
+ * `.claude/worktrees/` tree (dozens of recursive git worktrees, each ~3k+
+ * dirs). Walking them synchronously blocked the single-threaded Fastify event
+ * loop for minutes on a user machine — during which `/api/schema/status`,
+ * `/api/workspace/configs`, and `/api/health` were starved, surfacing as the
+ * "Bundled · gsd-core vschema unavailable" / "Failed to load tracked configs"
+ * sidebar brick. Even after the move to `fs/promises` (so the event loop
+ * yields between every directory entry) it still wastes minutes listing
+ * redundant copies of THIS repo's own `.planning/config.json`, so we skip
+ * these bulky developer cache / tooling dirs up-front.
+ */
+const EXCLUDED_DIR_NAMES: ReadonlySet<string> = new Set([
+  // Build outputs / deps
+  'node_modules', 'dist', 'build', 'out', 'target', '.turbo',
+  // Source-control / AI tooling worktrees and caches (would clone-spray the repo)
+  '.git', '.claude', '.codex', '.cursor', '.gemini', '.augment',
+  '.codeium', '.windsurf', '.cline', '.trae', '.qwen', '.copilot',
+  // Frontend / bundler caches
+  '.next', '.nuxt', '.svelte-kit', '.parcel-cache', '.cache',
+  // Python virtualenvs and bytecode caches
+  '.venv', 'venv', 'env', '__pycache__', '.pytest_cache', '.mypy_cache', '.ruff_cache',
+  // Coverage / mutation / temp scratch
+  'coverage', '.nyc_output', '.stryker-tmp', 'stryker-tmp',
+  // IDE workspace state — never contains a project's `.planning`
+  '.idea', '.vscode',
+  // Infrastructure tooling caches
+  '.terraform', '.terragrunt-cache',
+]);
+
 function isExcludedDir(name: string): boolean {
-  return name === 'node_modules' || name === '.git' || name === 'dist';
+  return EXCLUDED_DIR_NAMES.has(name);
 }
+
+/**
+ * Recursion caps keep pathological scans bounded even on a path that bypasses
+ * the exclude list. They are generous (the median project tree is < 1k dirs)
+ * but stop a single `POST /api/workspace/scan` from monopolizing the helper
+ * when a user pastes a giant workspace root.
+ */
+const MAX_SCAN_DIRS = 5_000;
+const MAX_SCAN_CANDIDATES = 200;
+const MAX_SCAN_DEPTH = 8;
 
 /** Create a persisted workspace store. */
 export function createWorkspaceStore(opts: WorkspaceStoreOptions = {}): WorkspaceStore {
@@ -231,7 +282,7 @@ export function createWorkspaceStore(opts: WorkspaceStoreOptions = {}): Workspac
       return entry;
     },
 
-    scan(rootPath: string): Array<{ projectName: string; path: string; status: 'new' | 'tracked' | 'invalid' }> {
+    async scan(rootPath: string): Promise<{ candidates: Array<{ projectName: string; path: string; status: 'new' | 'tracked' | 'invalid' }>; truncated: boolean; scannedDirs: number }> {
       if (!isAbsolute(rootPath)) {
         throw new RegistryError('Scan root must be an absolute path');
       }
@@ -239,29 +290,37 @@ export function createWorkspaceStore(opts: WorkspaceStoreOptions = {}): Workspac
       const resolvedRoot = resolve(rootPath);
       const trackedPaths = new Set(registry.list().map((c) => c.path));
       const candidates: Array<{ projectName: string; path: string; status: 'new' | 'tracked' | 'invalid' }> = [];
-      const stack: string[] = [resolvedRoot];
+      const stack: Array<{ dir: string; depth: number }> = [{ dir: resolvedRoot, depth: 0 }];
+      let scannedDirs = 0;
+      let truncated = false;
 
       while (stack.length > 0) {
-        const dir = stack.pop()!;
-        let dirEntries: string[];
+        if (scannedDirs >= MAX_SCAN_DIRS) { truncated = true; break; }
+        if (candidates.length >= MAX_SCAN_CANDIDATES) { truncated = true; break; }
+
+        const { dir, depth } = stack.pop()!;
+        scannedDirs += 1;
+
+        let dirEntries: Array<{ name: string; isDirectory: () => boolean; isSymbolicLink: () => boolean }>;
         try {
-          dirEntries = readdirSync(dir);
+          // `fs/promises.readdir({withFileTypes})` lets the event loop yield
+          // between directory reads; combined with `await lstat` below, every
+          // other in-flight HTTP request gets interleaved while the scan walks.
+          const entries = await readdir(dir, { withFileTypes: true });
+          dirEntries = entries.map((e) => ({ name: e.name, isDirectory: () => e.isDirectory(), isSymbolicLink: () => e.isSymbolicLink() }));
         } catch {
           continue;
         }
 
-        const hasPlanning = dirEntries.includes('.planning');
+        const entryNames = dirEntries.map((e) => e.name);
+        const hasPlanning = entryNames.includes('.planning');
         if (hasPlanning) {
-          const planningDir = join(dir, '.planning');
-          const configPath = join(planningDir, 'config.json');
+          const configPath = join(dir, '.planning', 'config.json');
           try {
-            const stat = statSync(configPath);
-            if (stat.isFile()) {
-              if (trackedPaths.has(configPath)) {
-                candidates.push({ projectName: basename(dir), path: configPath, status: 'tracked' });
-              } else {
-                candidates.push({ projectName: basename(dir), path: configPath, status: 'new' });
-              }
+            const configStat = await lstat(configPath);
+            if (configStat.isFile()) {
+              const status: 'new' | 'tracked' = trackedPaths.has(configPath) ? 'tracked' : 'new';
+              candidates.push({ projectName: basename(dir), path: configPath, status });
             } else {
               candidates.push({ projectName: basename(dir), path: configPath, status: 'invalid' });
             }
@@ -270,21 +329,27 @@ export function createWorkspaceStore(opts: WorkspaceStoreOptions = {}): Workspac
           }
         }
 
+        if (depth + 1 >= MAX_SCAN_DEPTH) {
+          // At the depth cap — record what we found here and do not recurse
+          // further into this dir's children (avoid runaway descents).
+          continue;
+        }
+
         for (const entry of dirEntries) {
-          if (isExcludedDir(entry)) continue;
-          const fullPath = join(dir, entry);
+          if (isExcludedDir(entry.name)) continue;
+          const fullPath = join(dir, entry.name);
           let stat;
           try {
-            stat = lstatSync(fullPath);
+            stat = await lstat(fullPath);
           } catch {
             continue;
           }
           if (stat.isSymbolicLink() || !stat.isDirectory()) continue;
-          stack.push(fullPath);
+          stack.push({ dir: fullPath, depth: depth + 1 });
         }
       }
 
-      return candidates;
+      return { candidates, truncated, scannedDirs };
     },
 
     createPreview(projectDir: string): { targetPath: string; exists: boolean } {

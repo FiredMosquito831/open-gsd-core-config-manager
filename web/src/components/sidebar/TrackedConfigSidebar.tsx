@@ -91,6 +91,7 @@ export function TrackedConfigSidebar() {
           title="Locate config"
           description="Enter the new absolute path for this tracked config. The server will validate it before updating the tracked entry."
           submitLabel="Locate"
+          pickKind="file"
           onSubmit={handleLocate}
           onCancel={() => setLocatingId(null)}
         />
