@@ -7,7 +7,8 @@
  * fresh buildApp() bootstrap.
  */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { createWorkspaceStore, WORKSPACE_METADATA_RECOVERY_WARNING, WorkspacePersistenceError } from '../../packages/server/src/workspace-store.js';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { FastifyInstance } from 'fastify';
@@ -79,6 +80,38 @@ async function trackConfig(path: string): Promise<{ id: string; status: string }
   expect(body.ok).toBe(true);
   return body.config;
 }
+
+describe('workspace metadata recovery and persistence', () => {
+  it('quarantines malformed metadata and exposes only a static recovery warning', async () => {
+    const workspaceDir = join(appDataRoot, 'workspace');
+    mkdirSync(workspaceDir, { recursive: true });
+    const metadataPath = join(workspaceDir, 'configs.json');
+    writeFileSync(metadataPath, '{ malformed', 'utf8');
+    await app.close();
+
+    const recovered = await buildApp({ ctx: makeContext(), clientRoot, workspaceRoot: appDataRoot, snapshotRoot: appDataRoot });
+    const res = await recovered.inject({ method: 'GET', url: '/api/workspace/configs', headers: authHeaders() });
+    const body = res.json() as { ok: boolean; configs: unknown[]; warning?: string };
+    expect(body).toEqual({ ok: true, configs: [], warning: WORKSPACE_METADATA_RECOVERY_WARNING });
+    expect(res.body).not.toContain(appDataRoot);
+    expect(readdirSync(workspaceDir).some((name) => /^configs\.json\.corrupt-/.test(name))).toBe(true);
+    await recovered.close();
+  });
+
+  it('keeps in-memory state unchanged when an atomic write fails', async () => {
+    const store = createWorkspaceStore({ appDataRoot, write: async () => { throw new Error('disk failure'); } });
+    await expect(store.add(configPath)).rejects.toBeInstanceOf(WorkspacePersistenceError);
+    expect(store.list().configs).toEqual([]);
+  });
+
+  it('merges concurrent adds from independent stores through the metadata lock', async () => {
+    const storeA = createWorkspaceStore({ appDataRoot });
+    const storeB = createWorkspaceStore({ appDataRoot });
+    await Promise.all([storeA.add(configPath), storeB.add(otherConfigPath)]);
+    const persisted = JSON.parse(readFileSync(join(appDataRoot, 'workspace', 'configs.json'), 'utf8')) as { configs: Array<{ path: string }> };
+    expect(persisted.configs.map((entry) => entry.path).sort()).toEqual([configPath, otherConfigPath].sort());
+  });
+});
 
 describe('POST /api/workspace/configs/track', () => {
   it('validates and tracks an absolute config path', async () => {

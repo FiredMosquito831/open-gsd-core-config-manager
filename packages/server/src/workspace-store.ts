@@ -11,8 +11,10 @@
  * `invalid`) is derived at load time so a file that disappears or becomes
  * invalid between launches is still surfaced with a problem state (D-14).
  */
-import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
-import { readdir, lstat } from 'node:fs/promises';
+import { existsSync, mkdirSync, readFileSync, renameSync, statSync } from 'node:fs';
+import { open, readdir, lstat, mkdir } from 'node:fs/promises';
+import { lock } from 'proper-lockfile';
+import { writeWithRetry } from '../../config-io/src/atomic-write.js';
 import { dirname, join, resolve, basename, isAbsolute } from 'node:path';
 
 const createLocks = new Map<string, Promise<unknown>>();
@@ -47,19 +49,31 @@ interface WorkspaceStoreOptions {
   registry?: ConfigRegistry;
   /** Shared active schema authority used when creating a config. */
   activeSchemaManager?: ActiveSchemaManager;
+  /** Test seam for simulating an atomic persistence failure. */
+  write?: typeof writeWithRetry;
+}
+
+/** A static, path-free recovery warning safe to return from the list endpoint. */
+export const WORKSPACE_METADATA_RECOVERY_WARNING = 'Workspace metadata was invalid and has been reset.';
+
+/** Persistence failures are intentionally converted into a static route error. */
+export class WorkspacePersistenceError extends Error {
+  constructor() {
+    super('Unable to save workspace changes');
+  }
 }
 
 export interface WorkspaceStore {
-  /** Ordered list of tracked workspace entries with derived status. */
-  list(): TrackedWorkspaceConfig[];
+  /** Ordered list of tracked workspace entries with derived status and recovery warning. */
+  list(): { configs: TrackedWorkspaceConfig[]; warning?: string };
   /** Validate and add a new path to the workspace and registry. */
-  add(rawPath: string): TrackedWorkspaceConfig;
+  add(rawPath: string): Promise<TrackedWorkspaceConfig>;
   /** Remove an entry from the workspace and registry. */
-  remove(id: string): void;
+  remove(id: string): Promise<void>;
   /** Reorder the workspace list; ids must all be known. */
-  reorder(ids: string[]): void;
+  reorder(ids: string[]): Promise<void>;
   /** Relocate an existing entry to a new path, keeping its id stable. */
-  locate(id: string, rawPath: string): TrackedWorkspaceConfig;
+  locate(id: string, rawPath: string): Promise<TrackedWorkspaceConfig>;
   /**
    * Scan a folder for `.planning/config.json` files; does not mutate state.
    * Asynchronous so the Fastify event loop is yielded between directory
@@ -102,23 +116,75 @@ function nameFor(path: string): string {
   return `${basename(dirname(path))}/${basename(path)}`;
 }
 
-function loadPersisted(root: string): PersistedWorkspace['configs'] {
-  const file = configFilePath(root);
-  if (!existsSync(file)) return [];
+function isPersistedEntry(value: unknown): value is PersistedWorkspace['configs'][number] {
+  if (!value || typeof value !== 'object') return false;
+  const entry = value as { id?: unknown; path?: unknown };
+  if (typeof entry.id !== 'string' || typeof entry.path !== 'string' || !isAbsolute(entry.path)) return false;
   try {
-    const data = JSON.parse(readFileSync(file, 'utf8')) as PersistedWorkspace;
-    if (data.version !== 1 || !Array.isArray(data.configs)) return [];
-    return data.configs;
+    const validated = createRegistry().track(entry.path);
+    return validated.id === entry.id;
   } catch {
-    return [];
+    return false;
   }
 }
 
-function savePersisted(root: string, configs: PersistedWorkspace['configs']): void {
+function parsePersisted(file: string): PersistedWorkspace['configs'] {
+  const data: unknown = JSON.parse(readFileSync(file, 'utf8'));
+  if (!data || typeof data !== 'object') throw new Error('Invalid workspace metadata');
+  const workspace = data as { version?: unknown; configs?: unknown };
+  if (workspace.version !== 1 || !Array.isArray(workspace.configs) || !workspace.configs.every(isPersistedEntry)) {
+    throw new Error('Invalid workspace metadata');
+  }
+  return workspace.configs;
+}
+
+function quarantineMalformed(file: string): void {
+  for (let attempt = 0; attempt < 100; attempt++) {
+    const suffix = `${Date.now()}-${process.pid}-${attempt}`;
+    const quarantine = `${file}.corrupt-${suffix}`;
+    if (existsSync(quarantine)) continue;
+    try {
+      renameSync(file, quarantine);
+      return;
+    } catch (err) {
+      if ((err as NodeJS.ErrnoException).code === 'EEXIST') continue;
+      throw err;
+    }
+  }
+  throw new Error('Unable to quarantine workspace metadata');
+}
+
+function loadPersisted(root: string): { configs: PersistedWorkspace['configs']; warning?: string } {
   const file = configFilePath(root);
-  mkdirSync(dirname(file), { recursive: true });
+  if (!existsSync(file)) return { configs: [] };
+  try {
+    return { configs: parsePersisted(file) };
+  } catch {
+    // Keep the original bytes available for recovery rather than silently
+    // replacing malformed metadata with an empty workspace.
+    quarantineMalformed(file);
+    return { configs: [], warning: WORKSPACE_METADATA_RECOVERY_WARNING };
+  }
+}
+
+async function withWorkspaceLock<T>(root: string, fn: () => Promise<T>): Promise<T> {
+  const file = configFilePath(root);
+  const lockTarget = `${file}.guard`;
+  await mkdir(dirname(file), { recursive: true });
+  const handle = await open(lockTarget, 'a');
+  await handle.close();
+  const release = await lock(lockTarget, { retries: { retries: 10, factor: 1.3 }, stale: 10_000 });
+  try {
+    return await fn();
+  } finally {
+    await release();
+  }
+}
+
+function savePersisted(root: string, configs: PersistedWorkspace['configs'], write: typeof writeWithRetry): Promise<void> {
+  const file = configFilePath(root);
   const data: PersistedWorkspace = { version: 1, configs };
-  writeFileSync(file, JSON.stringify(data, null, 2), 'utf8');
+  return write(file, JSON.stringify(data, null, 2));
 }
 
 /**
@@ -172,114 +238,97 @@ const MAX_SCAN_DEPTH = 8;
 export function createWorkspaceStore(opts: WorkspaceStoreOptions = {}): WorkspaceStore {
   const root = opts.appDataRoot ?? defaultAppDataRoot();
   const activeSchemaManager = opts.activeSchemaManager;
-  const persisted = loadPersisted(root);
-  const registry = opts.registry ?? createRegistry({ seed: persisted.map((p) => ({ id: p.id, path: p.path, name: nameFor(p.path) })) });
-  const entries = new Map<string, TrackedWorkspaceConfig>();
+  const atomicWrite = opts.write ?? writeWithRetry;
+  const loaded = loadPersisted(root);
+  const registry = opts.registry ?? createRegistry({ seed: loaded.configs.map((p) => ({ id: p.id, path: p.path, name: nameFor(p.path) })) });
+  let recoveryWarning = loaded.warning;
+  let entries = entriesFor(loaded.configs);
 
-  for (const persistedEntry of persisted) {
-    const resolvedPath = resolve(persistedEntry.path);
-    const tracked = registry.resolve(persistedEntry.id);
-    if (!tracked || tracked.path !== resolvedPath) {
-      // The registry rejected this path during seed (e.g. no longer .json).
-      entries.set(persistedEntry.id, {
-        id: persistedEntry.id,
-        path: resolvedPath,
-        name: nameFor(resolvedPath),
-        status: 'invalid',
-        problem: 'Config path is no longer valid',
-      });
-      continue;
-    }
-
-    const status = deriveStatus(resolvedPath);
-    entries.set(persistedEntry.id, {
-      id: persistedEntry.id,
-      path: resolvedPath,
-      name: nameFor(resolvedPath),
-      ...status,
-    });
+  function entriesFor(configs: PersistedWorkspace['configs']): Map<string, TrackedWorkspaceConfig> {
+    return new Map(configs.map((entry) => {
+      const path = resolve(entry.path);
+      return [entry.id, { id: entry.id, path, name: nameFor(path), ...deriveStatus(path) }];
+    }));
   }
 
-  function persist(): void {
-    savePersisted(
-      root,
-      Array.from(entries.values()).map((e) => ({ id: e.id, path: e.path })),
-    );
+  function syncRegistry(configs: PersistedWorkspace['configs']): void {
+    for (const config of registry.list()) registry.remove(config.id);
+    for (const config of configs) registry.track(config.path);
+    registry.reorder(configs.map((config) => config.id));
+  }
+
+  async function mutate(
+    transform: (configs: PersistedWorkspace['configs'], candidateRegistry: ConfigRegistry) => PersistedWorkspace['configs'],
+  ): Promise<void> {
+    try {
+      const saved = await withWorkspaceLock(root, async () => {
+        // Re-read while holding the lock so independently-created stores never
+        // write a stale in-memory list over another store's change.
+        const file = configFilePath(root);
+        const current = existsSync(file) ? parsePersisted(file) : [];
+        const candidateRegistry = createRegistry({ seed: current.map((p) => ({ id: p.id, path: p.path, name: nameFor(p.path) })) });
+        const next = transform(current, candidateRegistry);
+        await savePersisted(root, next, atomicWrite);
+        return next;
+      });
+      // Do not change observable in-memory state until the durable write succeeds.
+      syncRegistry(saved);
+      entries = entriesFor(saved);
+    } catch (err) {
+      if (err instanceof RegistryError) throw err;
+      throw new WorkspacePersistenceError();
+    }
   }
 
   return {
     registry,
 
-    list(): TrackedWorkspaceConfig[] {
+    list() {
       // Derive status at read time so missing files are surfaced immediately
       // without waiting for a relaunch (D-14).
-      return Array.from(entries.values()).map((entry) => {
+      const configs = Array.from(entries.values()).map((entry) => {
         const status = deriveStatus(entry.path);
-        if (status.status === entry.status && (!status.problem || status.problem === entry.problem)) {
-          return entry;
-        }
+        if (status.status === entry.status && (!status.problem || status.problem === entry.problem)) return entry;
         const updated: TrackedWorkspaceConfig = { ...entry, ...status };
         entries.set(entry.id, updated);
         return updated;
       });
+      return { configs, ...(recoveryWarning ? { warning: recoveryWarning } : {}) };
     },
 
-    add(rawPath: string): TrackedWorkspaceConfig {
-      const tracked = registry.track(rawPath);
-      const status = deriveStatus(tracked.path);
-      const entry: TrackedWorkspaceConfig = { ...tracked, ...status };
-      entries.set(tracked.id, entry);
-      persist();
-      return entry;
+    async add(rawPath: string): Promise<TrackedWorkspaceConfig> {
+      let result: TrackedWorkspaceConfig | undefined;
+      await mutate((configs, candidateRegistry) => {
+        const tracked = candidateRegistry.track(rawPath);
+        result = { ...tracked, ...deriveStatus(tracked.path) };
+        return candidateRegistry.list().map(({ id, path }) => ({ id, path }));
+      });
+      return result!;
     },
 
-    remove(id: string): void {
-      entries.delete(id);
-      registry.remove(id);
-      persist();
+    async remove(id: string): Promise<void> {
+      await mutate((configs, candidateRegistry) => {
+        candidateRegistry.remove(id);
+        return candidateRegistry.list().map(({ id: configId, path }) => ({ id: configId, path }));
+      });
     },
 
-    reorder(ids: string[]): void {
-      const unknownId = ids.find((id) => !entries.has(id));
-      if (unknownId) {
-        throw new RegistryError('Unknown tracked config id');
-      }
-
-      const ordered = new Map<string, TrackedWorkspaceConfig>();
-      const remaining = new Map(entries);
-
-      for (const id of ids) {
-        const entry = remaining.get(id);
-        if (entry) {
-          ordered.set(id, entry);
-          remaining.delete(id);
-        }
-      }
-
-      for (const [id, entry] of remaining) {
-        ordered.set(id, entry);
-      }
-
-      entries.clear();
-      for (const [id, entry] of ordered) {
-        entries.set(id, entry);
-      }
-
-      registry.reorder(ids);
-      persist();
+    async reorder(ids: string[]): Promise<void> {
+      await mutate((configs, candidateRegistry) => {
+        if (ids.some((id) => !candidateRegistry.resolve(id))) throw new RegistryError('Unknown tracked config id');
+        candidateRegistry.reorder(ids);
+        return candidateRegistry.list().map(({ id, path }) => ({ id, path }));
+      });
     },
 
-    locate(id: string, rawPath: string): TrackedWorkspaceConfig {
-      if (!entries.has(id)) {
-        throw new RegistryError('Unknown tracked config id');
-      }
-
-      const tracked = registry.relocate(id, rawPath);
-      const status = deriveStatus(tracked.path);
-      const entry: TrackedWorkspaceConfig = { ...tracked, ...status };
-      entries.set(id, entry);
-      persist();
-      return entry;
+    async locate(id: string, rawPath: string): Promise<TrackedWorkspaceConfig> {
+      let result: TrackedWorkspaceConfig | undefined;
+      await mutate((configs, candidateRegistry) => {
+        const tracked = candidateRegistry.relocate(id, rawPath);
+        result = { ...tracked, ...deriveStatus(tracked.path) };
+        return candidateRegistry.list().map(({ id: configId, path }) => ({ id: configId, path }));
+      });
+      return result!;
     },
 
     async scan(rootPath: string): Promise<{ candidates: Array<{ projectName: string; path: string; status: 'new' | 'tracked' | 'invalid' }>; truncated: boolean; scannedDirs: number }> {
@@ -383,12 +432,13 @@ export function createWorkspaceStore(opts: WorkspaceStoreOptions = {}): Workspac
           throw new RegistryError('Created config failed schema validation');
         }
 
-        const tracked = registry.track(targetPath);
-        const status = deriveStatus(tracked.path);
-        const entry: TrackedWorkspaceConfig = { ...tracked, ...status };
-        entries.set(tracked.id, entry);
-        persist();
-        return entry;
+        let entry: TrackedWorkspaceConfig | undefined;
+        await mutate((configs, candidateRegistry) => {
+          const tracked = candidateRegistry.track(targetPath);
+          entry = { ...tracked, ...deriveStatus(tracked.path) };
+          return candidateRegistry.list().map(({ id, path }) => ({ id, path }));
+        });
+        return entry!;
       });
     },
   };

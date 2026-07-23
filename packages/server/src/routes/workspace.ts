@@ -9,6 +9,7 @@
  */
 import type { FastifyPluginAsync } from 'fastify';
 import { RegistryError } from '../registry.js';
+import { WorkspacePersistenceError } from '../workspace-store.js';
 import type { ApiErr } from '../api-types.js';
 import type { WorkspaceStore } from '../workspace-store.js';
 
@@ -18,6 +19,12 @@ export interface WorkspaceRoutesOptions {
 
 function errBody(message: string): ApiErr {
   return { ok: false, errors: [{ message }] };
+}
+
+function safeWorkspaceError(err: unknown, reply: { code: (status: number) => { send: (body: ApiErr) => unknown } }) {
+  if (err instanceof RegistryError) return reply.code(400).send(errBody(err.message));
+  if (err instanceof WorkspacePersistenceError) return reply.code(500).send(errBody(err.message));
+  throw err;
 }
 
 const TRACK_BODY_SCHEMA = {
@@ -64,36 +71,30 @@ const CREATE_BODY_SCHEMA = {
 export const workspaceRoutes: FastifyPluginAsync<WorkspaceRoutesOptions> = async (app, opts) => {
   const { workspaceStore } = opts;
 
-  app.get('/workspace/configs', async () => ({
-    ok: true,
-    configs: workspaceStore.list(),
-  }));
+  app.get('/workspace/configs', async () => {
+    const { configs, warning } = workspaceStore.list();
+    return { ok: true, configs, ...(warning ? { warning } : {}) };
+  });
 
   app.post<{ Body: { path: string } }>(
     '/workspace/configs/track',
     { schema: { body: TRACK_BODY_SCHEMA } },
     async (req, reply) => {
       try {
-        const config = workspaceStore.add(req.body.path);
+        const config = await workspaceStore.add(req.body.path);
         return { ok: true, config };
       } catch (err) {
-        if (err instanceof RegistryError) {
-          return reply.code(400).send(errBody(err.message));
-        }
-        throw err;
+        return safeWorkspaceError(err, reply);
       }
     },
   );
 
   app.delete<{ Params: { id: string } }>('/workspace/configs/:id', async (req, reply) => {
     try {
-      workspaceStore.remove(req.params.id);
+      await workspaceStore.remove(req.params.id);
       return { ok: true };
     } catch (err) {
-      if (err instanceof RegistryError) {
-        return reply.code(400).send(errBody(err.message));
-      }
-      throw err;
+      return safeWorkspaceError(err, reply);
     }
   });
 
@@ -102,13 +103,10 @@ export const workspaceRoutes: FastifyPluginAsync<WorkspaceRoutesOptions> = async
     { schema: { body: REORDER_BODY_SCHEMA } },
     async (req, reply) => {
       try {
-        workspaceStore.reorder(req.body.ids);
+        await workspaceStore.reorder(req.body.ids);
         return { ok: true };
       } catch (err) {
-        if (err instanceof RegistryError) {
-          return reply.code(400).send(errBody(err.message));
-        }
-        throw err;
+        return safeWorkspaceError(err, reply);
       }
     },
   );
@@ -118,13 +116,10 @@ export const workspaceRoutes: FastifyPluginAsync<WorkspaceRoutesOptions> = async
     { schema: { body: LOCATE_BODY_SCHEMA } },
     async (req, reply) => {
       try {
-        const config = workspaceStore.locate(req.params.id, req.body.path);
+        const config = await workspaceStore.locate(req.params.id, req.body.path);
         return { ok: true, config };
       } catch (err) {
-        if (err instanceof RegistryError) {
-          return reply.code(400).send(errBody(err.message));
-        }
-        throw err;
+        return safeWorkspaceError(err, reply);
       }
     },
   );
