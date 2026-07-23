@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState, useSyncExternalStore } from 'react';
 import { useForm, type FieldErrors, type Resolver, type UseFormReturn } from 'react-hook-form';
 import { ApiError } from '../api/client';
-import { loadConfig, saveConfig } from '../api/configs';
+import { loadConfig, saveConfig, type LoadedConfig } from '../api/configs';
 import { getEffectiveLeaf } from '../schema/effective';
 import { indexSchema } from '../schema/indexSchema';
 import { buildProjectSaveCandidate, type ProjectChange } from '../schema/patchProject';
@@ -17,6 +17,8 @@ type DraftEntry = {
   serverErrors: ValidationSummaryError[];
   snapshotId?: string;
   runtimeNotice: RuntimeNotice;
+  baseRevision?: string;
+  stale: boolean;
   revision: number;
 };
 
@@ -28,7 +30,7 @@ function subscribe(listener: () => void) { listeners.add(listener); return () =>
 function entryFor(id: string): DraftEntry {
   const existing = entries.get(id);
   if (existing) return existing;
-  const entry: DraftEntry = { changes: {}, resets: new Set(), serverErrors: [], runtimeNotice: null, revision: 0 };
+  const entry: DraftEntry = { changes: {}, resets: new Set(), serverErrors: [], runtimeNotice: null, stale: false, revision: 0 };
   entries.set(id, entry);
   return entry;
 }
@@ -61,18 +63,19 @@ export interface ConfigDraftController {
   snapshotId?: string;
   runtimeNotice: RuntimeNotice;
   isSaving: boolean;
+  isStale: boolean;
   dismissRuntimeNotice(): void;
   saveDraft(): Promise<'saved' | 'blocked'>;
   onFieldChange(path: string, value: unknown): void;
   onResetField(path: string): void;
   discardDraft(): void;
-  resetFromServer(reloaded: LoadResult): void;
+  resetFromServer(reloaded: LoadedConfig): void;
 }
 
 /** The narrow draft boundary required by the History workspace. */
 export type HistoryDraftController = Pick<ConfigDraftController, 'isDirty' | 'saveDraft' | 'resetFromServer'>;
 
-export function useConfigDraft(activeConfigId: string, loadResult: LoadResult, schema: Record<string, SchemaEntry>): ConfigDraftController {
+export function useConfigDraft(activeConfigId: string, loadResult: LoadedConfig, schema: Record<string, SchemaEntry>): ConfigDraftController {
   const validator = useMemo(() => createClientValidator(schema), [schema]);
   const defaults = useMemo(() => collectEffectiveDefaults(loadResult, schema), [loadResult, schema]);
   const getSnapshot = useCallback(() => entryFor(activeConfigId).revision, [activeConfigId]);
@@ -86,10 +89,11 @@ export function useConfigDraft(activeConfigId: string, loadResult: LoadResult, s
   }, [activeConfigId, loadResult, validator]);
   const form = useForm<Record<string, unknown>>({ defaultValues: defaults, values: defaults, resolver, mode: 'onBlur', reValidateMode: 'onChange' });
 
-  const clear = useCallback((reloaded: LoadResult) => {
-    update(activeConfigId, (draft) => { draft.changes = {}; draft.resets = new Set(); draft.serverErrors = []; draft.snapshotId = undefined; });
+  const clear = useCallback((reloaded: LoadedConfig) => {
+    update(activeConfigId, (draft) => { draft.changes = {}; draft.resets = new Set(); draft.serverErrors = []; draft.snapshotId = undefined; draft.baseRevision = reloaded.revision; draft.stale = false; });
     form.reset(collectEffectiveDefaults(reloaded, schema));
   }, [activeConfigId, form, schema]);
+  if (entry.baseRevision === undefined) entry.baseRevision = loadResult.revision;
   const onFieldChange = useCallback((path: string, value: unknown) => {
     update(activeConfigId, (draft) => { draft.serverErrors = []; draft.snapshotId = undefined; draft.resets.delete(path); draft.changes = { ...draft.changes, [path]: value }; });
     form.setValue(path, value, { shouldDirty: true, shouldTouch: true, shouldValidate: true });
@@ -99,7 +103,7 @@ export function useConfigDraft(activeConfigId: string, loadResult: LoadResult, s
     form.setValue(path, undefined, { shouldDirty: true, shouldTouch: true, shouldValidate: true });
   }, [activeConfigId, form]);
   const discardDraft = useCallback(() => clear(loadResult), [clear, loadResult]);
-  const resetFromServer = useCallback((reloaded: LoadResult) => clear(reloaded), [clear]);
+  const resetFromServer = useCallback((reloaded: LoadedConfig) => clear(reloaded), [clear]);
   const [saving, setSaving] = useState(false);
   const dismissRuntimeNotice = useCallback(() => update(activeConfigId, (draft) => { draft.runtimeNotice = null; }), [activeConfigId]);
   const saveDraft = useCallback(async (): Promise<'saved' | 'blocked'> => {
@@ -113,17 +117,20 @@ export function useConfigDraft(activeConfigId: string, loadResult: LoadResult, s
     }
     setSaving(true);
     try {
-      const result = await saveConfig(activeConfigId, candidate);
+      const result = await saveConfig(activeConfigId, candidate, current.baseRevision ?? loadResult.revision);
       const matching = Object.keys(current.changes).filter((path) => /^(?:model_overrides|model_profile_overrides)\.(codex|opencode)\.(?:opus|sonnet|haiku)$/.test(path));
       const runtime = matching.map((path) => path.match(/^(?:model_overrides|model_profile_overrides)\.(codex|opencode)\./)?.[1]).find((value): value is 'codex' | 'opencode' => value === 'codex' || value === 'opencode');
       const refreshed = await loadConfig(activeConfigId);
-      update(activeConfigId, (draft) => { draft.snapshotId = result.snapshotId; draft.changes = {}; draft.resets = new Set(); if (runtime) draft.runtimeNotice = { runtime, settings: matching }; });
+      update(activeConfigId, (draft) => { draft.snapshotId = result.snapshotId; draft.changes = {}; draft.resets = new Set(); draft.baseRevision = refreshed.revision; draft.stale = false; if (runtime) draft.runtimeNotice = { runtime, settings: matching }; });
       form.reset(collectEffectiveDefaults(refreshed, schema));
       return 'saved';
     } catch (error) {
-      update(activeConfigId, (draft) => { draft.serverErrors = normalizeServerErrors(error); });
+      update(activeConfigId, (draft) => {
+        if (error instanceof ApiError && error.status === 409) draft.stale = true;
+        else draft.serverErrors = normalizeServerErrors(error);
+      });
       return 'blocked';
     } finally { setSaving(false); }
   }, [activeConfigId, form, loadResult, schema, validator]);
-  return { isDirty: Object.keys(entry.changes).length > 0 || entry.resets.size > 0, changes: entry.changes, resets: entry.resets, form, serverErrors: entry.serverErrors, snapshotId: entry.snapshotId, runtimeNotice: entry.runtimeNotice, isSaving: saving, dismissRuntimeNotice, saveDraft, onFieldChange, onResetField, discardDraft, resetFromServer };
+  return { isDirty: Object.keys(entry.changes).length > 0 || entry.resets.size > 0, changes: entry.changes, resets: entry.resets, form, serverErrors: entry.serverErrors, snapshotId: entry.snapshotId, runtimeNotice: entry.runtimeNotice, isSaving: saving, isStale: entry.stale, dismissRuntimeNotice, saveDraft, onFieldChange, onResetField, discardDraft, resetFromServer };
 }

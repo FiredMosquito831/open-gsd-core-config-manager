@@ -57,6 +57,7 @@ export interface HistorySnapshotMeta {
 export interface HistorySnapshotDetail {
   snapshot: HistorySnapshotMeta & { document: object };
   current: object;
+  currentRevision?: string;
 }
 
 /** Normal save-pipeline result returned after a successful restore. */

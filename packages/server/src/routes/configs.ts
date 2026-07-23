@@ -18,10 +18,11 @@
  * is guaranteed byte-unchanged in that case (SAVE-01, enforced inside
  * `saveConfig`, not here).
  */
+import { readFile } from 'node:fs/promises';
 import type { FastifyPluginAsync } from 'fastify';
 import { load } from '../../../config-io/src/index.js';
 import type { ActiveSchemaManager } from '../active-schema-manager.js';
-import { saveWithSnapshot } from '../snapshot-store/save-with-snapshot.js';
+import { configRevision, saveWithSnapshot } from '../snapshot-store/save-with-snapshot.js';
 import { RegistryError, isRegularFileOrMissing, type ConfigRegistry } from '../registry.js';
 import type { ApiErr } from '../api-types.js';
 
@@ -44,8 +45,8 @@ const TRACK_BODY_SCHEMA = {
 
 const SAVE_BODY_SCHEMA = {
   type: 'object',
-  required: ['config'],
-  properties: { config: { type: 'object' } },
+  required: ['config', 'expectedRevision'],
+  properties: { config: { type: 'object' }, expectedRevision: { type: 'string', minLength: 1 } },
 } as const;
 
 export const configRoutes: FastifyPluginAsync<ConfigRoutesOptions> = async (app, opts) => {
@@ -83,8 +84,13 @@ export const configRoutes: FastifyPluginAsync<ConfigRoutesOptions> = async (app,
 
     try {
       const snapshot = activeSchemaManager.snapshot();
-      const data = await load(tracked.path, { schema: snapshot.schema });
-      return { ok: true, data };
+      for (let attempt = 0; attempt < 2; attempt += 1) {
+        const before = await readFile(tracked.path, 'utf8');
+        const data = await load(tracked.path, { schema: snapshot.schema });
+        const after = await readFile(tracked.path, 'utf8');
+        if (before === after) return { ok: true, data, revision: configRevision(after) };
+      }
+      return reply.code(409).send(errBody('This configuration changed while it was loading. Reload it before editing.'));
     } catch (err) {
       // The registry entry outlived the file on disk (deleted out from
       // under it) — surface the same 404 rather than crashing.
@@ -95,7 +101,7 @@ export const configRoutes: FastifyPluginAsync<ConfigRoutesOptions> = async (app,
     }
   });
 
-  app.put<{ Params: { id: string }; Body: { config: object } }>(
+  app.put<{ Params: { id: string }; Body: { config: object; expectedRevision: string } }>(
     '/configs/:id',
     { schema: { body: SAVE_BODY_SCHEMA } },
     async (req, reply) => {
@@ -114,15 +120,16 @@ export const configRoutes: FastifyPluginAsync<ConfigRoutesOptions> = async (app,
       // (e.g. a client-supplied `path`) is ignored, never read as a
       // filesystem target.
       const snapshot = activeSchemaManager.snapshot();
-      const result = await saveWithSnapshot(tracked.path, req.body.config, snapshot.validator, {
+      const result = await saveWithSnapshot(tracked.path, req.body.config, snapshot.validator, req.body.expectedRevision, {
         root: snapshotRoot,
         warn,
       });
 
       if (!result.ok) {
+        if ('conflict' in result) return reply.code(409).send(errBody('This configuration changed on disk. Reload it before saving.'));
         return reply.code(422).send({ ok: false, errors: result.errors });
       }
-      return { ok: true, snapshotId: result.snapshotId, warning: result.warning };
+      return { ok: true, snapshotId: result.snapshotId, warning: result.warning, revision: result.revision };
     },
   );
 };

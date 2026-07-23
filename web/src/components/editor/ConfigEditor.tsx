@@ -1,6 +1,6 @@
 import { FormProvider } from 'react-hook-form';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { loadConfig } from '../../api/configs';
+import { loadConfig, type LoadedConfig } from '../../api/configs';
 import { getSchema } from '../../api/schema';
 import { useConfigDraft } from '../../editor/useConfigDraft';
 import { useUiStore } from '../../state/uiStore';
@@ -43,15 +43,15 @@ export function ConfigEditor({ workspaceMode = 'editor' }: ConfigEditorProps) {
   if (configQuery.error || schemaQuery.error) return <div className="gsd-sidebar__error">Failed to load config.</div>;
   if (!configQuery.data || !schemaQuery.data) return <div className="gsd-sidebar__error">Config data unavailable.</div>;
 
-  return <EditorContents key={activeConfigId} configId={activeConfigId} loadResult={configQuery.data} schema={schemaQuery.data} workspaceMode={workspaceMode} onSaved={(refreshed: LoadResult) => queryClient.setQueryData(['config', activeConfigId], refreshed)} searchQuery={searchQuery} searchOpen={searchOpen} setActiveChapter={setActiveChapter} setHighlightTarget={setHighlightTarget} setSearchOpen={setSearchOpen} openHistory={openHistory} />;
+  return <EditorContents key={activeConfigId} configId={activeConfigId} loadResult={configQuery.data} schema={schemaQuery.data} workspaceMode={workspaceMode} onSaved={(refreshed: LoadedConfig) => queryClient.setQueryData(['config', activeConfigId], refreshed)} searchQuery={searchQuery} searchOpen={searchOpen} setActiveChapter={setActiveChapter} setHighlightTarget={setHighlightTarget} setSearchOpen={setSearchOpen} openHistory={openHistory} />;
 }
 
 interface EditorContentsProps {
   configId: string;
-  loadResult: LoadResult;
+  loadResult: LoadedConfig;
   schema: Record<string, SchemaEntry>;
   workspaceMode: 'editor' | 'history' | 'schema';
-  onSaved(refreshed: LoadResult): void;
+  onSaved(refreshed: LoadedConfig): void;
   searchQuery: string;
   searchOpen: boolean;
   setActiveChapter(chapter: string): void;
@@ -62,6 +62,11 @@ interface EditorContentsProps {
 
 function EditorContents({ configId, loadResult, schema, workspaceMode, onSaved, searchQuery, searchOpen, setActiveChapter, setHighlightTarget, setSearchOpen, openHistory }: EditorContentsProps) {
   const draft = useConfigDraft(configId, loadResult, schema);
+  const reloadAndDiscard = async () => {
+    const reloaded = await loadConfig(configId);
+    draft.resetFromServer(reloaded);
+    onSaved(reloaded);
+  };
   if (workspaceMode === 'history') {
     return <HistoryWorkspace configId={configId} draft={draft} embedded />;
   }
@@ -73,6 +78,7 @@ function EditorContents({ configId, loadResult, schema, workspaceMode, onSaved, 
         {loadResult.meta.globalDefaultsFound && <p className="gsd-preview">Global defaults loaded from {loadResult.meta.globalDefaultsPath}</p>}
       </div>
       <RestoreNotice />
+      {draft.isStale && <div className="gsd-restore-notice gsd-restore-notice--warning" role="alert"><span>This configuration changed on disk. Your draft was not saved.</span><Button size="sm" variant="secondary" onClick={() => void reloadAndDiscard()}>Reload and discard my draft</Button></div>}
       <ValidationSummary errors={draft.serverErrors} kind="server" />
       {draft.runtimeNotice && <RuntimeInstallNotice runtime={draft.runtimeNotice.runtime} settings={draft.runtimeNotice.settings} onDismiss={draft.dismissRuntimeNotice} />}
       {searchOpen && searchQuery.trim() ? <SearchView loadResult={loadResult} schema={schema} query={searchQuery} onOpenResult={(chapter: string, path: string) => { setActiveChapter(chapter); setHighlightTarget(path); setSearchOpen(false); }} /> :

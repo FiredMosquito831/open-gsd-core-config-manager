@@ -22,6 +22,7 @@ interface HistoryWorkspaceProps {
 
 type RestoreError =
   | { kind: 'restore-failed'; reason: string }
+  | { kind: 'restore-stale' }
   | { kind: 'draft-save-failed' }
   | { kind: 'reconciliation-failed' };
 
@@ -84,7 +85,9 @@ export function HistoryWorkspace({ configId: suppliedId, configName: suppliedNam
     setPending(true);
     setRestoreError(null);
     try {
-      const result = await restoreConfigSnapshot(idAtStart, selectedAtStart);
+      const revision = selectedDetail.data?.currentRevision;
+      if (!revision) return;
+      const result = await restoreConfigSnapshot(idAtStart, selectedAtStart, revision);
       try {
         const reloaded = await loadConfig(idAtStart);
         if (useUiStore.getState().activeConfigId !== idAtStart) return;
@@ -104,7 +107,8 @@ export function HistoryWorkspace({ configId: suppliedId, configName: suppliedNam
     } catch (error) {
       if (useUiStore.getState().activeConfigId === idAtStart) {
         setDialogMode(null);
-        setRestoreError({ kind: 'restore-failed', reason: safeRestoreReason(error) });
+        if (error instanceof ApiError && error.status === 409) setRestoreError({ kind: 'restore-stale' });
+        else setRestoreError({ kind: 'restore-failed', reason: safeRestoreReason(error) });
       }
     } finally { setPending(false); }
   };
@@ -133,6 +137,7 @@ export function HistoryWorkspace({ configId: suppliedId, configName: suppliedNam
       <button type="button" className="gsd-button gsd-button--secondary gsd-button--md" onClick={backToEditor}>Back to editor</button>
     </header>
     {restoreError?.kind === 'restore-failed' && <div className="gsd-history__state" role="alert"><p>Couldn’t restore this snapshot. Your config was not changed. {restoreError.reason} Try again or return to the editor.</p><button type="button" className="gsd-button gsd-button--secondary gsd-button--md" onClick={() => setDialogMode('review')}>Try again</button><button type="button" className="gsd-button gsd-button--ghost gsd-button--md" onClick={backToEditor}>Back to editor</button></div>}
+    {restoreError?.kind === 'restore-stale' && <div className="gsd-history__state" role="alert"><p>The configuration changed on disk. This snapshot was not restored; refresh the comparison before deciding what to restore.</p><button type="button" className="gsd-button gsd-button--secondary gsd-button--md" onClick={() => { setRestoreError(null); void selectedDetail.refetch(); }}>Refresh comparison</button><button type="button" className="gsd-button gsd-button--ghost gsd-button--md" onClick={backToEditor}>Back to editor</button></div>}
     {restoreError?.kind === 'draft-save-failed' && <div className="gsd-history__state" role="alert"><p>The draft could not be saved. Try again.</p></div>}
     {restoreError?.kind === 'reconciliation-failed' && <div className="gsd-history__state" role="alert"><p>The snapshot was restored, but the editor could not reload it. Return to the editor and reload.</p><button type="button" className="gsd-button gsd-button--secondary gsd-button--md" onClick={backToEditor}>Return to editor</button></div>}
     <div className="gsd-history__body">

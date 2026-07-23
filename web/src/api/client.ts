@@ -3,6 +3,7 @@ import { getLaunchToken } from '../bootstrap/token';
 export class ApiError extends Error {
   constructor(
     public readonly errors: Array<{ message: string; [k: string]: unknown }>,
+    public readonly status = 0,
   ) {
     super(`API error: ${errors.map((e) => e.message).join(', ')}`);
     this.name = 'ApiError';
@@ -34,7 +35,7 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
     body.ok === false
   ) {
     const err = body as unknown as { errors: Array<{ message: string }> };
-    throw new ApiError(err.errors);
+    throw new ApiError(err.errors, response.status);
   }
 
   return body as T;

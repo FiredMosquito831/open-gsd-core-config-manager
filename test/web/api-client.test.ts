@@ -106,18 +106,18 @@ describe('route wrappers', () => {
     );
   });
 
-  it('configs.loadConfig GETs /api/configs/:id', async () => {
-    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(mockJsonResponse({ ok: true, data: {} }));
-    await configs.loadConfig('id-123');
+  it('configs.loadConfig GETs /api/configs/:id and retains its revision', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(mockJsonResponse({ ok: true, data: {}, revision: 'revision-1' }));
+    await expect(configs.loadConfig('id-123')).resolves.toEqual({ revision: 'revision-1' });
     expect(fetchSpy).toHaveBeenCalledWith('/api/configs/id-123', expect.any(Object));
   });
 
-  it('configs.saveConfig PUTs the candidate', async () => {
-    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(mockJsonResponse({ ok: true, snapshotId: 's1' }));
-    await configs.saveConfig('id-123', { mode: 'interactive' });
+  it('configs.saveConfig PUTs the candidate with its expected revision', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(mockJsonResponse({ ok: true, snapshotId: 's1', revision: 'revision-2' }));
+    await configs.saveConfig('id-123', { mode: 'interactive' }, 'revision-1');
     expect(fetchSpy).toHaveBeenCalledWith(
       '/api/configs/id-123',
-      expect.objectContaining({ method: 'PUT', body: JSON.stringify({ config: { mode: 'interactive' } }) }),
+      expect.objectContaining({ method: 'PUT', body: JSON.stringify({ config: { mode: 'interactive' }, expectedRevision: 'revision-1' }) }),
     );
   });
 
@@ -144,12 +144,11 @@ describe('route wrappers', () => {
     expect(fetchSpy).toHaveBeenLastCalledWith('/api/configs/id-1/history/7', expect.any(Object));
 
     fetchSpy.mockResolvedValueOnce(mockJsonResponse({ ok: true }));
-    await configs.restoreConfigSnapshot('id-1', 7);
+    await configs.restoreConfigSnapshot('id-1', 7, 'revision-1');
     expect(fetchSpy).toHaveBeenLastCalledWith(
       '/api/configs/id-1/history/7/restore',
-      expect.objectContaining({ method: 'POST' }),
+      expect.objectContaining({ method: 'POST', body: JSON.stringify({ expectedRevision: 'revision-1' }) }),
     );
-    expect(firstFetchCall().init?.body).toBeUndefined();
     expect(() => configs.loadHistoryComparison('id-1', 1.5)).toThrow(/positive safe integer/);
   });
 

@@ -148,7 +148,7 @@ describe('saveWithSnapshot — validation failure blocks the write and records n
     const result = await saveWithSnapshot(configPath, { a: 'bad' }, alwaysInvalid, { root: appDataRoot });
 
     expect(result.ok).toBe(false);
-    if (!result.ok) {
+    if (!result.ok && !('conflict' in result)) {
       expect(result.errors).toEqual([{ instancePath: '/foo', keyword: 'type' }]);
     }
     expect(readFileSync(configPath, 'utf8')).toBe(original);

@@ -9,7 +9,7 @@ import {
   SnapshotReadError,
   type SnapshotMetadata,
 } from '../snapshot-store/index.js';
-import { saveWithSnapshot } from '../snapshot-store/save-with-snapshot.js';
+import { configRevision, saveWithSnapshot } from '../snapshot-store/save-with-snapshot.js';
 
 export interface HistoryRoutesOptions {
   registry: ConfigRegistry;
@@ -45,12 +45,18 @@ function snapshotError(reply: { code: (status: number) => { send: (body: ApiErr)
   return reply.code(500).send(errBody('Internal error'));
 }
 
-async function currentProjectDocument(path: string): Promise<object> {
+async function currentProjectDocument(path: string): Promise<{ document: object; revision: string }> {
   const raw = await readFile(path, 'utf8');
   const parsed: unknown = JSON.parse(raw);
   if (!isProjectDocument(parsed)) throw new Error('Invalid project document');
-  return parsed;
+  return { document: parsed, revision: configRevision(raw) };
 }
+
+const RESTORE_BODY_SCHEMA = {
+  type: 'object',
+  required: ['expectedRevision'],
+  properties: { expectedRevision: { type: 'string', minLength: 1 } },
+} as const;
 
 export const historyRoutes: FastifyPluginAsync<HistoryRoutesOptions> = async (app, opts) => {
   const { registry, activeSchemaManager, snapshotRoot, warn } = opts;
@@ -80,14 +86,14 @@ export const historyRoutes: FastifyPluginAsync<HistoryRoutesOptions> = async (ap
       const snapshot = await readSnapshotBySequence(tracked.path, seq, snapshotRoot);
       if (!isProjectDocument(snapshot.document)) return reply.code(422).send(errBody('Snapshot unavailable'));
       const current = await currentProjectDocument(tracked.path);
-      const detail: HistorySnapshotDetail = { snapshot: { ...publicMetadata(snapshot), document: snapshot.document }, current };
+      const detail: HistorySnapshotDetail = { snapshot: { ...publicMetadata(snapshot), document: snapshot.document }, current: current.document, currentRevision: current.revision };
       return { ok: true, ...detail };
     } catch (error) {
       return snapshotError(reply, error);
     }
   });
 
-  app.post<{ Params: { id: string; seq: string } }>('/configs/:id/history/:seq/restore', async (req, reply) => {
+  app.post<{ Params: { id: string; seq: string }; Body: { expectedRevision: string } }>('/configs/:id/history/:seq/restore', { schema: { body: RESTORE_BODY_SCHEMA } }, async (req, reply) => {
     const tracked = registry.resolve(req.params.id);
     if (!tracked || !isRegularFileOrMissing(tracked.path)) {
       return reply.code(404).send(errBody('Unknown tracked config id'));
@@ -99,8 +105,11 @@ export const historyRoutes: FastifyPluginAsync<HistoryRoutesOptions> = async (ap
       const snapshot = await readSnapshotBySequence(tracked.path, seq, snapshotRoot);
       if (!isProjectDocument(snapshot.document)) return reply.code(422).send(errBody('Snapshot unavailable'));
       const active = activeSchemaManager.snapshot();
-      const result = await saveWithSnapshot(tracked.path, snapshot.document, active.validator, { root: snapshotRoot, warn });
-      if (!result.ok) return reply.code(422).send({ ok: false, errors: result.errors });
+      const result = await saveWithSnapshot(tracked.path, snapshot.document, active.validator, req.body.expectedRevision, { root: snapshotRoot, warn });
+      if (!result.ok) {
+        if ('conflict' in result) return reply.code(409).send(errBody('This configuration changed on disk. Review the current file before restoring.'));
+        return reply.code(422).send({ ok: false, errors: result.errors });
+      }
       const restore: HistoryRestoreResult = { snapshotId: result.snapshotId, warning: result.warning };
       return { ok: true, ...restore };
     } catch (error) {

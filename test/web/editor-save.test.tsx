@@ -76,7 +76,8 @@ const testSchema: Record<string, SchemaEntry> = {
   },
 };
 
-const loadResult: LoadResult = {
+const loadResult: LoadResult & { revision: string } = {
+  revision: 'revision-1',
   raw: { project: { mode: 'interactive' }, global: null },
   effective: {
     workflow: {
@@ -134,7 +135,7 @@ describe('editor save flow', () => {
 
   it('saves a project candidate built from raw.project plus changes and resets', async () => {
     const { saveConfig } = await import('../../web/src/api/configs.js');
-    vi.mocked(saveConfig).mockResolvedValue({ snapshotId: 'snap-1' });
+    vi.mocked(saveConfig).mockResolvedValue({ snapshotId: 'snap-1', revision: 'revision-2' });
 
     await renderWithActiveConfig();
     fireEvent.click(screen.getByRole('tab', { name: 'Core' }));
@@ -153,12 +154,29 @@ describe('editor save flow', () => {
       expect(saveConfig).toHaveBeenCalledWith(
         'cfg-1',
         expect.objectContaining({ mode: 'autonomous' }),
+        'revision-1',
       );
     });
 
     const candidate = vi.mocked(saveConfig).mock.calls[0][1];
     expect(candidate).not.toHaveProperty('workflow.max_discuss_passes');
     expect(candidate).toEqual({ mode: 'autonomous' });
+  });
+
+  it('preserves a stale draft and offers explicit reload after a 409 conflict', async () => {
+    const { saveConfig } = await import('../../web/src/api/configs.js');
+    vi.mocked(saveConfig).mockRejectedValue(new ApiError([{ message: 'This configuration changed on disk.' }], 409));
+
+    await renderWithActiveConfig();
+    fireEvent.click(screen.getByRole('tab', { name: 'Core' }));
+    await waitFor(() => screen.getByTestId('field-mode'));
+    const select = screen.getByLabelText('Mode') as HTMLSelectElement;
+    fireEvent.change(select, { target: { value: 'autonomous' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+
+    await waitFor(() => expect(screen.getByRole('alert').textContent).toContain('changed on disk'));
+    expect((screen.getByLabelText('Mode') as HTMLSelectElement).value).toBe('autonomous');
+    expect(screen.getByRole('button', { name: 'Reload and discard my draft' })).toBeTruthy();
   });
 
   it('renders server 422 validation errors in the validation summary without claiming success', async () => {

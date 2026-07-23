@@ -49,8 +49,15 @@ async function track(path = configPath): Promise<string> {
   return (response.json() as { config: { id: string } }).config.id;
 }
 
+async function revision(id: string): Promise<string> {
+  const response = await app.inject({ method: 'GET', url: `/api/configs/${id}`, headers: headers() });
+  expect(response.statusCode).toBe(200);
+  return (response.json() as { revision: string }).revision;
+}
+
 async function save(id: string, config: object): Promise<void> {
-  const response = await app.inject({ method: 'PUT', url: `/api/configs/${id}`, headers: headers(), payload: { config } });
+  const expectedRevision = await revision(id);
+  const response = await app.inject({ method: 'PUT', url: `/api/configs/${id}`, headers: headers(), payload: { config, expectedRevision } });
   expect(response.statusCode).toBe(200);
 }
 
@@ -123,7 +130,7 @@ describe('History API contracts (SAVE-05, SAVE-06)', () => {
     const id = await track();
     const before = readFileSync(configPath, 'utf8');
     await save(id, { mode: 'interactive', workflow: { tdd_mode: true } });
-    const response = await app.inject({ method: 'POST', url: `/api/configs/${id}/history/1/restore`, headers: headers() });
+    const response = await app.inject({ method: 'POST', url: `/api/configs/${id}/history/1/restore`, headers: headers(), payload: { expectedRevision: await revision(id) } });
     expect(response.statusCode).toBe(200);
     expect(JSON.parse(readFileSync(configPath, 'utf8'))).toEqual(JSON.parse(before));
     const index = await readIndex(snapshotDirFor(configPath, snapshotRoot));
@@ -137,7 +144,7 @@ describe('History API contracts (SAVE-05, SAVE-06)', () => {
     const original = readFileSync(configPath, 'utf8');
     const dir = snapshotDirFor(configPath, snapshotRoot);
     writeFileSync(join(dir, '1.json'), '{ invalid snapshot', 'utf8');
-    const response = await app.inject({ method: 'POST', url: `/api/configs/${id}/history/1/restore`, headers: headers() });
+    const response = await app.inject({ method: 'POST', url: `/api/configs/${id}/history/1/restore`, headers: headers(), payload: { expectedRevision: await revision(id) } });
     expect(response.statusCode).toBeGreaterThanOrEqual(400);
     expect(readFileSync(configPath, 'utf8')).toBe(original);
     expect(response.body).not.toContain(SECRET);
@@ -147,12 +154,12 @@ describe('History API contracts (SAVE-05, SAVE-06)', () => {
     const id = await track();
     await save(id, { mode: 'interactive', workflow: { tdd_mode: true } });
     await save(id, { mode: 'interactive', workflow: { tdd_mode: false }, changed: true });
+    const expectedRevision = await revision(id);
     const [first, second] = await Promise.all([
-      app.inject({ method: 'POST', url: `/api/configs/${id}/history/1/restore`, headers: headers() }),
-      app.inject({ method: 'POST', url: `/api/configs/${id}/history/2/restore`, headers: headers() }),
+      app.inject({ method: 'POST', url: `/api/configs/${id}/history/1/restore`, headers: headers(), payload: { expectedRevision } }),
+      app.inject({ method: 'POST', url: `/api/configs/${id}/history/2/restore`, headers: headers(), payload: { expectedRevision } }),
     ]);
-    expect(first.statusCode).toBe(200);
-    expect(second.statusCode).toBe(200);
+    expect([first.statusCode, second.statusCode].sort()).toEqual([200, 409]);
     const history = await app.inject({ method: 'GET', url: `/api/configs/${id}/history`, headers: headers() });
     const snapshots = (history.json() as { snapshots: Array<{ seq: number }> }).snapshots;
     expect(snapshots.map(({ seq }) => seq)).toEqual([...snapshots.map(({ seq }) => seq)].sort((a, b) => b - a));

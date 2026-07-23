@@ -178,6 +178,12 @@ describe('GET /api/configs/:id — loads a tracked config with effective values 
   });
 });
 
+async function currentRevision(id: string): Promise<string> {
+  const response = await app.inject({ method: 'GET', url: `/api/configs/${id}`, headers: authHeaders() });
+  expect(response.statusCode).toBe(200);
+  return (response.json() as { revision: string }).revision;
+}
+
 describe('PUT /api/configs/:id — saves a tracked config and records a snapshot', () => {
   it('saves a tracked config and records a snapshot', async () => {
     const id = await trackConfig();
@@ -189,7 +195,7 @@ describe('PUT /api/configs/:id — saves a tracked config and records a snapshot
       method: 'PUT',
       url: `/api/configs/${id}`,
       headers: authHeaders(),
-      payload: { config: modified },
+      payload: { config: modified, expectedRevision: await currentRevision(id) },
     });
     expect(res.statusCode).toBe(200);
     const body = res.json() as { ok: boolean; snapshotId?: string; warning?: string };
@@ -208,6 +214,27 @@ describe('PUT /api/configs/:id — saves a tracked config and records a snapshot
   });
 });
 
+describe('PUT /api/configs/:id — rejects stale revisions without writing or snapshotting', () => {
+  it('preserves an external edit when the browser sends an older revision', async () => {
+    const id = await trackConfig();
+    const expectedRevision = await currentRevision(id);
+    const external = JSON.stringify({ mode: 'autonomous', workflow: { tdd_mode: false } });
+    writeFileSync(configPath, external, 'utf8');
+
+    const response = await app.inject({
+      method: 'PUT',
+      url: `/api/configs/${id}`,
+      headers: authHeaders(),
+      payload: { config: { mode: 'interactive' }, expectedRevision },
+    });
+
+    expect(response.statusCode).toBe(409);
+    expect(readFileSync(configPath, 'utf8')).toBe(external);
+    const { snapshotDirFor } = await import('../../packages/server/src/snapshot-store/paths.js');
+    expect(existsSync(snapshotDirFor(configPath, appDataRoot))).toBe(false);
+  });
+});
+
 describe('PUT /api/configs/:id — returns 422 with field errors when the saved config fails schema validation', () => {
   it('returns 422 with field errors when the saved config fails schema validation', async () => {
     const id = await trackConfig();
@@ -219,7 +246,7 @@ describe('PUT /api/configs/:id — returns 422 with field errors when the saved 
       method: 'PUT',
       url: `/api/configs/${id}`,
       headers: authHeaders(),
-      payload: { config: invalid },
+      payload: { config: invalid, expectedRevision: await currentRevision(id) },
     });
     expect(res.statusCode).toBe(422);
     const body = res.json() as { ok: boolean; errors: object[] };
@@ -278,7 +305,7 @@ describe('PUT /api/configs/:id — never accepts a filesystem path on the save r
       method: 'PUT',
       url: `/api/configs/${id}`,
       headers: authHeaders(),
-      payload: { config: modified, path: sentinelPath },
+      payload: { config: modified, expectedRevision: await currentRevision(id), path: sentinelPath },
     });
     expect(res.statusCode).toBe(200);
     expect(existsSync(sentinelPath)).toBe(false);

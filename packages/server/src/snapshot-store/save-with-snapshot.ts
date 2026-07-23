@@ -120,10 +120,16 @@ async function withTransactionLock<T>(resolvedConfigPath: string, fn: () => Prom
   }
 }
 
+/** Opaque revision of the exact on-disk document bytes. */
+export function configRevision(content: string | null): string {
+  return createHash('sha256').update(content === null ? 'gsd-config-manager:missing' : `gsd-config-manager:content:${content}`).digest('hex');
+}
+
 /** The frozen server-layer save-result envelope (D-10). */
 export type SaveResult =
-  | { ok: true; snapshotId?: string; warning?: string }
-  | { ok: false; errors: object[] };
+  | { ok: true; snapshotId?: string; warning?: string; revision: string }
+  | { ok: false; errors: object[] }
+  | { ok: false; conflict: true };
 
 /** Injectable dependencies for `saveWithSnapshot`, enabling fault injection without module mocking. */
 export interface SaveDeps {
@@ -142,14 +148,17 @@ export async function saveWithSnapshot(
   configPath: string,
   nextConfig: object,
   validate: (data: unknown) => ValidationResult,
-  deps: SaveDeps = {},
+  expectedRevisionOrDeps: string | SaveDeps | undefined = undefined,
+  suppliedDeps: SaveDeps = {},
 ): Promise<SaveResult> {
+  const expectedRevision = typeof expectedRevisionOrDeps === 'string' ? expectedRevisionOrDeps : undefined;
+  const deps = typeof expectedRevisionOrDeps === 'string' ? suppliedDeps : expectedRevisionOrDeps ?? suppliedDeps;
   // Serialize the ENTIRE read-prior -> safe config write -> committed index
   // sequence per resolved config path in both this process and peer helpers.
   const resolvedConfigPath = resolvePath(configPath);
   return withPathLock(resolvedConfigPath, () => withTransactionLock(
     resolvedConfigPath,
-    () => saveWithSnapshotUnlocked(configPath, nextConfig, validate, deps),
+    () => saveWithSnapshotUnlocked(configPath, nextConfig, validate, expectedRevision, deps),
   ));
 }
 
@@ -157,6 +166,7 @@ async function saveWithSnapshotUnlocked(
   configPath: string,
   nextConfig: object,
   validate: (data: unknown) => ValidationResult,
+  expectedRevision: string | undefined,
   deps: SaveDeps,
 ): Promise<SaveResult> {
   const record = deps.record ?? recordSnapshot;
@@ -192,6 +202,10 @@ async function saveWithSnapshotUnlocked(
     }
   }
 
+  if (expectedRevision !== undefined && configRevision(priorContent) !== expectedRevision) {
+    return { ok: false, conflict: true };
+  }
+
   // 2. Call the frozen saveConfig UNMODIFIED. A validation failure is a
   //    soft failure surfaced to the caller; any other error is a genuine
   //    write failure and must propagate (the user must know their save did
@@ -211,6 +225,8 @@ async function saveWithSnapshotUnlocked(
     throw err;
   }
 
+  const revision = configRevision(await readFile(configPath, 'utf8'));
+
   // 3. Only after the save succeeds, attempt to record the snapshot in its
   //    own narrowly-scoped try/catch (D-12: a recording failure must never
   //    fail the save, which has already committed).
@@ -221,8 +237,8 @@ async function saveWithSnapshotUnlocked(
     const reason = (err as NodeJS.ErrnoException).code ?? (err as Error).message ?? 'unknown error';
     const warning = `Saved successfully, but history was not recorded (${reason}). Your changes are safe; version history for this save is unavailable.`;
     warn(warning);
-    return { ok: true, warning };
+    return { ok: true, warning, revision };
   }
 
-  return { ok: true, snapshotId };
+  return { ok: true, snapshotId, revision };
 }

@@ -50,9 +50,10 @@ beforeEach(() => {
   vi.mocked(getHistorySnapshot).mockResolvedValue({
     snapshot: { ...snapshots[0], document: snapshot.config },
     current,
+    currentRevision: 'revision-1',
   });
   vi.mocked(restoreConfigSnapshot).mockResolvedValue({});
-  vi.mocked(loadConfig).mockResolvedValue({ raw: { project: current, global: null }, effective: {}, unknown: [], meta: { globalDefaultsFound: false, globalDefaultsPath: '' } });
+  vi.mocked(loadConfig).mockResolvedValue({ revision: 'revision-2', raw: { project: current, global: null }, effective: {}, unknown: [], meta: { globalDefaultsFound: false, globalDefaultsPath: '' } });
 });
 
 afterEach(() => {
@@ -240,7 +241,7 @@ describe('History workspace contract (SAVE-05)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Restore snapshot' }));
 
     await waitFor(() => {
-      expect(restoreConfigSnapshot).toHaveBeenCalledWith('cfg-1', 7);
+      expect(restoreConfigSnapshot).toHaveBeenCalledWith('cfg-1', 7, 'revision-1');
       expect(loadConfig).toHaveBeenCalledWith('cfg-1');
       expect(resetFromServer).toHaveBeenCalledTimes(1);
       const [reloaded] = vi.mocked(resetFromServer).mock.calls[0]!;

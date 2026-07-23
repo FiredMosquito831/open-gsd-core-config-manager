@@ -26,15 +26,18 @@ export function trackConfig(path: string) {
   }).then((r) => r.config);
 }
 
-export function loadConfig(id: string) {
-  return apiFetch<{ data: LoadResult }>(`/api/configs/${id}`).then((r) => r.data);
+export type LoadedConfig = LoadResult & { revision?: string };
+
+export function loadConfig(id: string): Promise<LoadedConfig> {
+  return apiFetch<{ data: LoadResult; revision: string }>(`/api/configs/${id}`)
+    .then(({ data, revision }) => ({ ...data, revision }));
 }
 
-export function saveConfig(id: string, config: object) {
-  return apiFetch<{ snapshotId?: string; warning?: string }>(`/api/configs/${id}`, {
+export function saveConfig(id: string, config: object, expectedRevision = '') {
+  return apiFetch<{ snapshotId?: string; warning?: string; revision?: string }>(`/api/configs/${id}`, {
     method: 'PUT',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ config }),
+    body: JSON.stringify({ config, expectedRevision }),
   });
 }
 
@@ -49,8 +52,12 @@ export function loadHistoryComparison(id: string, seq: number) {
 }
 
 /** Restores a selected snapshot without ever accepting browser-supplied document content. */
-export function restoreConfigSnapshot(id: string, seq: number) {
-  return apiFetch<HistoryRestoreResult>(`${historyPath(id, seq)}/restore`, { method: 'POST' });
+export function restoreConfigSnapshot(id: string, seq: number, expectedRevision = '') {
+  return apiFetch<HistoryRestoreResult>(`${historyPath(id, seq)}/restore`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ expectedRevision }),
+  });
 }
 
 export const listHistory = listConfigHistory;
