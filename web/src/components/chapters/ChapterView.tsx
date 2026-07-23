@@ -9,6 +9,7 @@ import { SpecializedHandoffCard } from '../fields/SpecializedHandoffCard';
 import { UnknownChapter } from '../unknown/UnknownChapter';
 import { getSpecializedDescriptor } from '../../schema/specializedMetadata';
 import { FocusedWorkspace } from '../specialized/FocusedWorkspace';
+import { GenericJsonEditor } from '../specialized/GenericJsonEditor';
 import { useWatch } from 'react-hook-form';
 import { useUiStore as uiStore } from '../../state/uiStore';
 import { ProfileCards } from '../specialized/ProfileCards';
@@ -41,8 +42,9 @@ interface ChapterViewProps {
 
 export function ChapterView({ loadResult, schema, control, onFieldChange, onResetField }: ChapterViewProps) {
   const { activeChapter, focusedPath, setFocusedPath, profileEditorOpen, setProfileEditorOpen, profileSessionLabel, setProfileSessionLabel } = useUiStore();
-  const watchedValues = useWatch({ control }) as Record<string, unknown>;
+  const focusedValue = useWatch({ control, name: focusedPath ?? '__no_focused_path__' });
   const index = indexSchema(schema);
+  const focusedField = focusedPath ? index.fieldsByPath.get(focusedPath) : undefined;
   const focusedDescriptor = focusedPath ? getSpecializedDescriptor(focusedPath) : undefined;
   const [profileAssignments, setProfileAssignments] = useState<Record<string, unknown>>({});
   const profileValue = String(effectiveAt(loadResult, 'model_profile') ?? 'balanced');
@@ -54,12 +56,24 @@ export function ChapterView({ loadResult, schema, control, onFieldChange, onRese
     return <ProfileCards value={profileValue} onSelect={(next) => onFieldChange('model_profile', next)} onCreate={(profile) => { setProfileAssignments(profileAssignmentsFor(profile)); setProfileSessionLabel(''); setProfileEditorOpen(true); }} />;
   }
 
-  if (focusedDescriptor && activeChapter) {
-    const currentValue = watchedValues[focusedDescriptor.path] ?? getEffectiveLeaf(loadResult.effective, focusedDescriptor.path)?.value;
+  if (focusedDescriptor?.editable && activeChapter) {
+    const currentValue = focusedValue ?? getEffectiveLeaf(loadResult.effective, focusedDescriptor.path)?.value;
     return <FocusedWorkspace descriptor={focusedDescriptor} loadResult={loadResult} chapter={activeChapter} value={currentValue} onChange={(value) => {
       setFocusedPath(focusedDescriptor.path, activeChapter);
       onFieldChange(focusedDescriptor.path, value);
     }} />;
+  }
+
+  if (focusedField?.isHandoff && !focusedDescriptor && activeChapter) {
+    const currentValue = focusedValue ?? getEffectiveLeaf(loadResult.effective, focusedField.path)?.value;
+    return <GenericJsonEditor
+      field={focusedField}
+      loadResult={loadResult}
+      chapter={activeChapter}
+      value={currentValue}
+      onChange={(value) => onFieldChange(focusedField.path, value)}
+      onBack={() => setFocusedPath(null, null)}
+    />;
   }
   const fields = activeChapter ? index.fieldsByCategory.get(activeChapter) ?? [] : [];
 
@@ -79,8 +93,8 @@ export function ChapterView({ loadResult, schema, control, onFieldChange, onRese
           const leaf = getEffectiveLeaf(loadResult.effective, field.path);
           if (field.isHandoff) {
             const descriptor = getSpecializedDescriptor(field.path);
-            if (descriptor?.editable) {
-              return <button key={field.path} data-testid={`handoff-${field.path}`} type="button" className="gsd-specialized-launch" onClick={() => setFocusedPath(field.path, activeChapter)}><span>{field.title}</span><span>{field.path}</span><small>Open focused editor</small></button>;
+            if (descriptor?.editable || !descriptor) {
+              return <button key={field.path} data-testid={`handoff-${field.path}`} type="button" className="gsd-specialized-launch" onClick={() => setFocusedPath(field.path, activeChapter)}><span>{field.title}</span><span>{field.path}</span><small>{descriptor ? 'Open focused editor' : 'Open JSON editor'}</small></button>;
             }
             return <SpecializedHandoffCard key={field.path} field={field} />;
           }

@@ -97,6 +97,36 @@ const testSchema: Record<string, SchemaEntry> = {
     'x-description': 'Sections to include in PR body.',
     'x-provenance': 'config-defaults',
   },
+  custom_rules: {
+    type: 'array',
+    title: 'Custom Rules',
+    'x-category': 'Core',
+    'x-description': 'Additional rules.',
+    'x-provenance': 'config-defaults',
+  },
+  extensions: {
+    type: 'object',
+    title: 'Extensions',
+    'x-category': 'Core',
+    'x-description': 'Extension settings.',
+    'x-provenance': 'config-defaults',
+  },
+  provider_settings: {
+    type: 'object',
+    title: 'Provider Settings',
+    'x-category': 'Core',
+    'x-description': 'Settings by provider name.',
+    'x-provenance': 'dynamicKeyPattern:provider_settings',
+    patternProperties: {
+      '^provider_settings\\.[a-z]+$': {
+        type: 'object',
+        title: 'Provider setting',
+        'x-category': 'Core',
+        'x-description': 'Settings for one provider.',
+        'x-provenance': 'dynamicKeyPattern:provider_settings',
+      },
+    },
+  },
 };
 
 async function renderWithActiveConfig() {
@@ -154,7 +184,7 @@ describe('schema renderer', () => {
 
     for (const category of categories) {
       fireEvent.click(screen.getByRole('tab', { name: category }));
-      await waitFor(() => screen.getByTestId(new RegExp('^(field|handoff)-')));
+      await waitFor(() => expect(screen.getAllByTestId(/^field-|^handoff-/).length).toBeGreaterThan(0));
       const cards = screen.getAllByTestId(/^field-|^handoff-/);
       cards.forEach((card) => {
         const match = card.getAttribute('data-testid')?.match(/^(?:field|handoff)-(.+)$/);
@@ -166,19 +196,23 @@ describe('schema renderer', () => {
     expect(Array.from(renderedPaths).sort()).toEqual(expectedPaths);
   });
 
-  it('marks array/object/dynamic-map entries as handoff cards', async () => {
+  it('routes ordinary arrays, objects, and dynamic maps to the JSON editor while preserving specialized editors', async () => {
     await renderWithActiveConfig();
 
-    fireEvent.click(screen.getByRole('tab', { name: 'Ship' }));
-    await waitFor(() => screen.getByTestId('handoff-ship.pr_body_sections'));
-    expect(screen.getByTestId('handoff-ship.pr_body_sections')).toBeTruthy();
+    fireEvent.click(screen.getByRole('tab', { name: 'Core' }));
+    await waitFor(() => screen.getByTestId('handoff-custom_rules'));
+    expect(screen.getByTestId('handoff-custom_rules').textContent).toContain('Open JSON editor');
+    expect(screen.getByTestId('handoff-extensions').textContent).toContain('Open JSON editor');
+    expect(screen.getByTestId('handoff-provider_settings').textContent).toContain('Open JSON editor');
+    fireEvent.click(screen.getByTestId('handoff-custom_rules'));
+    expect(screen.getByTestId('generic-json-editor-custom_rules')).toBeTruthy();
+    expect(screen.getByText('Edit complete JSON value')).toBeTruthy();
 
+    fireEvent.click(screen.getByRole('button', { name: 'Back to Core' }));
     fireEvent.click(screen.getByRole('tab', { name: 'Model & Routing' }));
     await waitFor(() => screen.getByTestId('handoff-model_overrides'));
-    expect(screen.getByTestId('handoff-model_overrides')).toBeTruthy();
-
-    fireEvent.click(screen.getByRole('tab', { name: 'Core' }));
-    await waitFor(() => screen.getByTestId('field-mode'));
+    fireEvent.click(screen.getByTestId('handoff-model_overrides'));
+    expect(screen.getByLabelText('model_overrides focused editor')).toBeTruthy();
     expect(screen.queryByTestId('handoff-mode')).toBeNull();
   });
 
