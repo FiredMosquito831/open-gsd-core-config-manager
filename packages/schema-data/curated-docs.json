@@ -307,6 +307,15 @@
   "statusline.context_position": {
     "x-description": "Where the context-usage indicator renders in the terminal status line (e.g. \"end\")."
   },
+  "statusline.state_format": {
+    "type": "string",
+    "enum": ["full", "compact"],
+    "x-description": "Choose how much workflow state the terminal status line shows.",
+    "x-options": {
+      "full": { "x-description": "Show the complete state summary, including the current workflow details." },
+      "compact": { "x-description": "Show a shorter state summary to keep the status line less crowded." }
+    }
+  },
   "statusline.show_last_command": {
     "x-description": "Show the last-run GSD command in the terminal status line."
   },

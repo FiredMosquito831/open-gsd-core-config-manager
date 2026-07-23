@@ -1,6 +1,5 @@
 import { createHash } from 'node:crypto';
 import { buildAjvSchema, createValidator } from '../../config-io/src/index.js';
-import type { SchemaEntry } from '../../config-io/src/types.js';
 import { diffCanonicalSchemas, reconcileSchemaSources } from '../../schema-data/src/reconcile.js';
 import type {
   CanonicalSchema,
@@ -246,7 +245,7 @@ export function defaultRefreshDependencies(): RefreshDependencies {
     documentation: extractDocumentationEvidence,
     reconcile: reconcileSchemaSources,
     diff: diffCanonicalSchemas,
-    compile: (schema) => createValidator(buildAjvSchema(schema as Record<string, SchemaEntry>)),
+    compile: (schema) => createValidator(buildAjvSchema(schema)),
     activeSchema: () => { throw new Error('Active schema manager is required'); },
     activeMetadata: () => { throw new Error('Active schema manager is required'); },
     activeGeneration: () => { throw new Error('Active schema manager is required'); },

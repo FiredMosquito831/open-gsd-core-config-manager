@@ -45,9 +45,18 @@ export interface SpecializedDescriptor {
 }
 
 const schema = bundledSchema as Record<string, SchemaEntry>;
+
+function isSpecializedDescriptorMetadata(value: Record<string, unknown>): value is Pick<SpecializedDescriptor, 'editor' | 'editable' | 'sensitive' | 'sourceEvidence'> & { reason?: unknown } {
+  return typeof value.editor === 'string'
+    && typeof value.editable === 'boolean'
+    && typeof value.sensitive === 'boolean'
+    && Array.isArray(value.sourceEvidence)
+    && value.sourceEvidence.every((source) => typeof source === 'string');
+}
+
 const schemaMetadata = (path: string): SpecializedDescriptor | undefined => {
   const metadata = schema[path]?.['x-specialized'];
-  if (!metadata) return undefined;
+  if (!metadata || !isSpecializedDescriptorMetadata(metadata)) return undefined;
   return {
     path,
     editor: metadata.editor as SpecializedEditor,
@@ -132,7 +141,12 @@ export const SPECIALIZED_METADATA: SpecializedDescriptor[] = [
     }),
   ),
   ...Object.entries(schema)
-    .filter(([, entry]) => entry['x-specialized']?.sensitive && !specializedCatalog.sensitivePaths.includes(entry['x-specialized'].path))
+    .filter(([path, entry]) => {
+      const metadata = entry['x-specialized'];
+      return metadata && isSpecializedDescriptorMetadata(metadata)
+        && metadata.sensitive
+        && !specializedCatalog.sensitivePaths.includes(path);
+    })
     .map(([path]) =>
       descriptor(path, 'read-only-unsupported', {
         editable: false,

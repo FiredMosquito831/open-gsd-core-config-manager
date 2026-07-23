@@ -25,14 +25,14 @@
 import bundledSchema from '../../schema-data/bundled-schema.json' with { type: 'json' };
 import bundledSchemaMetadata from '../../schema-data/bundled-schema-meta.json' with { type: 'json' };
 import { buildAjvSchema, createValidator } from '../../config-io/src/index.js';
-import type { SchemaEntry, ValidationResult } from '../../config-io/src/types.js';
-import type { CanonicalSchemaMetadata } from '../../schema-data/src/source-types.js';
+import type { ValidationResult } from '../../config-io/src/types.js';
+import type { CanonicalSchema, CanonicalSchemaMetadata } from '../../schema-data/src/source-types.js';
 
-const SCHEMA = bundledSchema as unknown as Record<string, SchemaEntry>;
+const SCHEMA = bundledSchema as CanonicalSchema;
 const METADATA = bundledSchemaMetadata as CanonicalSchemaMetadata;
 
 /** Returns the immutable bundled canonical schema inlined at build time. */
-export function getBundledSchema(): Record<string, SchemaEntry> {
+export function getBundledSchema(): CanonicalSchema {
   return SCHEMA;
 }
 

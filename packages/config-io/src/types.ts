@@ -10,6 +10,8 @@
  * and § Decision: Unknown-Key Representation.
  */
 
+import type { CanonicalSchemaEntry } from '../../schema-data/src/source-types.js';
+
 /**
  * Which config layer supplied a resolved effective value, in merge
  * precedence order: 'project' overrides 'global', which overrides the
@@ -89,46 +91,5 @@ export interface ValidationResult {
   errors: object[];
 }
 
-/**
- * One flattened entry in the bundled canonical schema, describing a
- * single key (or dynamic key pattern) shared by Plans 02 (schema build)
- * and 05 (schema-driven UI rendering).
- */
-export interface SchemaEntry {
-  /**
-   * A single JSON Schema type name, or a union array (e.g. `["object",
-   * "null"]` for a nullable dynamic-map container) — widened from a bare
-   * `string` in Plan 07 (Rule 1 — bug fix) once schema-convert.ts's
-   * `buildAjvSchema` needed to compile the real bundled schema through Ajv
-   * and several real entries carry a union `type` array.
-   */
-  type: string | string[];
-  enum?: unknown[];
-  default?: unknown;
-  title: string;
-  /** UI category grouping, e.g. "Workflow", "Model & Routing". */
-  'x-category': string;
-  /** One-line plain-language description of what this key does. */
-  'x-description': string;
-  /**
-   * Which reconciled source justified this key's inclusion: 'manifest',
-   * 'capability-registry', 'config-defaults', 'fixture-observed', or a
-   * `dynamicKeyPattern:<name>` tag for dynamic-map container entries.
-   */
-  'x-provenance': string;
-  /** Regex-keyed sub-schema for dynamic-map container keys (e.g. model_overrides.<agent-id>). */
-  patternProperties?: Record<string, SchemaEntry>;
-  /** Human-readable hint for what the dynamic pattern's key segment represents, e.g. "agent-id". */
-  'x-dynamic-key-hint'?: string;
-  /** Per-enum-option metadata slot, reserved for Phase 3's per-option beginner prose (D-01). */
-  'x-options'?: Record<string, { 'x-description': string }>;
-  /** Optional source-confirmed specialized editor metadata; validation remains schema-driven. */
-  'x-specialized'?: {
-    path: string;
-    editor: string;
-    editable: boolean;
-    sensitive: boolean;
-    sourceEvidence: string[];
-    [key: string]: unknown;
-  };
-}
+/** One flattened entry in the canonical schema shared by generation, I/O, and UI. */
+export type SchemaEntry = CanonicalSchemaEntry;
