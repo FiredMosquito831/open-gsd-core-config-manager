@@ -70,7 +70,7 @@ function categoryFor(key: string): string {
   if (key.startsWith('gates.')) return 'Gates';
   if (key.startsWith('safety.') || key.startsWith('security.') || key.startsWith('workflow.security_')) return 'Security';
   if (key.startsWith('git.')) return 'Git';
-  if (key.startsWith('planning.')) return 'Planning';
+  if (key.startsWith('planning.') || key.startsWith('granularities')) return 'Planning';
   if (key.startsWith('review.') || key.startsWith('plan_review')) return 'Review';
   if (key.startsWith('ship.')) return 'Ship';
   if (key.startsWith('effort.') || key.startsWith('fast_mode.')) return 'Effort';

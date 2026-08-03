@@ -64,7 +64,7 @@ import { join, resolve as resolvePath } from 'node:path';
 import { lock } from 'proper-lockfile';
 import { saveConfig, ValidationError } from '../../../config-io/src/atomic-write.js';
 import type { ValidationResult } from '../../../config-io/src/types.js';
-import { recordSnapshot } from './index.js';
+import { recordSnapshot, type SnapshotRecordResult, type PrunePolicy, type SnapshotWriteDeps } from './index.js';
 
 /**
  * Per-resolved-path in-process async mutex (CR-03). Keyed by
@@ -133,9 +133,10 @@ export type SaveResult =
 
 /** Injectable dependencies for `saveWithSnapshot`, enabling fault injection without module mocking. */
 export interface SaveDeps {
-  record?: typeof recordSnapshot;
+  recordDeps?: SnapshotWriteDeps;
   root?: string;
   warn?: (message: string) => void;
+  prunePolicy?: PrunePolicy;
 }
 
 /**
@@ -169,7 +170,6 @@ async function saveWithSnapshotUnlocked(
   expectedRevision: string | undefined,
   deps: SaveDeps,
 ): Promise<SaveResult> {
-  const record = deps.record ?? recordSnapshot;
   const warn = deps.warn ?? console.warn;
 
   // 1. Read current on-disk content (for the pre-write snapshot). D-11:
@@ -230,9 +230,9 @@ async function saveWithSnapshotUnlocked(
   // 3. Only after the save succeeds, attempt to record the snapshot in its
   //    own narrowly-scoped try/catch (D-12: a recording failure must never
   //    fail the save, which has already committed).
-  let snapshotId: string | undefined;
+  let snapshotRecord: SnapshotRecordResult | undefined;
   try {
-    snapshotId = await record(configPath, priorContent, deps.root);
+    snapshotRecord = await recordSnapshot(configPath, priorContent, deps.root, deps.recordDeps, deps.prunePolicy);
   } catch (err) {
     const reason = (err as NodeJS.ErrnoException).code ?? (err as Error).message ?? 'unknown error';
     const warning = `Saved successfully, but history was not recorded (${reason}). Your changes are safe; version history for this save is unavailable.`;
@@ -240,5 +240,5 @@ async function saveWithSnapshotUnlocked(
     return { ok: true, warning, revision };
   }
 
-  return { ok: true, snapshotId, revision };
+  return { ok: true, snapshotId: snapshotRecord?.snapshotId, revision };
 }

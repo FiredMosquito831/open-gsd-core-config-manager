@@ -27,7 +27,7 @@ A user can open any GSD `config.json`, understand exactly what every setting and
 - [ ] Left sidebar lists all tracked config files; clicking one loads its data into the editor for viewing/modifying.
 - [ ] User can create a brand-new config file from defaults.
 - [ ] Array-valued keys are edited as "pools": user can add, configure, reorder, and remove individual entries through guided controls rather than raw JSON.
-- [ ] Every save is snapshotted into a browsable version history per config, with diff view and one-click revert. — *Partially delivered: the snapshot mechanism itself (SAVE-04) landed in Phase 2 — every successful save writes a timestamped snapshot into the OS app-data directory, outside the tracked project. The browse/diff/revert UI on top of it is Phase 5.*
+- [x] Every save is snapshotted into a browsable version history per config, with diff view and one-click revert. — *Validated in Phase 5: Version History UI (SAVE-05, SAVE-06), building on Phase 2's SAVE-04 snapshot store. History browsing, redacted structural diff, responsive timeline, guarded restore review, pre-restore recovery snapshot, and focus-safe restore outcomes are delivered.*
 - [ ] User can view, edit, and create custom GSD model profiles per gsd-core docs, including per-agent/role overrides.
 - [ ] UI is visually rich, polished, and user-friendly (clear typography, category navigation, inline help).
 
@@ -63,7 +63,7 @@ A user can open any GSD `config.json`, understand exactly what every setting and
 | Loopback binding is NOT treated as a trust boundary | Any page in the user's browser can `fetch()` 127.0.0.1 — the classic local-server CSRF/DNS-rebinding class that has bitten other local tools | ✓ Delivered in Phase 2 — Host allowlist (root scope) + `/api`-scoped Origin guard + CORS lock + per-launch `x-gsd-token`. Static assets are deliberately token-free so the page can load and *then* present its token. |
 | Hybrid schema: bundled curated canonical schema + refresh from gsd-core repo | Offline-reliable beginner docs, yet stays current with gsd-core changes | Bundled half delivered in Phase 1; live reconcile is Phase 6 |
 | Discovery via manual add + remembered list, plus optional chosen-folder scan | Predictable and safe; avoids surprising machine-wide crawling | — Pending (Phase 3) |
-| Full version-history snapshots with diff + one-click revert | Strongest protection against corruption/data loss | Snapshot store delivered in Phase 2 (app-data dir, outside the tracked project); browse/diff/revert UI is Phase 5 |
+| Full version-history snapshots with diff + one-click revert | Strongest protection against corruption/data loss | ✓ Delivered in Phase 5 — complete per-config timeline, redacted structural diff, safe restore through the normal save pipeline, pre-restore recovery snapshots, retryable outcomes, and responsive keyboard-accessible review UI |
 | React + Vite + TypeScript frontend, public npm package | Rich UI, maintainable, trivially shareable | npm package delivered in Phase 2 (`npm pack` → 3 files, 21.3 KB, UI bundled inside). The React/Vite frontend replaces Phase 2's placeholder page in Phase 3. |
 
 ## Evolution
@@ -84,4 +84,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-07-13 after Phase 2 (Local Loopback Server, CLI & Security Hardening) completed*
+*Last updated: 2026-07-20 after Phase 5 (Version History UI) completed*

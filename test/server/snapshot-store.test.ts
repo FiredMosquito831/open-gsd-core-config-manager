@@ -91,13 +91,13 @@ describe('saveWithSnapshot — snapshot-recording failure is non-fatal (SAVE-04,
     const priorContent = '{"secretApiKey":"sk-super-secret-value"}';
     writeFile(configPath, priorContent);
 
-    const failingRecord = async (): Promise<string | undefined> => {
+    const failingWrite = async (): Promise<void> => {
       throw new Error('disk full');
     };
 
     const result = await saveWithSnapshot(configPath, { replaced: true }, alwaysValid, {
       root: appDataRoot,
-      record: failingRecord,
+      recordDeps: { write: failingWrite },
     });
 
     expect(result.ok).toBe(true);

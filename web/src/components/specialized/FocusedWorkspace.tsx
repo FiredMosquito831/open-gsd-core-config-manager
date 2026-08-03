@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import type { LoadResult } from '../../../../packages/config-io/src/types';
 import type { SpecializedDescriptor } from '../../schema/specializedMetadata';
+import { getAgentCatalog, getPhaseTypesCatalog, getRoutingTiersCatalog } from '../../schema/specializedMetadata';
 import { getEffectiveLeaf, getLayeredValue } from '../../schema/effective';
 import { useUiStore } from '../../state/uiStore';
 import { LayerSummary } from './LayerSummary';
@@ -24,6 +25,26 @@ function asMap(value: unknown): Record<string, unknown> {
   return value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {};
 }
 
+function catalogFor(keyCatalog: 'agents' | 'phaseTypes' | 'routingTiers'): string[] {
+  if (keyCatalog === 'phaseTypes') return getPhaseTypesCatalog();
+  if (keyCatalog === 'routingTiers') return getRoutingTiersCatalog();
+  return getAgentCatalog();
+}
+
+/**
+ * Pick the next unused catalog key for a map with a fixed key domain
+ * (models.<phase_type>, granularities.<phase_type>, effort.routing_tier_defaults.<tier>).
+ * Falls back to an entry-N placeholder when the descriptor has no keyCatalog.
+ */
+function nextMapKey(map: Record<string, unknown>, descriptor: SpecializedDescriptor): string {
+  if (descriptor.keyCatalog) {
+    const used = new Set(Object.keys(map));
+    const next = catalogFor(descriptor.keyCatalog).find((key) => !used.has(key));
+    if (next) return next;
+  }
+  return `entry-${Object.keys(map).length + 1}`;
+}
+
 export function FocusedWorkspace({ descriptor, loadResult, chapter, value, onChange }: FocusedWorkspaceProps) {
   const { setFocusedPath } = useUiStore();
   const entries = asEntries(value);
@@ -41,13 +62,15 @@ export function FocusedWorkspace({ descriptor, loadResult, chapter, value, onCha
   const back = () => setFocusedPath(null, null);
   const addEntry = () => {
     const fields = descriptor.fields ?? [];
-    const entry = Object.fromEntries(fields.map((field) => [field.path, field.type === 'string' ? '' : undefined]));
+    const entry = fields.length > 0
+      ? Object.fromEntries(fields.map((field) => [field.path, field.type === 'string' ? '' : undefined]))
+      : (descriptor.allowedValues?.[0] ?? '');
     if (isArray) {
       const next = [...entries, entry];
       onChange(next);
       setSelectedIndex(entries.length);
     } else {
-      const key = `entry-${mapKeys.length + 1}`;
+      const key = nextMapKey(map, descriptor);
       onChange({ ...map, [key]: entry });
       setSelectedKey(key);
     }

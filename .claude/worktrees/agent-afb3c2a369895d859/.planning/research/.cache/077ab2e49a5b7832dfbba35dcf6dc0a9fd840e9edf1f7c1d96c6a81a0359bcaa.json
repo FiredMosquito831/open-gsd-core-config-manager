@@ -1,0 +1,1 @@
+{"content":"Commander.js: declaring only '--no-open' (no separate --open) makes the option default to true, and passing --no-open on the CLI sets it to false. Order matters if a plain --open is also declared elsewhere.","source":"web","provider":"websearch","confidence":"MEDIUM","fetched_at":"2026-07-12T16:09:36.319Z","ttl":86400000,"kind":"docs"}

@@ -21,17 +21,33 @@ export function EnumCombobox({
   onBlur,
   disabled,
 }: EnumComboboxProps) {
+  const hasNull = options.includes(null);
+  const currentKey = value === null || value === undefined ? '' : String(value);
   return (
     <select
       id={id}
-      value={typeof value === 'string' || typeof value === 'number' ? String(value) : ''}
-      onChange={(e: ChangeEvent<HTMLSelectElement>) => onChange(e.target.value)}
+      value={currentKey}
+      onChange={(e: ChangeEvent<HTMLSelectElement>) => {
+        const raw = e.target.value;
+        if (raw === '' && hasNull) {
+          onChange(null);
+          return;
+        }
+        // Preserve the option's original type (boolean/number/null) instead of
+        // always emitting a string: match the selected value back onto the
+        // option that rendered it.
+        const matched = options.find((option) => option !== null && String(option) === raw);
+        onChange(matched !== undefined ? matched : raw);
+      }}
       disabled={disabled}
       onBlur={onBlur}
       className="gsd-field-card__select"
       aria-label={label}
     >
-      {options.map((option) => {
+      {hasNull && (
+        <option value="">(unset)</option>
+      )}
+      {options.filter((option) => option !== null).map((option) => {
         const key = String(option);
         return (
           <option key={key} value={key}>

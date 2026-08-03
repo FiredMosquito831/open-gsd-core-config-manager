@@ -4,6 +4,7 @@ export default defineConfig({
   test: {
     include: ['test/**/*.test.{ts,tsx}'],
     environment: 'node',
+    setupFiles: ['test/web/setup.ts'],
     watch: false,
     passWithNoTests: true,
     pool: 'vmThreads',

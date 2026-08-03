@@ -1,0 +1,1 @@
+{"content":"npm bin field + '#!/usr/bin/env node' shebang is the standard cross-platform CLI pattern; npm auto-generates a Windows .cmd shim from the shebang (the 'shebang-to-cmd shimmer'), so no manual Windows wrapper is needed.","source":"web","provider":"websearch","confidence":"MEDIUM","fetched_at":"2026-07-12T16:09:36.876Z","ttl":86400000,"kind":"web"}

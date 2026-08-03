@@ -4,6 +4,8 @@ import bundledSchema from '../../packages/schema-data/bundled-schema.json' with 
 import {
   SPECIALIZED_METADATA,
   getSpecializedDescriptor,
+  getPhaseTypesCatalog,
+  getRoutingTiersCatalog,
   isSpecializedEditable,
   type SpecializedDescriptor,
 } from '../../web/src/schema/specializedMetadata.js';
@@ -55,5 +57,31 @@ describe('specialized metadata', () => {
     expect(editable.every((item: SpecializedDescriptor) => item.sourceEvidence.length > 0)).toBe(true);
     expect(descriptor('model_policy.runtime_tiers')?.editor).toBe('runtime-tier-map');
     expect(descriptor('model_profile_overrides')?.runtimeInstall?.length).toBeGreaterThan(0);
+  });
+
+  it('catalogues the full effort ladder on every effort descriptor', () => {
+    const ladder = ['minimal', 'low', 'medium', 'high', 'xhigh', 'max'];
+    expect(descriptor('effort.agent_overrides')).toMatchObject({
+      editor: 'agent-map',
+      keyCatalog: 'agents',
+      allowedValues: ladder,
+    });
+    expect(descriptor('effort.routing_tier_defaults')).toMatchObject({
+      editor: 'runtime-tier-map',
+      keyCatalog: 'routingTiers',
+      allowedValues: ladder,
+    });
+  });
+
+  it('catalogues granularities and routing-tier keys with evidence', () => {
+    expect(descriptor('granularities')).toMatchObject({
+      editor: 'runtime-tier-map',
+      keyCatalog: 'phaseTypes',
+      allowedValues: ['coarse', 'standard', 'fine'],
+    });
+    expect(descriptor('granularities')?.sourceEvidence.length).toBeGreaterThan(0);
+    expect(descriptor('effort.routing_tier_defaults')?.sourceEvidence.length).toBeGreaterThan(0);
+    expect(getPhaseTypesCatalog()).toEqual(['planning', 'discuss', 'research', 'execution', 'verification', 'completion']);
+    expect(getRoutingTiersCatalog()).toEqual(['light', 'standard', 'heavy']);
   });
 });

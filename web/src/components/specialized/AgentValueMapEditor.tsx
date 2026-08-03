@@ -30,7 +30,7 @@ export function AgentValueMapEditor({ descriptor, value, onChange }: AgentValueM
         return (
           <div key={agent} className={`gsd-agent-map-editor__row ${isKnown ? '' : 'gsd-agent-map-editor__row--unsupported'}`}>
             <strong>{agent}</strong>
-            {isKnown ? <EnumCombobox id={`agent-${agent}`} label={`${agent} value`} value={current} options={supported} meanings={{}} onChange={(next) => onChange({ ...map, [agent]: next })} /> : <span className="gsd-agent-map-editor__readonly">Unsupported value preserved: {String(current)}</span>}
+            {isKnown ? <EnumCombobox id={`agent-${agent}`} label={`${agent} value`} value={current} options={supported} meanings={descriptor.allowedDescriptions ?? {}} onChange={(next) => onChange({ ...map, [agent]: next })} /> : <span className="gsd-agent-map-editor__readonly">Unsupported value preserved: {String(current)}</span>}
             {isKnown && <button type="button" className="gsd-button gsd-button--danger gsd-button--sm" onClick={() => remove(agent)}>Remove</button>}
           </div>
         );

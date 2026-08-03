@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { EnumCombobox } from '../fields/EnumCombobox';
 import { Button } from '../common/Button';
 import { getAgentCatalog } from '../../schema/specializedMetadata';
+import { PROFILE_DESCRIPTIONS } from './ProfileCards';
 
 const AGENTS = getAgentCatalog();
 const TIERS = ['opus', 'sonnet', 'haiku', 'inherit'];
@@ -32,7 +33,7 @@ export function ProfileEditor({ assignments, sessionLabel, onSessionLabelChange,
         {Object.entries(assignments).map(([agent, current]) => (
           <div className="gsd-profile-editor__row" key={agent}>
             <strong>{agent}</strong>
-            <EnumCombobox id={`profile-${agent}`} label={`${agent} model tier`} value={current} options={TIERS} meanings={{}} onChange={(next) => onChange({ ...assignments, [agent]: next })} />
+            <EnumCombobox id={`profile-${agent}`} label={`${agent} model tier`} value={current} options={TIERS} meanings={PROFILE_DESCRIPTIONS} onChange={(next) => onChange({ ...assignments, [agent]: next })} />
             <button type="button" className="gsd-button gsd-button--danger gsd-button--sm" onClick={() => { const next = { ...assignments }; delete next[agent]; onChange(next); }}>Remove</button>
           </div>
         ))}

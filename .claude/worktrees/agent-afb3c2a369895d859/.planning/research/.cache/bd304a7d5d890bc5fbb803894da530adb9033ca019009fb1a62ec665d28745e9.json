@@ -1,0 +1,1 @@
+{"content":"fastify.listen({port:0,host:'127.0.0.1'}) binds an OS-assigned ephemeral port; fastify.server.address() (standard Node net.Server.address()) returns {address,family,port} to read back the assigned port after listen resolves.","source":"web","provider":"websearch","confidence":"MEDIUM","fetched_at":"2026-07-12T16:09:35.751Z","ttl":86400000,"kind":"docs"}

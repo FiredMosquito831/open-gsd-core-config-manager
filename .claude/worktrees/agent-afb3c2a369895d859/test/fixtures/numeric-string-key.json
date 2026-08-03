@@ -1,0 +1,13 @@
+{
+  "mode": "interactive",
+  "granularity": "fine",
+  "model_profile": "balanced",
+  "review": {
+    "default_reviewers": null,
+    "models": {
+      "0": "gpt-5",
+      "10": "claude-sonnet",
+      "gsd-code-reviewer": "claude-opus"
+    }
+  }
+}

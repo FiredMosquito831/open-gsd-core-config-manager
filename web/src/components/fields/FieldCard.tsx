@@ -142,7 +142,7 @@ export function FieldCard({ field, leaf, control, onFieldChange, onResetField }:
                   const meaning = field.optionMeanings[key];
                   return (
                     <div key={key} className="gsd-field-card__option">
-                      <dt>{key}</dt>
+                      <dt>{option === null ? '(unset)' : key}</dt>
                       <dd>{meaning || <span className="gsd-content-gap">No description yet</span>}</dd>
                     </div>
                   );

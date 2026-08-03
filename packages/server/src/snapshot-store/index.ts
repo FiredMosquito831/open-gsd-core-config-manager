@@ -61,6 +61,20 @@ export interface SnapshotIndex {
   entries: SnapshotIndexEntry[];
 }
 
+/** Pruning policy for snapshot retention. */
+export interface PrunePolicy {
+  /** Keep at most N most recent snapshots (0 = unlimited). */
+  keepLast?: number;
+  /** Skip recording a snapshot if its contentHash equals the most recent. */
+  skipIdentical?: boolean;
+}
+
+/** Default pruning policy: skip identical, keep last 50. */
+export const DEFAULT_PRUNE_POLICY: Required<PrunePolicy> = {
+  keepLast: 50,
+  skipIdentical: true,
+};
+
 /** Metadata safe to return outside the snapshot-store trust boundary. */
 export interface SnapshotMetadata {
   seq: number;
@@ -157,20 +171,65 @@ export async function readIndex(dir: string): Promise<SnapshotIndex> {
 }
 
 /**
+ * Applies pruning policy to a config's snapshot index:
+ * - If `skipIdentical` is true and the new contentHash matches the most recent entry, skip recording and return the existing most recent entry's seq.
+ * - If `keepLast` is > 0 and the number of entries exceeds keepLast, remove the oldest entries (and their snapshot files) to stay within the limit.
+ */
+async function applyPruning(
+  dir: string,
+  index: SnapshotIndex,
+  newContentHash: string,
+  policy: Required<PrunePolicy>,
+): Promise<{ skippedExistingSeq?: number; removedSeqs: number[] }> {
+  const removedSeqs: number[] = [];
+
+  // Skip identical: if the most recent entry has the same contentHash, don't record a duplicate
+  if (policy.skipIdentical && index.entries.length > 0) {
+    const mostRecent = index.entries[index.entries.length - 1];
+    if (mostRecent.contentHash === newContentHash) {
+      return { skippedExistingSeq: mostRecent.seq, removedSeqs };
+    }
+  }
+
+  // Keep-last-N pruning
+  if (policy.keepLast > 0 && index.entries.length >= policy.keepLast) {
+    const toRemove = index.entries.length - policy.keepLast + 1; // +1 to make room for the new entry
+    const entriesToKeep = index.entries.slice(toRemove);
+    const removed = index.entries.slice(0, toRemove);
+    removedSeqs.push(...removed.map((e) => e.seq));
+    // Delete snapshot files
+    for (const entry of removed) {
+      await unlink(join(dir, entry.file)).catch(() => undefined);
+    }
+    // Mutate index in place
+    index.entries = entriesToKeep;
+  }
+
+  return { removedSeqs };
+}
+
+/**
  * Records a full-JSON snapshot of `priorContent` for `configPath`, appending
  * a new entry to that config's `index.json`.
  *
- * Returns `undefined` immediately when `priorContent` is `null` (D-11: a
- * brand-new file has nothing to snapshot — no directory is created, no
- * phantom index entry is written).
+ * Returns `{ snapshotId: string, skippedExistingSeq?: number, prunedSeqs?: number[] }` immediately when
+ * `priorContent` is `null` (D-11: a brand-new file has nothing to snapshot — no directory is created,
+ * no phantom index entry is written).
  *
  * Otherwise: resolves the snapshot dir, creates it (`mkdir` recursive),
- * reads the existing index, computes the next `seq` (last entry's `seq + 1`,
- * starting at 1) and the `contentHash` (sha256 of `priorContent`), writes
- * the full prior content verbatim to `<seq>.json` (D-08 — never a diff),
- * appends the new entry, rewrites `index.json` pretty-printed (2-space
- * indent), and returns a snapshot id of the form `<dirBasename>:<seq>`.
+ * reads the existing index, applies pruning policy, checks for skip-identical,
+ * computes the next `seq` (last entry's `seq + 1`, starting at 1) and the
+ * `contentHash` (sha256 of `priorContent`), writes the full prior content
+ * verbatim to `<seq>.json` (D-08 — never a diff), appends the new entry,
+ * rewrites `index.json` pretty-printed (2-space indent), and returns a
+ * snapshot id of the form `<dirBasename>:<seq>` (plus any pruning info).
  */
+export interface SnapshotRecordResult {
+  snapshotId?: string;
+  skippedExistingSeq?: number;
+  prunedSeqs?: number[];
+}
+
 /** Narrow write seam used to fault-inject atomic replacement failures in tests. */
 export interface SnapshotWriteDeps {
   write?: typeof writeWithRetry;
@@ -181,19 +240,33 @@ export async function recordSnapshot(
   priorContent: string | null,
   root?: string,
   deps: SnapshotWriteDeps = {},
-): Promise<string | undefined> {
+  policy: PrunePolicy = {},
+): Promise<SnapshotRecordResult | undefined> {
   if (priorContent === null) return undefined; // D-11
 
   const atomicWrite = deps.write ?? writeWithRetry;
   const dir = snapshotDirFor(configPath, root);
   await mkdir(dir, { recursive: true });
 
+  const effectivePolicy: Required<PrunePolicy> = {
+    ...DEFAULT_PRUNE_POLICY,
+    ...policy,
+  };
+
   return withIndexLock(dir, async () => {
     // Re-read only after acquiring the process-shared lock so sequence
     // allocation and index replacement cannot lose another helper's entry.
     const index = await readIndex(dir);
-    const seq = (index.entries.at(-1)?.seq ?? 0) + 1;
     const contentHash = createHash('sha256').update(priorContent).digest('hex');
+
+    // Apply pruning (skip-identical + keep-last-N)
+    const { skippedExistingSeq, removedSeqs } = await applyPruning(dir, index, contentHash, effectivePolicy);
+
+    if (skippedExistingSeq !== undefined) {
+      return { skippedExistingSeq, prunedSeqs: removedSeqs };
+    }
+
+    const seq = (index.entries.at(-1)?.seq ?? 0) + 1;
     const file = `${seq}.json`;
     const snapshotPath = join(dir, file);
 
@@ -210,7 +283,7 @@ export async function recordSnapshot(
 
     const dirParts = dir.split(/[\\/]/);
     const dirBasename = dirParts[dirParts.length - 1];
-    return `${dirBasename}:${seq}`;
+    return { snapshotId: `${dirBasename}:${seq}`, prunedSeqs: removedSeqs };
   });
 }
 

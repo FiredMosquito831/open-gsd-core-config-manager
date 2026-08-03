@@ -57,11 +57,11 @@
     "default": null,
     "title": "Strict Known Registries",
     "type": [
-      "string",
+      "array",
       "null"
     ],
-    "x-category": "Workflow",
-    "x-description": "Restrict capability installs to a fixed allow-list of known registries instead of accepting any configured source.",
+    "x-category": "Security",
+    "x-description": "Host-based allowlist gating which sources third-party capabilities may be installed from. null permits external installs through the consent + integrity gate; [] blocks all external installs; a non-empty list permits only sources whose host matches an entry (add the literal token \"npm\" to permit the npm source kind).",
     "x-provenance": "manifest"
   },
   "claude_md_assembly.blocks": {
@@ -85,10 +85,23 @@
     "x-provenance": "dynamicKeyPattern:claude_md_assembly"
   },
   "claude_md_assembly.mode": {
+    "default": "embed",
+    "enum": [
+      "embed",
+      "link"
+    ],
     "title": "Mode",
     "type": "string",
     "x-category": "Discovery",
-    "x-description": "Controls how CLAUDE.md sections are assembled (e.g. merge vs. replace) when regenerating the project's CLAUDE.md.",
+    "x-description": "How managed CLAUDE.md sections are written when the project CLAUDE.md is regenerated.",
+    "x-options": {
+      "embed": {
+        "x-description": "Inline content between GSD markers; the default."
+      },
+      "link": {
+        "x-description": "Write @.planning/<source-path> references instead; Claude Code expands them at runtime, reducing CLAUDE.md size."
+      }
+    },
     "x-provenance": "manifest"
   },
   "claude_md_path": {
@@ -103,8 +116,8 @@
     "default": false,
     "title": "Enabled",
     "type": "boolean",
-    "x-category": "General",
-    "x-description": "Master toggle for the Claude orchestration capability. Default-off + BETA: the Workflow-tool execution backend and the ultraplan plan-offload surface are inert unless this is true. When false, loop behaviour is byte-identical to a non-Claude runtime (inline/manual dispatch).",
+    "x-category": "Claude Orchestration",
+    "x-description": "When enabled, activates Claude-level orchestration for planning and execution workflows within this GSD project.",
     "x-provenance": "capability-registry"
   },
   "claude_orchestration.execution_backend": {
@@ -117,7 +130,7 @@
     "title": "Execution Backend",
     "type": "string",
     "x-category": "General",
-    "x-description": "Which execute-phase dispatch backend to use when the capability is enabled. 'auto' (default) activates the Workflow backend only when the runtime is Claude AND the Workflow tool is detected AND the Agent SDK meets claude_orchestration.min_agent_sdk_version; otherwise it falls back to inline. 'workflow' forces the Workflow backend when the tool is present AND the Agent SDK meets the floor (still fails closed to inline if the tool is absent or the SDK is too old — the floor applies in both modes). 'inline' forces today's manual one-agent-per-message dispatch regardless of tool availability.",
+    "x-description": "Selects the execution backend for Claude orchestration: 'auto' (automatic selection), 'inline' (embedded execution), or 'workflow' (dedicated workflow mode).",
     "x-options": {
       "auto": {
         "x-description": ""
@@ -135,8 +148,8 @@
     "default": "0.3.149",
     "title": "Min Agent Sdk Version",
     "type": "string",
-    "x-category": "General",
-    "x-description": "Minimum Agent SDK version required to activate the Workflow backend under execution_backend='auto'. Defaults to 0.3.149 (the release that introduced the Workflow tool). Raise to pin a higher floor; the detection seam fails closed to inline for any runtime reporting an older or unknown version.",
+    "x-category": "Claude Orchestration",
+    "x-description": "Minimum agent SDK version required for Claude orchestration features to function correctly.",
     "x-provenance": "capability-registry"
   },
   "code_quality.fallow.enabled": {
@@ -157,18 +170,46 @@
   },
   "code_quality.fallow.profile": {
     "default": "standard",
+    "enum": [
+      "minimal",
+      "standard",
+      "strict"
+    ],
     "title": "Profile",
     "type": "string",
     "x-category": "Workflow",
     "x-description": "Fallow analysis profile to apply (e.g. \"standard\").",
+    "x-options": {
+      "minimal": {
+        "x-description": "Lightest analysis pass."
+      },
+      "standard": {
+        "x-description": "Balanced default analysis profile."
+      },
+      "strict": {
+        "x-description": "Strictest analysis profile."
+      }
+    },
     "x-provenance": "manifest"
   },
   "code_quality.fallow.scope": {
     "default": "phase",
+    "enum": [
+      "phase",
+      "repo"
+    ],
     "title": "Scope",
     "type": "string",
     "x-category": "Workflow",
     "x-description": "Scope of the Fallow code-quality pass: \"phase\" analyzes only files touched this phase.",
+    "x-options": {
+      "phase": {
+        "x-description": "Analyze only the files touched this phase (default)."
+      },
+      "repo": {
+        "x-description": "Analyze across the whole repository."
+      }
+    },
     "x-provenance": "manifest"
   },
   "commit_docs": {
@@ -254,10 +295,38 @@
   },
   "effort.default": {
     "default": "high",
+    "enum": [
+      "minimal",
+      "low",
+      "medium",
+      "high",
+      "xhigh",
+      "max"
+    ],
     "title": "Default",
     "type": "string",
     "x-category": "Effort",
     "x-description": "Default reasoning-effort tier applied when no phase-type or agent-specific override matches.",
+    "x-options": {
+      "high": {
+        "x-description": "High reasoning effort for substantive tasks."
+      },
+      "low": {
+        "x-description": "Low reasoning effort for simple tasks."
+      },
+      "max": {
+        "x-description": "Maximum reasoning effort — slowest, most thorough."
+      },
+      "medium": {
+        "x-description": "Moderate reasoning effort."
+      },
+      "minimal": {
+        "x-description": "Lowest reasoning effort — fastest, least thorough."
+      },
+      "xhigh": {
+        "x-description": "Extra-high reasoning effort for deep reasoning."
+      }
+    },
     "x-provenance": "manifest"
   },
   "effort.routing_tier_defaults": {
@@ -315,8 +384,8 @@
     "default": "Artifacts/jobs",
     "title": "Artifact Dir",
     "type": "string",
-    "x-category": "General",
-    "x-description": "Root for per-job artifact directories (e.g. Artifacts/jobs/<jobid>/). Avoids fixed log paths and hardcoding a cluster/project layout. Surfaced by the adapter (`slurm-adapter.cjs submit` prints the resolved value); override via GSD_EXTERNAL_JOB_ARTIFACT_DIR.",
+    "x-category": "External Job",
+    "x-description": "Directory where external job artifacts are stored after execution.",
     "x-provenance": "capability-registry"
   },
   "external_job.backend": {
@@ -326,8 +395,8 @@
     ],
     "title": "Backend",
     "type": "string",
-    "x-category": "General",
-    "x-description": "Scheduler backend. SLURM is the first adapter; the field is the pluggability seam for future backends (LSF, PBS, Kubernetes batch). Core never interprets this value.",
+    "x-category": "External Job",
+    "x-description": "The backend system for external job submission (e.g., 'slurm', 'k8s', 'local').",
     "x-options": {
       "slurm": {
         "x-description": ""
@@ -339,24 +408,24 @@
     "default": false,
     "title": "Enabled",
     "type": "boolean",
-    "x-category": "General",
-    "x-description": "Master toggle for the async external-job producer capability. Default-off: the core loop consumes manifests whether or not this is on, but no manifest is ever written unless an executor opts in here.",
+    "x-category": "External Job",
+    "x-description": "Enables running GSD tasks as external jobs (e.g., via Slurm or other batch systems) rather than inline execution.",
     "x-provenance": "capability-registry"
   },
   "external_job.poll_timeout_ms": {
     "default": 15000,
     "title": "Poll Timeout Ms",
     "type": "number",
-    "x-category": "General",
-    "x-description": "Hard timeout (ms) for the scheduler poll subprocess (squeue, with sacct fallback). Read by the adapter (env GSD_SLURM_POLL_TIMEOUT_MS overrides).",
+    "x-category": "External Job",
+    "x-description": "Timeout in milliseconds for polling external job status before considering it stalled.",
     "x-provenance": "capability-registry"
   },
   "external_job.submit_timeout_ms": {
     "default": 30000,
     "title": "Submit Timeout Ms",
     "type": "number",
-    "x-category": "General",
-    "x-description": "Hard timeout (ms) for the scheduler submit subprocess (e.g. sbatch). Bounded per CLAUDE.md unbounded-subprocess policy. Read by the adapter (env GSD_SLURM_SUBMIT_TIMEOUT_MS overrides).",
+    "x-category": "External Job",
+    "x-description": "Timeout in milliseconds for the initial job submission request.",
     "x-provenance": "capability-registry"
   },
   "fast_mode.agent_overrides": {
@@ -544,10 +613,26 @@
   },
   "git.branching_strategy": {
     "default": "none",
+    "enum": [
+      "none",
+      "phase",
+      "milestone"
+    ],
     "title": "Branching Strategy",
     "type": "string",
     "x-category": "Git",
     "x-description": "Git branching approach for phase/milestone isolation: \"none\", \"phase\", or \"milestone\".",
+    "x-options": {
+      "milestone": {
+        "x-description": "One branch per milestone, merged when the milestone completes."
+      },
+      "none": {
+        "x-description": "Commit directly on the current branch; no isolation (default)."
+      },
+      "phase": {
+        "x-description": "One branch per phase, merged when the phase completes."
+      }
+    },
     "x-provenance": "manifest"
   },
   "git.create_tag": {
@@ -590,7 +675,7 @@
       "^granularities\\.(planning|discuss|research|execution|verification|completion)$": {
         "title": "Granularities Entry",
         "type": "string",
-        "x-category": "General",
+        "x-category": "Planning",
         "x-description": "See granularities — granularities.<planning|discuss|research|execution|verification|completion>",
         "x-provenance": "dynamicKeyPattern:granularities"
       }
@@ -600,17 +685,33 @@
       "object",
       "null"
     ],
-    "x-category": "General",
+    "x-category": "Planning",
     "x-description": "Per-phase-type overrides of planning granularity (e.g. deeper planning for execution than for research).",
     "x-dynamic-key-hint": "granularities.<planning|discuss|research|execution|verification|completion>",
     "x-provenance": "dynamicKeyPattern:granularities"
   },
   "granularity": {
-    "default": "fine",
+    "default": "standard",
+    "enum": [
+      "coarse",
+      "standard",
+      "fine"
+    ],
     "title": "Granularity",
     "type": "string",
     "x-category": "Planning",
     "x-description": "Default planning depth for phase plans: \"coarse\", \"standard\", or \"fine\".",
+    "x-options": {
+      "coarse": {
+        "x-description": "Fewer, larger plans per milestone (2-4 phases); fastest, least detail."
+      },
+      "fine": {
+        "x-description": "Task-level plans with the most detail (6-10 phases per milestone)."
+      },
+      "standard": {
+        "x-description": "One plan per phase; the balanced default."
+      }
+    },
     "x-provenance": "manifest"
   },
   "graphify.auto_update": {
@@ -633,15 +734,15 @@
     "default": false,
     "title": "Enabled",
     "type": "boolean",
-    "x-category": "Workflow",
-    "x-description": "Enable the graphify knowledge-graph command + skill.",
+    "x-category": "Graphify",
+    "x-description": "When enabled, activates the project knowledge graph build and update for this GSD project.",
     "x-provenance": "capability-registry"
   },
   "graphify.graph_path": {
     "title": "Graph Path",
     "type": "string",
     "x-category": "Workflow",
-    "x-description": "",
+    "x-description": "Override where /gsd-graphify reads the knowledge graph from — point at a shared umbrella-level graph.json so one curated cross-repo graph serves every sub-project. When unset, behaviour is the historical .planning/graphs/graph.json.",
     "x-provenance": "manifest"
   },
   "hooks.context_warnings": {
@@ -664,15 +765,16 @@
     "default": false,
     "title": "Enabled",
     "type": "boolean",
-    "x-category": "Workflow",
-    "x-description": "Enable the intel code-intelligence command.",
+    "x-category": "Intel",
+    "x-description": "Enables the intel tracking and analysis module for this project.",
     "x-provenance": "capability-registry"
   },
   "jina": {
+    "default": true,
     "title": "Jina",
-    "type": "string",
-    "x-category": "General",
-    "x-description": "",
+    "type": "boolean",
+    "x-category": "Discovery",
+    "x-description": "Enable Jina reader/scrape fallback in the discovery waterfall. Defaults to available (true); set false to disable.",
     "x-provenance": "manifest"
   },
   "learnings.max_inject": {
@@ -708,40 +810,40 @@
     "default": false,
     "title": "Auto Capture Hooks",
     "type": "boolean",
-    "x-category": "Workflow",
-    "x-description": "Reserved / not yet implemented: will install MemPalace's native stop/precompact Claude Code hooks for passive mid-session capture (the capability's hooks array is currently empty).",
+    "x-category": "Mempalace",
+    "x-description": "When enabled, automatically captures artifacts via hook triggers.",
     "x-provenance": "capability-registry"
   },
   "mempalace.capture_artifacts": {
-    "default": true,
+    "default": false,
     "title": "Capture Artifacts",
     "type": "boolean",
-    "x-category": "Workflow",
-    "x-description": "File CONTEXT/PLAN/SUMMARY and learnings into the palace at phase boundaries.",
+    "x-category": "Mempalace",
+    "x-description": "When enabled, Mempalace captures phase artifacts into its temporal knowledge graph.",
     "x-provenance": "capability-registry"
   },
   "mempalace.cross_project_tunnels": {
     "default": false,
     "title": "Cross Project Tunnels",
     "type": "boolean",
-    "x-category": "Workflow",
-    "x-description": "Propose/create cross-wing tunnels at ship:post.",
+    "x-category": "Mempalace",
+    "x-description": "When enabled, allows cross-project tunnel connections through Mempalace.",
     "x-provenance": "capability-registry"
   },
   "mempalace.diary_journal": {
-    "default": true,
+    "default": false,
     "title": "Diary Journal",
     "type": "boolean",
-    "x-category": "Workflow",
-    "x-description": "Write a per-agent diary entry at ship:post.",
+    "x-category": "Mempalace",
+    "x-description": "When enabled, keeps a session diary journal as part of Mempalace.",
     "x-provenance": "capability-registry"
   },
   "mempalace.enabled": {
     "default": false,
     "title": "Enabled",
     "type": "boolean",
-    "x-category": "Workflow",
-    "x-description": "Master toggle for the MemPalace memory capability.",
+    "x-category": "Mempalace",
+    "x-description": "When enabled, activates the Mempalace memory and cross-project tunnel system for this project.",
     "x-provenance": "capability-registry"
   },
   "mempalace.memory_mode": {
@@ -753,59 +855,71 @@
     ],
     "title": "Memory Mode",
     "type": "string",
-    "x-category": "Workflow",
-    "x-description": "How MemPalace relates to GSD native memory during recall/capture. 'augment' (default): the palace is an additive layer alongside .planning/graphs/ — native memory stays authoritative. 'kg_backend': knowledge-graph queries resolve against the palace's temporal KG as the primary source, with .planning/graphs/ as fallback. 'replace': recall resolves through the palace as the source of truth, native memory as fallback. Every mode stays onError:skip and default-resilient — an unreachable palace degrades to native memory, and GSD keeps writing .planning/graphs/ so no memory is lost. Cross-mode migration of existing .planning/graphs/ into the palace is a separate, not-yet-implemented concern.",
+    "x-category": "Mempalace",
+    "x-description": "Memory mode for Mempalace: 'augment' (enhances context), 'kg_backend' (knowledge-graph backend), or 'replace' (replaces session memory).",
     "x-options": {
       "augment": {
-        "x-description": "Add MemPalace recall on top of normal project context without replacing the existing context sources."
+        "x-description": ""
       },
       "kg_backend": {
-        "x-description": "Use the temporal knowledge-graph backend as the primary memory source for MemPalace recall."
+        "x-description": ""
       },
       "replace": {
-        "x-description": "Replace the normal memory injection path with MemPalace recall output instead of appending it."
+        "x-description": ""
       }
     },
     "x-provenance": "capability-registry"
   },
   "mempalace.mirror_kg": {
-    "default": true,
+    "default": false,
     "title": "Mirror Kg",
     "type": "boolean",
-    "x-category": "Workflow",
-    "x-description": "Mirror decisions/learnings into MemPalace's temporal knowledge graph.",
+    "x-category": "Mempalace",
+    "x-description": "When enabled, mirrors the temporal knowledge graph for cross-session continuity.",
     "x-provenance": "capability-registry"
   },
   "mempalace.recall_on_discuss": {
-    "default": true,
+    "default": false,
     "title": "Recall On Discuss",
     "type": "boolean",
-    "x-category": "Workflow",
-    "x-description": "Inject wake-up + search recall at discuss:pre.",
+    "x-category": "Mempalace",
+    "x-description": "When enabled, Mempalace recalls relevant memories during the discuss phase.",
     "x-provenance": "capability-registry"
   },
   "mempalace.recall_on_plan": {
-    "default": true,
+    "default": false,
     "title": "Recall On Plan",
     "type": "boolean",
-    "x-category": "Workflow",
-    "x-description": "Produce MEMORY-RECALL.md at plan:pre.",
+    "x-category": "Mempalace",
+    "x-description": "When enabled, Mempalace recalls relevant memories during the plan phase.",
     "x-provenance": "capability-registry"
   },
   "mempalace.wing": {
     "default": "",
     "title": "Wing",
     "type": "string",
-    "x-category": "Workflow",
-    "x-description": "Palace wing name; empty derives from project_code / project dir.",
+    "x-category": "Mempalace",
+    "x-description": "The wing identifier for Mempalace session isolation and cross-project tunnel routing.",
     "x-provenance": "capability-registry"
   },
   "mode": {
     "default": "interactive",
+    "enum": [
+      "interactive",
+      "yolo"
+    ],
     "title": "Mode",
     "type": "string",
     "x-category": "Workflow",
     "x-description": "Operation mode: \"interactive\" shows gates and confirmations; \"yolo\" runs autonomously without prompts.",
+    "x-options": {
+      "interactive": {
+        "x-description": "Confirm each phase transition interactively; the default."
+      },
+      "yolo": {
+        "x-description": "Auto-approve all decisions; runs autonomously without prompts."
+      }
+    },
     "x-provenance": "manifest"
   },
   "model_overrides": {
@@ -839,6 +953,12 @@
   },
   "model_policy.budget": {
     "default": null,
+    "enum": [
+      "high",
+      "medium",
+      "low",
+      null
+    ],
     "title": "Budget",
     "type": [
       "string",
@@ -846,6 +966,20 @@
     ],
     "x-category": "Model & Routing",
     "x-description": "Cost tier used to materialize the canonical model mapping for the chosen provider: \"high\", \"medium\", or \"low\".",
+    "x-options": {
+      "high": {
+        "x-description": "Highest-cost tier — the strongest models available for the provider."
+      },
+      "low": {
+        "x-description": "Lowest-cost tier — fastest and cheapest."
+      },
+      "medium": {
+        "x-description": "Balanced cost/quality tier."
+      },
+      "null": {
+        "x-description": "Unset — no explicit budget tier selected."
+      }
+    },
     "x-provenance": "manifest"
   },
   "model_policy.high": {
@@ -883,6 +1017,15 @@
   },
   "model_policy.provider": {
     "default": null,
+    "enum": [
+      "openai",
+      "anthropic",
+      "anthropic-fable",
+      "google",
+      "qwen",
+      "generic",
+      null
+    ],
     "title": "Provider",
     "type": [
       "string",
@@ -890,6 +1033,29 @@
     ],
     "x-category": "Model & Routing",
     "x-description": "AI provider used for model_policy tier resolution (e.g. anthropic, openai, google, qwen).",
+    "x-options": {
+      "anthropic": {
+        "x-description": "Anthropic catalog-backed presets."
+      },
+      "anthropic-fable": {
+        "x-description": "Anthropic Fable catalog-backed presets."
+      },
+      "generic": {
+        "x-description": "Treats all model IDs as opaque strings — no prefix inference or reasoning-effort defaults."
+      },
+      "google": {
+        "x-description": "Google catalog-backed presets."
+      },
+      "null": {
+        "x-description": "Unset — no explicit provider selected."
+      },
+      "openai": {
+        "x-description": "OpenAI catalog-backed presets."
+      },
+      "qwen": {
+        "x-description": "Qwen catalog-backed presets."
+      }
+    },
     "x-provenance": "manifest"
   },
   "model_policy.runtime_tiers": {
@@ -934,6 +1100,23 @@
     "type": "string",
     "x-category": "Model & Routing",
     "x-description": "Model selection preset applied to all subagents: \"quality\", \"balanced\", \"budget\", \"adaptive\", or \"inherit\".",
+    "x-options": {
+      "adaptive": {
+        "x-description": "Adaptive tier selection per task."
+      },
+      "balanced": {
+        "x-description": "Opus for planning only; Sonnet for execution (default)."
+      },
+      "budget": {
+        "x-description": "Sonnet for code-writing; Haiku for the rest."
+      },
+      "inherit": {
+        "x-description": "All agents use the current session model."
+      },
+      "quality": {
+        "x-description": "Opus for all decision-making; highest quality."
+      }
+    },
     "x-provenance": "manifest",
     "x-specialized": {
       "editable": true,
@@ -1054,14 +1237,19 @@
     "x-provenance": "fixture-observed"
   },
   "perplexity": {
+    "default": false,
     "title": "Perplexity",
-    "type": "string",
-    "x-category": "General",
-    "x-description": "",
+    "type": "boolean",
+    "x-category": "Discovery",
+    "x-description": "Enable Perplexity web search in the discovery waterfall (requires a PERPLEXITY_API_KEY).",
     "x-provenance": "manifest"
   },
   "phase_id_convention": {
     "default": null,
+    "enum": [
+      "milestone-prefixed",
+      null
+    ],
     "title": "Phase Id Convention",
     "type": [
       "string",
@@ -1069,6 +1257,14 @@
     ],
     "x-category": "Workflow",
     "x-description": "Optional override for how phase identifiers are formatted, when phase_naming allows customization.",
+    "x-options": {
+      "milestone-prefixed": {
+        "x-description": "Globally unique IDs that encode the enclosing milestone (e.g. Phase 1-01)."
+      },
+      "null": {
+        "x-description": "Unset — legacy numeric phase IDs (Phase 1, Phase 2)."
+      }
+    },
     "x-provenance": "manifest"
   },
   "phase_naming": {
@@ -1089,10 +1285,34 @@
   },
   "plan_review.source_grounding_authority": {
     "default": "grep",
+    "enum": [
+      "grep",
+      "intel",
+      "treesitter",
+      "lsp",
+      "scip"
+    ],
     "title": "Source Grounding Authority",
     "type": "string",
     "x-category": "Review",
     "x-description": "Tool used to verify source-grounding claims during plan review (e.g. \"grep\").",
+    "x-options": {
+      "grep": {
+        "x-description": "Ripgrep/grep search of source files; works in any project without additional tooling (default)."
+      },
+      "intel": {
+        "x-description": "Query the .planning/intel/api-map.json index built by /gsd:map-codebase; requires intel.enabled."
+      },
+      "lsp": {
+        "x-description": "Reserved for a future LSP adapter."
+      },
+      "scip": {
+        "x-description": "Reserved for a future SCIP/LSIF adapter."
+      },
+      "treesitter": {
+        "x-description": "Reserved for a future tree-sitter adapter."
+      }
+    },
     "x-provenance": "manifest"
   },
   "planning.commit_docs": {
@@ -1123,8 +1343,8 @@
     "default": false,
     "title": "Enabled",
     "type": "boolean",
-    "x-category": "Workflow",
-    "x-description": "Enable the developer profiling pipeline commands (scan-sessions, extract-messages, profile-sample, write-profile, etc.).",
+    "x-category": "Profile Pipeline",
+    "x-description": "When enabled, activates the profile pipeline for managing agent and model profile configurations.",
     "x-provenance": "capability-registry"
   },
   "project_code": {
@@ -1139,14 +1359,20 @@
     "x-provenance": "manifest"
   },
   "ref_search": {
+    "default": false,
     "title": "Ref Search",
-    "type": "string",
-    "x-category": "General",
-    "x-description": "",
+    "type": "boolean",
+    "x-category": "Discovery",
+    "x-description": "Enable Ref docs search in the discovery waterfall (requires a REF_API_KEY).",
     "x-provenance": "manifest"
   },
   "resolve_model_ids": {
     "default": false,
+    "enum": [
+      false,
+      true,
+      "omit"
+    ],
     "title": "Resolve Model Ids",
     "type": [
       "boolean",
@@ -1154,6 +1380,17 @@
     ],
     "x-category": "Model & Routing",
     "x-description": "Whether to map model tier aliases (opus/sonnet/haiku) to full Claude model IDs; \"omit\" returns an empty model parameter so the runtime's own default is used.",
+    "x-options": {
+      "false": {
+        "x-description": "Return Claude aliases (opus, sonnet, haiku) — the default."
+      },
+      "omit": {
+        "x-description": "Return an empty model parameter so the runtime uses its own default; set automatically for non-Claude runtimes."
+      },
+      "true": {
+        "x-description": "Map aliases to full Claude model IDs (e.g. claude-opus-4-8)."
+      }
+    },
     "x-provenance": "manifest"
   },
   "response_language": {
@@ -1262,7 +1499,7 @@
       "null"
     ],
     "x-category": "Review",
-    "x-description": "",
+    "x-description": "Named reviewer instances — run one model-capable adapter as several independent reviewers (each with its own cli/model/agent).",
     "x-dynamic-key-hint": "review.reviewer_instances.<instance-name>.<cli|model|agent> (#1517)",
     "x-provenance": "dynamicKeyPattern:review"
   },
@@ -1315,24 +1552,38 @@
   },
   "statusline.context_position": {
     "default": "end",
+    "enum": [
+      "end",
+      "front"
+    ],
     "title": "Context Position",
     "type": "string",
     "x-category": "Workflow",
     "x-description": "Where the context-usage indicator renders in the terminal status line (e.g. \"end\").",
+    "x-options": {
+      "end": {
+        "x-description": "Render the context indicator at the end of the status line (default)."
+      },
+      "front": {
+        "x-description": "Render the context indicator at the front of the status line."
+      }
+    },
     "x-provenance": "manifest"
   },
   "statusline.show_context_tokens": {
+    "default": false,
     "title": "Show Context Tokens",
-    "type": "string",
+    "type": "boolean",
     "x-category": "Workflow",
-    "x-description": "",
+    "x-description": "Append the absolute token count (e.g. (156k)) after the context meter's percentage in the status line.",
     "x-provenance": "manifest"
   },
   "statusline.show_git": {
+    "default": false,
     "title": "Show Git",
-    "type": "string",
+    "type": "boolean",
     "x-category": "Workflow",
-    "x-description": "",
+    "x-description": "Append a git segment after the directory in the status line: current branch plus compact work-state markers (+staged ~unstaged ?untracked).",
     "x-provenance": "manifest"
   },
   "statusline.show_last_command": {
@@ -1363,34 +1614,35 @@
     "x-provenance": "manifest"
   },
   "tavily_search": {
+    "default": false,
     "title": "Tavily Search",
-    "type": "string",
-    "x-category": "General",
-    "x-description": "",
+    "type": "boolean",
+    "x-category": "Discovery",
+    "x-description": "Enable Tavily web search in the discovery waterfall (requires a TAVILY_API_KEY).",
     "x-provenance": "manifest"
   },
   "workflow.ai_integration_phase": {
-    "default": true,
+    "default": false,
     "title": "Ai Integration Phase",
     "type": "boolean",
     "x-category": "Workflow",
-    "x-description": "Prompt for an AI-SPEC design contract before planning phases that involve AI systems.",
+    "x-description": "When enabled, activates AI integration phase for this GSD workflow.",
     "x-provenance": "capability-registry"
   },
   "workflow.api_coverage_gate": {
-    "default": true,
+    "default": false,
     "title": "Api Coverage Gate",
     "type": "boolean",
     "x-category": "Workflow",
-    "x-description": "Require an explicit API-coverage decision (full-by-default, opt-out-not-opt-in) before a phase that integrates an external API/SDK/service can seal. At plan:pre the planner is prompted to enumerate the API surface into COVERAGE.md; at verify:pre a blocking gate fails the seal unless the matrix exists with every non-integrated capability an explicit, reasoned opt-out. Independent of ai_integration_phase (applies to any external-API integration, not only AI).",
+    "x-description": "When enabled, requires API coverage verification before workflow advancement.",
     "x-provenance": "capability-registry"
   },
   "workflow.assumption_delta": {
-    "default": true,
+    "default": false,
     "title": "Assumption Delta",
     "type": "boolean",
     "x-category": "Workflow",
-    "x-description": "Enable the assumption-delta architecture checkpoint during planning. When a pluralization/optional/chosen signal is detected in the phase scope, the planner is prompted to re-ask whether the primary key / identity model still names the right thing. Advisory (non-blocking).",
+    "x-description": "Tracks delta in assumptions during the discuss phase.",
     "x-provenance": "capability-registry"
   },
   "workflow.auto_advance": {
@@ -1421,11 +1673,11 @@
     "x-provenance": "manifest"
   },
   "workflow.code_review": {
-    "default": true,
+    "default": false,
     "title": "Code Review",
     "type": "boolean",
     "x-category": "Workflow",
-    "x-description": "Enable code-review participation in post-execution review flows.",
+    "x-description": "When enabled, activates the code review step in the workflow.",
     "x-provenance": "capability-registry"
   },
   "workflow.code_review_command": {
@@ -1473,10 +1725,26 @@
   },
   "workflow.context_guard_mode": {
     "default": "warn",
+    "enum": [
+      "warn",
+      "auto",
+      "off"
+    ],
     "title": "Context Guard Mode",
     "type": "string",
     "x-category": "Workflow",
     "x-description": "Context-exhaustion guard mode for execute-phase: \"warn\" recommends a pause, \"auto\" pauses automatically, \"off\" disables the guard.",
+    "x-options": {
+      "auto": {
+        "x-description": "Automatically invoke /gsd:pause-work before the next wave."
+      },
+      "off": {
+        "x-description": "Disable the context-exhaustion guard."
+      },
+      "warn": {
+        "x-description": "Emit a warning and recommend /gsd:pause-work when context pressure is poor (default)."
+      }
+    },
     "x-provenance": "manifest"
   },
   "workflow.cross_ai_command": {
@@ -1508,10 +1776,22 @@
   },
   "workflow.discuss_mode": {
     "default": "discuss",
+    "enum": [
+      "discuss",
+      "assumptions"
+    ],
     "title": "Discuss Mode",
     "type": "string",
     "x-category": "Workflow",
     "x-description": "Default mode for discuss-phase: \"discuss\" runs interactive questioning; \"assumptions\" analyzes the codebase and surfaces assumptions instead.",
+    "x-options": {
+      "assumptions": {
+        "x-description": "Reads the codebase first, generates structured assumptions with confidence levels, and only asks you to correct what is wrong."
+      },
+      "discuss": {
+        "x-description": "Asks questions one-by-one interactively (default)."
+      }
+    },
     "x-provenance": "manifest"
   },
   "workflow.drift_action": {
@@ -1523,7 +1803,7 @@
     "title": "Drift Action",
     "type": "string",
     "x-category": "Workflow",
-    "x-description": "Action taken by the codebase drift gate when the threshold is exceeded: warn (advisory message) or auto-remap (spawn gsd-codebase-mapper agent to refresh STRUCTURE.md).",
+    "x-description": "Action taken by the codebase drift gate when the threshold is exceeded: warn (advisory) or auto-remap (trigger gsd-codebase-mapper).",
     "x-options": {
       "auto-remap": {
         "x-description": "Automatically trigger a codebase remap when drift exceeds the configured threshold."
@@ -1539,15 +1819,27 @@
     "title": "Drift Threshold",
     "type": "number",
     "x-category": "Workflow",
-    "x-description": "Minimum number of new structural elements (directories, barrel exports, migrations, routes) before the codebase drift gate triggers a warn or auto-remap action.",
+    "x-description": "Threshold for detecting configuration drift (number of changed keys before a warning).",
     "x-provenance": "capability-registry"
   },
   "workflow.human_verify_mode": {
     "default": "end-of-phase",
+    "enum": [
+      "end-of-phase",
+      "mid-flight"
+    ],
     "title": "Human Verify Mode",
     "type": "string",
     "x-category": "Workflow",
     "x-description": "When to pause execution for human verification (e.g. \"end-of-phase\").",
+    "x-options": {
+      "end-of-phase": {
+        "x-description": "Suppress checkpoint:human-verify tasks and embed checks into end-of-phase review (default)."
+      },
+      "mid-flight": {
+        "x-description": "Restore blocking checkpoint tasks during execution."
+      }
+    },
     "x-provenance": "manifest"
   },
   "workflow.inline_plan_threshold": {
@@ -1591,19 +1883,19 @@
     "x-provenance": "manifest"
   },
   "workflow.nyquist_validation": {
-    "default": true,
+    "default": false,
     "title": "Nyquist Validation",
     "type": "boolean",
     "x-category": "Workflow",
-    "x-description": "Enable Nyquist validation coverage auditing.",
+    "x-description": "When enabled, activates Nyquist validation for this workflow phase.",
     "x-provenance": "capability-registry"
   },
   "workflow.pattern_mapper": {
-    "default": true,
+    "default": false,
     "title": "Pattern Mapper",
     "type": "boolean",
     "x-category": "Workflow",
-    "x-description": "Run the pattern mapper before planning when context or research is available.",
+    "x-description": "When enabled, activates the pattern mapper step.",
     "x-provenance": "capability-registry"
   },
   "workflow.plan_bounce": {
@@ -1650,11 +1942,11 @@
     "x-provenance": "manifest"
   },
   "workflow.plan_drift_precheck": {
-    "default": true,
+    "default": false,
     "title": "Plan Drift Precheck",
     "type": "boolean",
     "x-category": "Workflow",
-    "x-description": "Enable the non-blocking codebase drift pre-check at plan:pre, before /gsd:plan-phase spawns the planner. When enabled, a stale STRUCTURE.md (structural additions exceeding drift_threshold) is surfaced up front as a warn-only advisory pointing to /gsd:map-codebase; it never blocks planning and never spawns the mapper agent. Separate from schema_drift_gate so autonomous/CI runs can silence the plan-time advisory while keeping the execute:wave:post gates enabled.",
+    "x-description": "When enabled, performs a pre-check for plan drift before execution.",
     "x-provenance": "capability-registry"
   },
   "workflow.plan_review_convergence": {
@@ -1666,19 +1958,19 @@
     "x-provenance": "manifest"
   },
   "workflow.post_planning_gaps": {
-    "default": true,
+    "default": false,
     "title": "Post Planning Gaps",
     "type": "boolean",
     "x-category": "Workflow",
-    "x-description": "Run the post-planning gap analysis report after plans are generated.",
+    "x-description": "When enabled, analyzes and reports gaps after the planning phase completes.",
     "x-provenance": "capability-registry"
   },
   "workflow.research": {
-    "default": true,
+    "default": false,
     "title": "Research",
     "type": "boolean",
     "x-category": "Workflow",
-    "x-description": "Run phase research before planning when research artifacts are missing or explicitly refreshed.",
+    "x-description": "When enabled, activates the research phase.",
     "x-provenance": "capability-registry"
   },
   "workflow.research_before_questions": {
@@ -1690,27 +1982,27 @@
     "x-provenance": "manifest"
   },
   "workflow.schema_drift_gate": {
-    "default": true,
+    "default": false,
     "title": "Schema Drift Gate",
     "type": "boolean",
     "x-category": "Workflow",
-    "x-description": "Enable the drift gates at execute:wave:post. When enabled, the schema drift gate blocks verification if schema-relevant files changed during execution but no database push command was executed; the codebase drift gate (non-blocking) warns when structural additions exceed the drift_threshold.",
+    "x-description": "When enabled, blocks advancement on schema drift.",
     "x-provenance": "capability-registry"
   },
   "workflow.schema_push_detection": {
-    "default": true,
+    "default": false,
     "title": "Schema Push Detection",
     "type": "boolean",
     "x-category": "Workflow",
-    "x-description": "Enable ORM schema push detection during planning. When schema-relevant files are detected in the phase scope, a [BLOCKING] push task is injected into the plan.",
+    "x-description": "When enabled, detects and reports schema push events.",
     "x-provenance": "capability-registry"
   },
   "workflow.security_asvs_level": {
-    "default": 1,
+    "default": 2,
     "title": "Security Asvs Level",
     "type": "number",
-    "x-category": "Security",
-    "x-description": "OWASP ASVS level used by security review guidance.",
+    "x-category": "Workflow",
+    "x-description": "ASVS security level for security enforcement (number 1-3).",
     "x-provenance": "capability-registry"
   },
   "workflow.security_block_on": {
@@ -1725,7 +2017,7 @@
     "title": "Security Block On",
     "type": "string",
     "x-category": "Security",
-    "x-description": "Minimum open threat severity that blocks advancement.",
+    "x-description": "Minimum open threat severity that blocks phase advancement.",
     "x-options": {
       "critical": {
         "x-description": "Block phase completion only when critical security findings remain open."
@@ -1746,11 +2038,11 @@
     "x-provenance": "capability-registry"
   },
   "workflow.security_enforcement": {
-    "default": true,
+    "default": false,
     "title": "Security Enforcement",
     "type": "boolean",
-    "x-category": "Security",
-    "x-description": "Enable security threat-mitigation verification before phase advancement.",
+    "x-category": "Workflow",
+    "x-description": "When enabled, activates security enforcement for this workflow.",
     "x-provenance": "capability-registry"
   },
   "workflow.skip_discuss": {
@@ -1765,7 +2057,7 @@
     "title": "Specless Probe Fallback",
     "type": "string",
     "x-category": "Workflow",
-    "x-description": "",
+    "x-description": "Enable the spec-less probe fallback so a plan with no explicit spec still probes for a design contract. Any value other than literal false enables it.",
     "x-provenance": "manifest"
   },
   "workflow.subagent_timeout": {
@@ -1781,7 +2073,7 @@
     "title": "Tdd Mode",
     "type": "boolean",
     "x-category": "Workflow",
-    "x-description": "Enable TDD mode: planner annotates eligible tasks type:tdd and executor enforces RED/GREEN/REFACTOR gate sequence.",
+    "x-description": "When enabled, requires failing tests before fixes (red-green-done cycle).",
     "x-provenance": "capability-registry"
   },
   "workflow.test_command": {
@@ -1796,10 +2088,11 @@
     "x-provenance": "manifest"
   },
   "workflow.test_gate_timeout": {
+    "default": 600,
     "title": "Test Gate Timeout",
-    "type": "string",
+    "type": "number",
     "x-category": "Workflow",
-    "x-description": "",
+    "x-description": "Wall-clock timeout in seconds for a verification test gate; a watch-mode runner that never exits is aborted after this budget instead of hanging the orchestrator.",
     "x-provenance": "manifest"
   },
   "workflow.text_mode": {
@@ -1811,27 +2104,27 @@
     "x-provenance": "manifest"
   },
   "workflow.ui_phase": {
-    "default": true,
+    "default": false,
     "title": "Ui Phase",
     "type": "boolean",
     "x-category": "Workflow",
-    "x-description": "Enable the UI design-contract gate during planning.",
+    "x-description": "When enabled, activates the UI design contract phase.",
     "x-provenance": "capability-registry"
   },
   "workflow.ui_review": {
-    "default": true,
+    "default": false,
     "title": "Ui Review",
     "type": "boolean",
     "x-category": "Workflow",
-    "x-description": "Enable the retrospective UI audit.",
+    "x-description": "When enabled, activates the UI visual audit review phase.",
     "x-provenance": "capability-registry"
   },
   "workflow.ui_safety_gate": {
-    "default": true,
+    "default": false,
     "title": "Ui Safety Gate",
     "type": "boolean",
     "x-category": "Workflow",
-    "x-description": "Block execution on unmet UI-SPEC contracts.",
+    "x-description": "When enabled, activates the UI safety gate before final approval.",
     "x-provenance": "capability-registry"
   },
   "workflow.use_worktrees": {
@@ -1855,7 +2148,7 @@
     "title": "Windows Enforce",
     "type": "boolean",
     "x-category": "Workflow",
-    "x-description": "Enable the blocking ship:pre gate for the broken-windows ledger. When true (opt-in), /gsd-ship blocks while .planning/WINDOWS.md has any open entry. When false (default), windows are still tracked (the executor and verifier still populate WINDOWS.md via gsd-tools windows append) but ship does not block — teams can adopt tracking before enforcement. Issue #1950.",
+    "x-description": "When enabled, enforces Windows-specific rules or configurations.",
     "x-provenance": "capability-registry"
   },
   "workflow.worktree_skip_hooks": {
