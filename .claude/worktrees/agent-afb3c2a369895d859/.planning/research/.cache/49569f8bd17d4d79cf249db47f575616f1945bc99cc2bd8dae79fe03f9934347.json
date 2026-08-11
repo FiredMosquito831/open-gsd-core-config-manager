@@ -1,1 +1,0 @@
-{"content":"proper-lockfile automatically removes locks on graceful process exit, but NOT on SIGKILL or a VM fatal crash. release() rejects on error (e.g. lock already compromised); onCompromised callback defaults to throwing.","source":"web","provider":"websearch","confidence":"MEDIUM","fetched_at":"2026-07-12T16:09:37.965Z","ttl":86400000,"kind":"docs"}

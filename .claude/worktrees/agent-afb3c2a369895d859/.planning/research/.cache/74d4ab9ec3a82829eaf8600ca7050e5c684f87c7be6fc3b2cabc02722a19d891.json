@@ -1,1 +1,0 @@
-{"content":"env-paths(name,{suffix}) returns {data,config,cache,log,temp} OS-conventional paths (Windows %LOCALAPPDATA%/%APPDATA%, XDG on Linux, ~/Library on macOS); it only generates path strings, caller must fs.mkdir(recursive:true) to create them.","source":"web","provider":"websearch","confidence":"MEDIUM","fetched_at":"2026-07-12T16:09:37.692Z","ttl":86400000,"kind":"docs"}
