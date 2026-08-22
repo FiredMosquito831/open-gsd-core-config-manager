@@ -20,6 +20,7 @@ import { createOutput } from './output.js';
 interface RawCliOptions {
   port?: string;
   open: boolean;
+  token?: string;
 }
 
 export async function main(argv: string[] = process.argv): Promise<void> {
@@ -33,6 +34,7 @@ export async function main(argv: string[] = process.argv): Promise<void> {
     // becoming `false` only when the flag is explicitly passed — do not
     // also declare a positive `--open`.
     .option('--no-open', 'do not automatically open the browser')
+    .option('--token <uuid>', 'launch token for testing (default: random)')
     .parse(argv);
 
   const rawOpts = program.opts<RawCliOptions>();
@@ -52,7 +54,7 @@ export async function main(argv: string[] = process.argv): Promise<void> {
   }
 
   try {
-    const handle = await bootstrap({ port, open: rawOpts.open }, { out });
+    const handle = await bootstrap({ port, open: rawOpts.open, token: rawOpts.token }, { out });
     registerSignalHandlers(handle);
   } catch (err) {
     const code = (err as NodeJS.ErrnoException).code;

@@ -84,6 +84,9 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
   const workspaceStore = opts.workspaceStore ?? createWorkspaceStore({ appDataRoot: opts.workspaceRoot, activeSchemaManager });
   const registry = opts.registry ?? workspaceStore.registry;
   app.decorate('configRegistry', registry);
+
+  // Start file watching for external config changes
+  workspaceStore.startWatching();
   const schemaRefreshService = opts.schemaRefreshService ?? new SchemaRefreshService({
     ...defaultRefreshDependencies(),
     activeSchema: () => activeSchemaManager.snapshot().schema,

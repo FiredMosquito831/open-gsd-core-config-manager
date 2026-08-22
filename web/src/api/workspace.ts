@@ -58,3 +58,25 @@ export function createConfig(projectDir: string, overwrite: boolean) {
     body: JSON.stringify({ projectDir, overwrite }),
   }).then((r) => r.config);
 }
+
+export type ConfigFileChangeEvent = {
+  type: 'changed' | 'deleted' | 'renamed';
+  configId: string;
+  path: string;
+  timestamp: string;
+};
+
+export function subscribeToFileChanges(onEvent: (event: ConfigFileChangeEvent) => void): () => void {
+  const eventSource = new EventSource('/api/workspace/events');
+
+  eventSource.addEventListener('file-change', (event) => {
+    const data = JSON.parse(event.data) as ConfigFileChangeEvent;
+    onEvent(data);
+  });
+
+  eventSource.addEventListener('error', () => {
+    eventSource.close();
+  });
+
+  return () => eventSource.close();
+}

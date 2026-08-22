@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { SchemaStatusControl } from './schema/SchemaStatusControl';
+import { Icons, Icon } from './common/Icons';
 
 export interface AppShellProps {
   /** Left pane: tracked-config sidebar. */
@@ -22,23 +23,6 @@ export interface AppShellProps {
   searchQuery: string;
   /** Update the global settings search query. */
   onSearchQueryChange: (query: string) => void;
-}
-
-function SidebarIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-      <line x1="9" y1="3" x2="9" y2="21" />
-    </svg>
-  );
-}
-
-function ChaptersIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20" />
-    </svg>
-  );
 }
 
 export function AppShell({
@@ -64,7 +48,7 @@ export function AppShell({
           aria-label={leftOpen ? 'Collapse tracked configs' : 'Show tracked configs'}
           title={leftOpen ? 'Collapse tracked configs' : 'Show tracked configs'}
         >
-          <SidebarIcon />
+          <Icons.sidebar size={16} />
         </button>
         <SchemaStatusControl />
         {mode === 'editor' && <button
@@ -75,7 +59,7 @@ export function AppShell({
           aria-label={middleOpen ? 'Collapse chapters' : 'Show chapters'}
           title={middleOpen ? 'Collapse chapters' : 'Show chapters'}
         >
-          <ChaptersIcon />
+          <Icons.chapters size={16} />
         </button>}
       </div>
 

@@ -111,6 +111,26 @@ const descriptor = (
 const structured = (path: string, fields: SpecializedField[]) =>
   descriptor(path, 'structured-array', { fields });
 
+const SENSITIVE_EDITABLE = [
+  'ship.pr_body_sections',
+  'model_overrides',
+  'effort.agent_overrides',
+  'effort.routing_tier_defaults',
+  'fast_mode.agent_overrides',
+  'fast_mode.routing_tier_defaults',
+  'model_profile_overrides',
+  'model_policy.runtime_tiers',
+  'model_profile',
+  'models',
+  'granularities',
+  'agent_skills',
+  'claude_md_assembly.blocks',
+  'dynamic_routing',
+  'features',
+  'review.max_prompt_tokens_per_reviewer',
+  'review.models',
+];
+
 export const SPECIALIZED_METADATA: SpecializedDescriptor[] = [
   descriptor('ship.pr_body_sections', 'structured-array', {
     sourceEvidence: [specializedCatalog.evidence['ship.pr_body_sections']],
@@ -162,6 +182,15 @@ export const SPECIALIZED_METADATA: SpecializedDescriptor[] = [
       'false': 'Keep standard execution ceremony for this agent (default).',
     },
   }),
+  descriptor('fast_mode.routing_tier_defaults', 'runtime-tier-map', {
+    keyCatalog: 'routingTiers',
+    allowedValues: [true, false],
+    allowedDescriptions: {
+      'true': 'Run this routing tier in fast mode (reduced-ceremony execution).',
+      'false': 'Keep normal reasoning for this routing tier (default).',
+    },
+    sourceEvidence: ['docs/CONFIGURATION.md#fast_mode.routing_tier_defaults'],
+  }),
   descriptor('model_profile_overrides', 'runtime-tier-map', {
     runtimeInstall: runtimeInstallMatrix,
   }),
@@ -194,6 +223,77 @@ export const SPECIALIZED_METADATA: SpecializedDescriptor[] = [
       'fine': 'Task-level plans with the most detail (6-10 phases per milestone).',
     },
     sourceEvidence: ['docs/CONFIGURATION.md#granularities.<phase_type>'],
+  }),
+  // Additional dynamic maps from patternProperties
+  descriptor('agent_skills', 'runtime-tier-map', {
+    keyCatalog: 'agents',
+    allowedValues: ['planner', 'executor', 'researcher', 'reviewer', 'backend', 'frontend', 'fullstack', 'devops', 'generic'],
+    allowedDescriptions: {
+      'planner': 'Planning and coordination skills.',
+      'executor': 'Code execution and delivery skills.',
+      'researcher': 'Research and investigation skills.',
+      'reviewer': 'Code and plan review skills.',
+      'backend': 'Backend development skills.',
+      'frontend': 'Frontend development skills.',
+      'fullstack': 'Full-stack development skills.',
+      'devops': 'DevOps and infrastructure skills.',
+      'generic': 'General-purpose skills.',
+    },
+    sourceEvidence: ['docs/CONFIGURATION.md#agent_skills.<agent-type>'],
+  }),
+  descriptor('claude_md_assembly.blocks', 'runtime-tier-map', {
+    allowedValues: ['context', 'instructions', 'workflow', 'custom'],
+    allowedDescriptions: {
+      'context': 'Project context and background.',
+      'instructions': 'Agent instructions and conventions.',
+      'workflow': 'Workflow-specific overrides.',
+      'custom': 'Custom block content.',
+    },
+    sourceEvidence: ['docs/CONFIGURATION.md#claude_md_assembly.blocks.<section>'],
+  }),
+  descriptor('dynamic_routing', 'runtime-tier-map', {
+    fields: [
+      { path: 'enabled', type: 'boolean' },
+      { path: 'escalate_on_failure', type: 'boolean' },
+      { path: 'max_escalations', type: 'number' },
+      { path: 'provider_escalation', type: 'string' },
+      { path: 'tier_models.light', type: 'string' },
+      { path: 'tier_models.standard', type: 'string' },
+      { path: 'tier_models.heavy', type: 'string' },
+    ],
+    sourceEvidence: ['docs/CONFIGURATION.md#dynamic_routing'],
+  }),
+  descriptor('features', 'runtime-tier-map', {
+    allowedValues: [true, false],
+    allowedDescriptions: {
+      'true': 'Enable this feature flag.',
+      'false': 'Disable this feature flag (default).',
+    },
+    sourceEvidence: ['docs/CONFIGURATION.md#features.<feature_name>'],
+  }),
+  descriptor('review.max_prompt_tokens_per_reviewer', 'runtime-tier-map', {
+    allowedValues: ['1000', '4000', '8000', '16000', '32000', '64000', '128000', '200000'],
+    allowedDescriptions: {
+      '1000': '1K tokens — minimal prompt budget.',
+      '4000': '4K tokens — small prompt budget.',
+      '8000': '8K tokens — moderate prompt budget.',
+      '16000': '16K tokens — standard prompt budget.',
+      '32000': '32K tokens — large prompt budget.',
+      '64000': '64K tokens — very large prompt budget.',
+      '128000': '128K tokens — maximum prompt budget.',
+      '200000': '200K tokens — extended prompt budget.',
+    },
+    sourceEvidence: ['docs/CONFIGURATION.md#review.max_prompt_tokens_per_reviewer.<reviewer-slug>'],
+  }),
+  descriptor('review.models', 'runtime-tier-map', {
+    allowedValues: ['opus', 'sonnet', 'haiku', 'inherit'],
+    allowedDescriptions: {
+      'opus': 'Opus — highest reasoning quality for review.',
+      'sonnet': 'Sonnet — balanced quality/speed for review.',
+      'haiku': 'Haiku — fastest, lightest model for review.',
+      'inherit': 'Inherit the session-level model profile.',
+    },
+    sourceEvidence: ['docs/CONFIGURATION.md#review.models.<cli-name>'],
   }),
   descriptor('review.reviewer_instances', 'read-only-unsupported', {
     editable: false,

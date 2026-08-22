@@ -11,7 +11,7 @@ import type { FastifyPluginAsync } from 'fastify';
 import { RegistryError } from '../registry.js';
 import { WorkspacePersistenceError } from '../workspace-store.js';
 import type { ApiErr } from '../api-types.js';
-import type { WorkspaceStore } from '../workspace-store.js';
+import type { WorkspaceStore, ConfigFileChangeEvent } from '../workspace-store.js';
 
 export interface WorkspaceRoutesOptions {
   workspaceStore: WorkspaceStore;
@@ -70,6 +70,50 @@ const CREATE_BODY_SCHEMA = {
 
 export const workspaceRoutes: FastifyPluginAsync<WorkspaceRoutesOptions> = async (app, opts) => {
   const { workspaceStore } = opts;
+
+  // SSE endpoint for config file change events
+  app.get('/workspace/events', async function (request, reply) {
+    reply.raw.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      Connection: 'keep-alive',
+      'X-Accel-Buffering': 'no',
+    });
+    reply.raw.write('\n');
+
+    const sendEvent = (event: string, data: unknown) => {
+      reply.raw.write(`event: ${event}\n`);
+      reply.raw.write(`data: ${JSON.stringify(data)}\n\n`);
+    };
+
+    let closed = false;
+    const close = () => {
+      closed = true;
+      request.raw.destroy();
+    };
+    request.raw.on('close', close);
+    request.raw.on('error', close);
+
+    // Send initial connected event
+    sendEvent('connected', { timestamp: new Date().toISOString() });
+
+    // Subscribe to file change events
+    const unsubscribe = workspaceStore.subscribe((event) => {
+      if (closed) return;
+      sendEvent('file-change', {
+        type: event.type,
+        configId: event.configId,
+        path: event.path,
+        timestamp: event.timestamp.toISOString(),
+      });
+    });
+
+    // Cleanup on close
+    request.raw.on('close', () => {
+      unsubscribe();
+      close();
+    });
+  });
 
   app.get('/workspace/configs', async () => {
     const { configs, warning } = workspaceStore.list();

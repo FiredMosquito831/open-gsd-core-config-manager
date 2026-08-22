@@ -55,6 +55,35 @@ afterEach(async () => {
   rmSync(clientRoot, { recursive: true, force: true });
 });
 
+// Directory symlinks require OS privileges Windows does not grant by default
+// (Developer Mode / SeCreateSymbolicLinkPrivilege). Probe once so the symlink
+// safety test can skip cleanly on locked-down boxes instead of false-failing —
+// the scan route's symlink guards (workspace-store.ts isSymbolicLink) are the
+// real behavior under test here.
+function supportsDirectorySymlinks(): boolean {
+  const probe = mkdtempSync(join(tmpdir(), 'gsdcm-symlink-probe-'));
+  const link = join(tmpdir(), `gsdcm-symlink-link-${probe.slice(-6)}`);
+  try {
+    symlinkSync(probe, link, 'dir');
+    return true;
+  } catch {
+    return false;
+  } finally {
+    try {
+      rmSync(link, { force: true });
+    } catch {
+      /* ignore */
+    }
+    try {
+      rmSync(probe, { recursive: true, force: true });
+    } catch {
+      /* ignore */
+    }
+  }
+}
+
+const itIfSymlinks = supportsDirectorySymlinks() ? it : it.skip;
+
 function makeProject(dir: string, name: string): string {
   const projectDir = join(dir, name);
   const planningDir = join(projectDir, '.planning');
@@ -115,7 +144,7 @@ describe('POST /api/workspace/scan', () => {
     expect(body.candidates[0].status).toBe('invalid');
   });
 
-  it('does not follow directory symlinks outside the selected root', async () => {
+  itIfSymlinks('does not follow directory symlinks outside the selected root', async () => {
     const outsideRoot = mkdtempSync(join(tmpdir(), 'gsdcm-scan-outside-'));
     try {
       makeProject(outsideRoot, 'outside-project');

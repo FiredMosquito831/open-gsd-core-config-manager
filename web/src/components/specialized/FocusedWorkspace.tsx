@@ -55,12 +55,16 @@ export function FocusedWorkspace({ descriptor, loadResult, chapter, value, onCha
   const [selectedKey, setSelectedKey] = useState<string | null>(!isArray && mapKeys.length ? mapKeys[0] : null);
   const [removingIndex, setRemovingIndex] = useState<number | null>(null);
   const [removingKey, setRemovingKey] = useState<string | null>(null);
+  const [addKey, setAddKey] = useState<string>('');
   const selectedMapValue = selectedKey === null ? undefined : map[selectedKey];
   const leaf = getEffectiveLeaf(loadResult.effective, descriptor.path);
   const layered = useMemo(() => getLayeredValue(loadResult, descriptor.path), [loadResult, descriptor.path]);
+  const availableMapKeys = !isArray && descriptor.keyCatalog
+    ? catalogFor(descriptor.keyCatalog).filter((key) => !(key in map))
+    : [];
 
   const back = () => setFocusedPath(null, null);
-  const addEntry = () => {
+  const addEntry = (explicitKey?: string) => {
     const fields = descriptor.fields ?? [];
     const entry = fields.length > 0
       ? Object.fromEntries(fields.map((field) => [field.path, field.type === 'string' ? '' : undefined]))
@@ -70,9 +74,10 @@ export function FocusedWorkspace({ descriptor, loadResult, chapter, value, onCha
       onChange(next);
       setSelectedIndex(entries.length);
     } else {
-      const key = nextMapKey(map, descriptor);
+      const key = explicitKey ?? nextMapKey(map, descriptor);
       onChange({ ...map, [key]: entry });
       setSelectedKey(key);
+      setAddKey('');
     }
   };
   const removeEntry = () => {
@@ -123,7 +128,7 @@ export function FocusedWorkspace({ descriptor, loadResult, chapter, value, onCha
           onMove={moveEntry}
           onRemove={setRemovingIndex}
         /> : <section className="gsd-pool-list" aria-label="Map entries">
-          <div className="gsd-pool-list__header"><div><h3>Entries</h3><p>{mapEntries.length} {mapEntries.length === 1 ? 'entry' : 'entries'}</p></div><button type="button" className="gsd-button gsd-button--primary gsd-button--sm" onClick={addEntry}>Add entry</button></div>
+          <div className="gsd-pool-list__header"><div><h3>Entries</h3><p>{mapEntries.length} {mapEntries.length === 1 ? 'entry' : 'entries'}</p></div>{descriptor.keyCatalog ? (<div className="gsd-pool-list__add"><select value={addKey} disabled={availableMapKeys.length === 0} onChange={(event) => setAddKey(event.target.value)} aria-label="Select a key to add"><option value="">{availableMapKeys.length ? 'Choose a key to add' : 'All keys added'}</option>{availableMapKeys.map((key) => <option key={key} value={key}>{key}</option>)}</select><button type="button" className="gsd-button gsd-button--primary gsd-button--sm" disabled={!addKey} onClick={() => addKey && addEntry(addKey)}>Add</button></div>) : <button type="button" className="gsd-button gsd-button--primary gsd-button--sm" onClick={() => addEntry()}>Add entry</button>}</div>
           <div className="gsd-pool-list__items" role="listbox" aria-label="Select a map entry">{mapEntries.map(({ key }) => <div key={key} role="option" aria-selected={selectedKey === key} className={`gsd-pool-list__row ${selectedKey === key ? 'gsd-pool-list__row--selected' : ''}`}><button type="button" className="gsd-pool-list__select" onClick={() => setSelectedKey(key)}><span className="gsd-pool-list__name">{key}</span></button><button type="button" className="gsd-button gsd-button--danger gsd-button--sm" onClick={() => setRemovingKey(key)} aria-label={`Remove ${key}`}>Remove</button></div>)}</div>
         </section>}
         <div className="gsd-focused-workspace__detail" aria-label="Entry details">

@@ -19,6 +19,7 @@ const FIXTURE_OBSERVED_TYPES: Record<string, string> = {
   'safety.always_confirm_external_services': 'boolean', 'parallelization.enabled': 'boolean',
   'parallelization.plan_level': 'boolean', 'parallelization.task_level': 'boolean', 'parallelization.skip_checkpoints': 'boolean',
   'parallelization.max_concurrent_agents': 'number', 'parallelization.min_plans_for_parallel': 'number',
+  'planner.stall_detect_interval_minutes': 'number', 'planner.stall_threshold_minutes': 'number',
 };
 
 function assertSafePath(key: string): void {
@@ -77,7 +78,7 @@ function categoryFor(key: string): string {
   if (key.startsWith('model_') || key.startsWith('models') || key === 'model_profile' || key.startsWith('dynamic_routing') || key.startsWith('agent_skills') || key.startsWith('resolve_model_ids')) return 'Model & Routing';
   if (key.startsWith('claude_md')) return 'Discovery';
   if (key.startsWith('workflow.') || key === 'mode' || key === 'granularity') return 'Workflow';
-  if (key.startsWith('hooks.') || key.startsWith('statusline.') || key.startsWith('features.') || key.startsWith('learnings.') || key.startsWith('graphify.') || key.startsWith('intel.') || key.startsWith('code_quality.') || key.startsWith('parallelization') || key.startsWith('capabilities.') || key.startsWith('executor.') || key.startsWith('manager.') || key.startsWith('mempalace.') || key.startsWith('profile-pipeline.')) return 'Workflow';
+  if (key.startsWith('hooks.') || key.startsWith('statusline.') || key.startsWith('features.') || key.startsWith('learnings.') || key.startsWith('graphify.') || key.startsWith('intel.') || key.startsWith('code_quality.') || key.startsWith('parallelization') || key.startsWith('capabilities.') || key.startsWith('executor.') || key.startsWith('planner.') || key.startsWith('manager.') || key.startsWith('mempalace.') || key.startsWith('profile-pipeline.')) return 'Workflow';
   return 'General';
 }
 
@@ -95,6 +96,7 @@ function dynamicLeafType(container: string): string | string[] {
     'effort.routing_tier_defaults': 'string', 'effort.agent_overrides': 'string', 'fast_mode.routing_tier_defaults': 'boolean',
     'fast_mode.agent_overrides': 'boolean', 'review.max_prompt_tokens_per_reviewer': 'number', review: 'string',
     granularities: 'string', models: 'string', features: 'boolean', agent_skills: ['object', 'null'],
+    'phase_commit_docs': 'boolean',
     dynamic_routing: ['string', 'number', 'boolean', 'null'] } as Record<string, string | string[]>)[container] ?? 'string';
 }
 

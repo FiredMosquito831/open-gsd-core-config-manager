@@ -26,7 +26,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **SCHEMA-02**: Every config field displays a plain-language explanation of what it does, written for beginners
 - [x] **SCHEMA-03**: Every enum/option value displays a plain-language explanation of what that specific choice means and its implications
 - [x] **SCHEMA-04**: The schema-driven renderer covers all config chapters with no key omitted; adding a new bundled key requires no per-key hand-coding
-- [ ] **SCHEMA-05**: User can refresh/reconcile the canonical schema from the open-gsd/gsd-core repository, seeing added/changed/deprecated keys, without losing curated descriptions
+- [x] **SCHEMA-05**: User can refresh/reconcile the canonical schema from the open-gsd/gsd-core repository, seeing added/changed/deprecated keys, without losing curated descriptions
 - [x] **SCHEMA-06**: Unknown/future keys present in a loaded file that are not in the schema are surfaced to the user rather than hidden or dropped
 
 ### Config Discovery & Tracking
@@ -139,7 +139,7 @@ Which phases cover which requirements. Populated during roadmap creation.
 | PROF-04 | Phase 4 | Complete |
 | SAVE-05 | Phase 5 | Complete |
 | SAVE-06 | Phase 5 | Complete |
-| SCHEMA-05 | Phase 6 | Pending |
+| SCHEMA-05 | Phase 6 | Complete |
 
 **Coverage:**
 
@@ -149,4 +149,4 @@ Which phases cover which requirements. Populated during roadmap creation.
 
 ---
 *Requirements defined: 2026-07-11*
-*Last updated: 2026-07-11 after roadmap creation — traceability populated, requirement count corrected*
+*Last updated: 2026-08-22 — Phase 4 marked complete (5/5 plans); schema refreshed to gsd-core v1.11.0*

@@ -29,9 +29,9 @@ export interface LaunchContext {
  * them must fail closed against this initial state, not assume it is
  * already sealed.
  */
-export function createLaunchContext(): LaunchContext {
+export function createLaunchContext(token?: string): LaunchContext {
   return {
-    token: randomUUID(),
+    token: token ?? randomUUID(),
     allowedHosts: new Set(),
     corsOrigin: null,
   };

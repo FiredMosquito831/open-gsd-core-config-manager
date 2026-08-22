@@ -1,3 +1,5 @@
+@import "tailwindcss";
+
 :root {
   color-scheme: light dark;
   --gsd-bg: #ffffff;
@@ -123,6 +125,8 @@ body {
   display: flex;
   flex-direction: column;
   min-width: 0;
+  position: relative;
+  z-index: 1;
 }
 
 .gsd-app-shell__left {
@@ -338,6 +342,40 @@ body {
 .gsd-sidebar__actions {
   display: flex;
   gap: 0.5rem;
+}
+
+.gsd-sidebar__item--changed {
+  border-left: 3px solid var(--gsd-warning);
+}
+
+.gsd-sidebar__change-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--gsd-warning-bg);
+  border-bottom: 1px solid var(--gsd-warning);
+  flex-wrap: wrap;
+}
+
+.gsd-sidebar__change-icon {
+  flex-shrink: 0;
+}
+
+.gsd-sidebar__change-text {
+  font-size: 0.75rem;
+  color: var(--gsd-warning);
+  flex: 1;
+  min-width: 0;
+}
+
+.gsd-sidebar__change-banner .gsd-button--ghost {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+}
+
+.gsd-sidebar__item--changed {
+  border-left: 3px solid var(--gsd-warning);
 }
 
 .gsd-sidebar__list {

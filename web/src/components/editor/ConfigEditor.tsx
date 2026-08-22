@@ -32,9 +32,11 @@ interface ConfigEditorProps {
 }
 
 export function ConfigEditor({ workspaceMode = 'editor' }: ConfigEditorProps) {
+  if (workspaceMode === 'schema') return <SchemaWorkspace />;
+  if (workspaceMode === 'history') return <HistoryWorkspace embedded />;
+
   const { activeConfigId, searchQuery, searchOpen, setActiveChapter, setHighlightTarget, setSearchOpen, openHistory } = useUiStore();
   const queryClient = useQueryClient();
-  if (workspaceMode === 'schema') return <SchemaWorkspace />;
   const configQuery = useQuery({ queryKey: ['config', activeConfigId], queryFn: () => loadConfig(activeConfigId!), enabled: !!activeConfigId });
   const schemaQuery = useQuery({ queryKey: ['schema'], queryFn: getSchema });
 

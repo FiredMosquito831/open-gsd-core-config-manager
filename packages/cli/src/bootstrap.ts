@@ -78,6 +78,8 @@ export interface BootstrapOptions {
   port?: number;
   /** Whether to auto-launch the browser after bind. */
   open: boolean;
+  /** Fixed token for testing (default: random). */
+  token?: string;
 }
 
 export interface BootstrapDeps {
@@ -104,7 +106,7 @@ export async function bootstrap(opts: BootstrapOptions, deps: BootstrapDeps = {}
   const openFn = deps.open ?? ((url: string) => open(url));
   const clientRoot = deps.clientRoot ?? defaultClientRoot();
 
-  const ctx = createLaunchContext();
+  const ctx = createLaunchContext(opts.token);
   const workspaceStore = createWorkspaceStore({ appDataRoot: appDataRoot() });
   const app = await buildApp({
     ctx,
@@ -120,6 +122,9 @@ export async function bootstrap(opts: BootstrapOptions, deps: BootstrapDeps = {}
   // Must run before any request can arrive — safe because no request can
   // reach the server until listen() (above) has already resolved.
   sealLaunchContext(ctx, port);
+
+  // Start file watching for tracked configs
+  workspaceStore.startWatching();
 
   const url = `http://127.0.0.1:${port}/?t=${ctx.token}`;
   out.banner(url);
@@ -142,6 +147,9 @@ export async function bootstrap(opts: BootstrapOptions, deps: BootstrapDeps = {}
     shuttingDown = true;
 
     out.shuttingDown();
+
+    // Stop file watching before closing
+    workspaceStore.stopWatching();
 
     // Generous safety net (02-RESEARCH.md: close-with-grace's 500ms default
     // is flagged as dangerously aggressive) — unref'd so it never itself

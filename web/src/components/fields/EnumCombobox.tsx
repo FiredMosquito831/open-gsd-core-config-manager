@@ -49,9 +49,13 @@ export function EnumCombobox({
       )}
       {options.filter((option) => option !== null).map((option) => {
         const key = String(option);
+        const meaning = meanings[key];
+        const label = meaning
+          ? `${key} — ${meaning.length > 80 ? meaning.slice(0, 77) + '…' : meaning}`
+          : key;
         return (
           <option key={key} value={key}>
-            {key}
+            {label}
           </option>
         );
       })}

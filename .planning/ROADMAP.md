@@ -16,9 +16,9 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1: Schema Foundation & Data-Layer Safety** - Bundled canonical schema plus safe, layered, corruption-proof config read/write with zero data loss (completed 2026-07-12)
 - [x] **Phase 2: Local Loopback Server, CLI & Security Hardening** - Single-command `npx` launch, secured local server, and automatic save snapshots (completed 2026-07-12)
 - [x] **Phase 3: Generic Schema-Driven UI Shell** - Every config chapter rendered with plain-language docs, tracked-file sidebar, search, and inline validation (completed 2026-07-17)
-- [ ] **Phase 4: Pool Editors & Model Profile Specialization** - Guided editors for array/map pools and GSD model profiles, with effective-value/precedence display
+- [x] **Phase 4: Pool Editors & Model Profile Specialization** - Guided editors for array/map pools and GSD model profiles, with effective-value/precedence display (completed 2026-08-03)
 - [x] **Phase 5: Version History UI** - Browse, diff, and one-click revert of past config snapshots (completed 2026-07-20)
-- [x] **Phase 6: Live Schema Reconcile Against gsd-core** - On-demand schema refresh from the live gsd-core repo without losing curated docs (completed 2026-07-21)
+- [x] **Phase 6: Live Schema Reconcile Against gsd-core** - On-demand schema refresh from the live gsd-core repo without losing curated docs (completed 2026-07-21; schema refreshed to gsd-core v1.11.0 on 2026-08-22)
 
 ## Phase Details
 
@@ -130,7 +130,7 @@ Plans:
   4. User can view the five built-in GSD model-profile selectors and their assignments, then create a copy-first custom project model configuration using supported model fields; no durable named custom-profile entity is invented.
   5. Saving a change to a runtime-baked setting (e.g. `model_overrides` on a Codex/OpenCode-style install) surfaces a clear "requires `gsd install` to take effect" notice; integration/API-key fields are masked by default in the UI and never logged.
 
-**Plans**: 2/5 plans executed
+**Plans**: 5/5 plans complete
 Plans:
 **Wave 1**
 
@@ -142,15 +142,15 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2)*
 
-- [ ] 04-05-PLAN.md — Reusable provenance summary and descriptor-driven temporary secret-reveal protection
+- [x] 04-05-PLAN.md — Reusable provenance summary and descriptor-driven temporary secret-reveal protection
 
 **Wave 4** *(blocked on Waves 2–3)*
 
-- [ ] 04-03-PLAN.md — Focused accessible structured-pool and constrained agent-map editors with catalog-driven SecretField integration tests
+- [x] 04-03-PLAN.md — Focused accessible structured-pool and constrained agent-map editors with catalog-driven SecretField integration tests
 
 **Wave 5** *(blocked on Waves 3–4)*
 
-- [ ] 04-04-PLAN.md — Profiles chapter, copy/edit flow, runtime-baked install notices, and catalog-driven SecretField integration tests
+- [x] 04-04-PLAN.md — Profiles chapter, copy/edit flow, runtime-baked install notices, and catalog-driven SecretField integration tests
 
 **UI hint**: yes
 
@@ -224,6 +224,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 1. Schema Foundation & Data-Layer Safety | 7/7 | Complete    | 2026-07-12 |
 | 2. Local Loopback Server, CLI & Security Hardening | 7/7 | Complete    | 2026-07-12 |
 | 3. Generic Schema-Driven UI Shell | 6/6 | Complete    | 2026-07-17 |
-| 4. Pool Editors & Model Profile Specialization | 2/5 | In Progress|  |
+| 4. Pool Editors & Model Profile Specialization | 5/5 | Complete    | 2026-08-03 |
 | 5. Version History UI | 9/9 | Complete    | 2026-07-20 |
 | 6. Live Schema Reconcile Against gsd-core | 9/9 | Complete    | 2026-07-21 |

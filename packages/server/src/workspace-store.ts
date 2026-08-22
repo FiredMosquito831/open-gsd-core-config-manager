@@ -10,12 +10,18 @@
  * paths is stored under the OS app-data directory. Status (`ok`/`missing`/
  * `invalid`) is derived at load time so a file that disappears or becomes
  * invalid between launches is still surfaced with a problem state (D-14).
+ *
+ * File watching (D-14, chokidar): watches tracked config files for external
+ * changes and notifies subscribers so the UI can show "file changed on disk"
+ * and offer reload, avoiding silently overwriting external edits.
  */
 import { existsSync, mkdirSync, readFileSync, renameSync, statSync } from 'node:fs';
 import { open, readdir, lstat, mkdir } from 'node:fs/promises';
 import { lock } from 'proper-lockfile';
 import { writeWithRetry } from '../../config-io/src/atomic-write.js';
 import { dirname, join, resolve, basename, isAbsolute } from 'node:path';
+import chokidar, { FSWatcher } from 'chokidar';
+import { installWatchErrorHandler } from './watch-error-guard.js';
 
 const createLocks = new Map<string, Promise<unknown>>();
 
@@ -35,6 +41,17 @@ import { createRegistry, RegistryError, type ConfigRegistry } from './registry.j
 import { saveWithSnapshot } from './snapshot-store/save-with-snapshot.js';
 import type { ActiveSchemaManager } from './active-schema-manager.js';
 import { appDataRoot } from './snapshot-store/paths.js';
+
+/** File change event for tracked configs. */
+export interface ConfigFileChangeEvent {
+  type: 'changed' | 'deleted' | 'renamed';
+  configId: string;
+  path: string;
+  timestamp: Date;
+}
+
+/** Subscriber callback for config file changes. */
+export type ConfigFileChangeSubscriber = (event: ConfigFileChangeEvent) => void;
 
 /** Persisted workspace data shape (versioned for future migrations). */
 interface PersistedWorkspace {
@@ -87,8 +104,22 @@ export interface WorkspaceStore {
   createPreview(projectDir: string): { targetPath: string; exists: boolean };
   /** Create a new config file, track it, and persist the workspace. */
   create(projectDir: string, overwrite: boolean): Promise<TrackedWorkspaceConfig>;
+  /** Subscribe to config file changes detected by the file watcher. */
+  subscribe(subscriber: ConfigFileChangeSubscriber): () => void;
+  /** Start watching all tracked config files. */
+  startWatching(): void;
+  /** Stop watching all config files. */
+  stopWatching(): void;
+  /** Watch a specific config file for changes (internal use). */
+  watchConfig(config: TrackedWorkspaceConfig): void;
+  /** Stop watching a specific config file (internal use). */
+  unwatchConfig(configId: string): void;
   /** The underlying registry used for path validation. */
   registry: ConfigRegistry;
+  /** Internal: event subscribers for file changes. */
+  subscribers: Set<ConfigFileChangeSubscriber>;
+  /** Internal: chokidar file watcher instance. */
+  watcher: FSWatcher | null;
 }
 
 function defaultAppDataRoot(): string {
@@ -303,10 +334,12 @@ export function createWorkspaceStore(opts: WorkspaceStoreOptions = {}): Workspac
         result = { ...tracked, ...deriveStatus(tracked.path) };
         return candidateRegistry.list().map(({ id, path }) => ({ id, path }));
       });
+      this.watchConfig(result!);
       return result!;
     },
 
     async remove(id: string): Promise<void> {
+      this.unwatchConfig(id);
       await mutate((configs, candidateRegistry) => {
         candidateRegistry.remove(id);
         return candidateRegistry.list().map(({ id: configId, path }) => ({ id: configId, path }));
@@ -328,6 +361,9 @@ export function createWorkspaceStore(opts: WorkspaceStoreOptions = {}): Workspac
         result = { ...tracked, ...deriveStatus(tracked.path) };
         return candidateRegistry.list().map(({ id: configId, path }) => ({ id: configId, path }));
       });
+      // Unwatch old path, watch new path
+      this.unwatchConfig(id);
+      this.watchConfig(result!);
       return result!;
     },
 
@@ -438,8 +474,91 @@ export function createWorkspaceStore(opts: WorkspaceStoreOptions = {}): Workspac
           entry = { ...tracked, ...deriveStatus(tracked.path) };
           return candidateRegistry.list().map(({ id, path }) => ({ id, path }));
         });
+        // Start watching the new config
+        this.watchConfig(entry!);
         return entry!;
       });
+    },
+
+    // File watching implementation
+    subscribers: new Set<ConfigFileChangeSubscriber>(),
+    watcher: null as FSWatcher | null,
+
+    subscribe(subscriber: ConfigFileChangeSubscriber): () => void {
+      this.subscribers.add(subscriber);
+      return () => this.subscribers.delete(subscriber);
+    },
+
+    startWatching(): void {
+      if (this.watcher) return;
+      // A path the OS denies a watch on (e.g. EPERM on Windows without
+      // Developer Mode) is thrown natively inside libuv's fs.watch callback —
+      // below chokidar's layer — so it can only be caught process-wide. Install
+      // the guard exactly where the watcher is created; it is idempotent, so the
+      // repeated calls bootstrap/app make are harmless. See watch-error-guard.ts.
+      installWatchErrorHandler();
+      this.watcher = chokidar.watch([], {
+        persistent: false,
+        ignoreInitial: true,
+        awaitWriteFinish: { stabilityThreshold: 100, pollInterval: 50 },
+        // Suppress permission-denied errors (e.g. EPERM on Windows paths the
+        // process cannot watch). The watcher is a best-effort change channel —
+        // tracked-config status is derived on load and on every event — so a
+        // path that can't be watched must never crash the server. Defense-in-
+        // depth: any non-permission watcher error still routes to the 'error'
+        // handler below and is logged without throwing.
+        ignorePermissionErrors: true,
+      });
+      this.watcher.on('all', (event: string, path: string) => {
+        const normalizedPath = resolve(path);
+        const config = Array.from(entries.values()).find((e) => e.path === normalizedPath);
+        if (config) {
+          const changeEvent: ConfigFileChangeEvent = {
+            type: event === 'change' ? 'changed' : event === 'unlink' ? 'deleted' : 'renamed',
+            configId: config.id,
+            path: normalizedPath,
+            timestamp: new Date(),
+          };
+          this.subscribers.forEach((sub: ConfigFileChangeSubscriber) => sub(changeEvent));
+          // Update derived status
+          const status = deriveStatus(normalizedPath);
+          entries.set(config.id, { ...config, ...status });
+        }
+      });
+      // The watcher is a best-effort change-notification channel: a watch can
+      // fail (e.g. EPERM on Windows for a permission-denied path) without the
+      // tracked-config surface being broken — status is derived on load and on
+      // each event. Never let a watcher error crash the process.
+      this.watcher.on('error', (error: unknown) => {
+        console.error('[workspace-store] config file watcher error:', error);
+      });
+      // Watch all currently tracked configs
+      for (const entry of entries.values()) {
+        this.watcher.add(entry.path);
+      }
+    },
+
+    stopWatching(): void {
+      if (this.watcher) {
+        this.watcher.close().catch(() => {
+          // Ignore close errors
+        });
+        this.watcher = null;
+      }
+    },
+
+    // Local watcher helper functions (closure over `entries` and `watcher`)
+    watchConfig(config: TrackedWorkspaceConfig): void {
+      if (this.watcher) {
+        this.watcher.add(config.path);
+      }
+    },
+
+    unwatchConfig(configId: string): void {
+      const config = entries.get(configId);
+      if (config && this.watcher) {
+        this.watcher.unwatch(config.path);
+      }
     },
   };
 }

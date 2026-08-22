@@ -15,11 +15,16 @@ function root(): string {
 }
 
 function newerMetadata() {
+  // Always strictly newer than the active bundle so this helper stays valid
+  // across bundled-schema version bumps (the assertion is "newer than bundle",
+  // not any specific version).
+  const [major, minor] = getBundledSchemaMetadata().gsdCoreVersion.split('.').map(Number);
+  const gsdCoreVersion = `${major}.${minor + 1}.0`;
   return {
     envelopeVersion: 1 as const,
     source: 'refreshed' as const,
-    gsdCoreVersion: '1.8.0',
-    tag: 'v1.8.0',
+    gsdCoreVersion,
+    tag: `v${gsdCoreVersion}`,
     commit: 'a'.repeat(40),
     archiveSha256: 'b'.repeat(64),
     generatedAt: '2026-07-20T12:00:00.000Z',

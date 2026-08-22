@@ -234,12 +234,12 @@ export function SchemaWorkspace(): React.ReactElement {
           <div role="alert" className="gsd-schema-alert">
             <h2>
               {failure === 'activate'
-                ? "Couldn't activate this schema update"
+                ? "Couldn’t activate this schema update"
                 : failure === 'cancel'
-                ? "Couldn't cancel this schema update review"
+                ? "Couldn’t cancel this schema update review"
                 : failure === 'reset'
-                ? "Couldn't reset to the bundled schema"
-                : "Couldn't prepare a schema update"}
+                ? "Couldn’t reset to the bundled schema"
+                : "Couldn’t prepare a schema update"}
             </h2>
             <p>
               {failure === 'activate'

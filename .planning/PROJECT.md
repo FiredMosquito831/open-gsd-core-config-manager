@@ -14,22 +14,22 @@ A user can open any GSD `config.json`, understand exactly what every setting and
 
 - [x] Saving is corruption-safe: schema validation before write, atomic write (temp file + rename). — *Validated in Phase 1: Schema Foundation & Data-Layer Safety (SAVE-01, SAVE-02, SAVE-03)*
 - [x] User can install and launch the tool with a single command (`npx <package>`) with no separate server setup — a local loopback helper serves the UI and performs file I/O. — *Validated in Phase 2: Local Loopback Server, CLI & Security Hardening (DIST-01, DIST-02, DIST-03, DIST-04). The server binds 127.0.0.1 only and is guarded by a Host allowlist, an Origin check, and a per-launch token — loopback binding alone is not treated as a trust boundary (SEC-01, SEC-02).*
+- [x] UI presents all GSD config keys organized into category tabs ("chapters") derived from the canonical gsd-core config structure. — *Validated in Phase 3: Generic Schema-Driven UI Shell*
+- [x] Every field shows a full plain-language explanation of what it does; every option/enum value shows what that specific choice means and its implications — written for beginners. — *Validated in Phase 3*
+- [x] The tool bundles a curated canonical schema (keys, types, options, descriptions, defaults) derived from gsd-core docs + `defaults.json`, and can also refresh/reconcile it against the live open-gsd/gsd-core repository to construct an up-to-date canonical config. — *Validated in Phase 6: Live Schema Reconcile Against gsd-core. Bundled schema refreshed to gsd-core **v1.11.0** on 2026-08-22 (201 keys, 71 enum keys, 0 enum gaps).*
+- [x] Coverage is exhaustive — no config key is omitted; unknown/new keys found in a file are surfaced rather than dropped. — *Validated in Phase 3*
+- [x] User can add existing config files manually (path or file picker); the app remembers them in a persistent sidebar list. — *Validated in Phase 3 (DISC-01, DISC-02)*
+- [x] An optional helper can scan a user-chosen folder for `.planning/config.json` files to quickly populate the sidebar (respecting boundaries like `node_modules`/`.git`). — *Validated in Phase 3 (DISC-03)*
+- [x] The tool discovers and loads both a project's `config.json` and the applicable `defaults.json`, showing effective values (default vs. overridden). — *Validated in Phase 3 (DISC-06, EDIT-03)*
+- [x] Left sidebar lists all tracked config files; clicking one loads its data into the editor for viewing/modifying. — *Validated in Phase 3 (DISC-05)*
+- [x] User can create a brand-new config file from defaults. — *Validated in Phase 3 (DISC-04)*
+- [x] Every save is snapshotted into a browsable version history per config, with diff view and one-click revert. — *Validated in Phase 5: Version History UI (SAVE-05, SAVE-06), building on Phase 2's SAVE-04 snapshot store. History browsing, redacted structural diff, responsive timeline, guarded restore review, pre-restore recovery snapshot, and focus-safe restore outcomes are delivered.*
+- [x] Array-valued keys are edited as "pools": user can add, configure, reorder, and remove individual entries through guided controls rather than raw JSON. — *Validated in Phase 4: Pool Editors & Model Profile Specialization (POOL-01, POOL-02, POOL-03)*
+- [x] User can view, edit, and create custom GSD model profiles per gsd-core docs, including per-agent/role overrides. — *Validated in Phase 4 (PROF-01, PROF-02, PROF-03, PROF-04)*
 
 ### Active
 
-- [ ] UI presents all GSD config keys organized into category tabs ("chapters") derived from the canonical gsd-core config structure.
-- [ ] Every field shows a full plain-language explanation of what it does; every option/enum value shows what that specific choice means and its implications — written for beginners.
-- [ ] The tool bundles a curated canonical schema (keys, types, options, descriptions, defaults) derived from gsd-core docs + `defaults.json`, and can also refresh/reconcile it against the live open-gsd/gsd-core repository to construct an up-to-date canonical config.
-- [ ] Coverage is exhaustive — no config key is omitted; unknown/new keys found in a file are surfaced rather than dropped.
-- [ ] User can add existing config files manually (path or file picker); the app remembers them in a persistent sidebar list.
-- [ ] An optional helper can scan a user-chosen folder for `.planning/config.json` files to quickly populate the sidebar (respecting boundaries like `node_modules`/`.git`).
-- [ ] The tool discovers and loads both a project's `config.json` and the applicable `defaults.json`, showing effective values (default vs. overridden).
-- [ ] Left sidebar lists all tracked config files; clicking one loads its data into the editor for viewing/modifying.
-- [ ] User can create a brand-new config file from defaults.
-- [ ] Array-valued keys are edited as "pools": user can add, configure, reorder, and remove individual entries through guided controls rather than raw JSON.
-- [x] Every save is snapshotted into a browsable version history per config, with diff view and one-click revert. — *Validated in Phase 5: Version History UI (SAVE-05, SAVE-06), building on Phase 2's SAVE-04 snapshot store. History browsing, redacted structural diff, responsive timeline, guarded restore review, pre-restore recovery snapshot, and focus-safe restore outcomes are delivered.*
-- [ ] User can view, edit, and create custom GSD model profiles per gsd-core docs, including per-agent/role overrides.
-- [ ] UI is visually rich, polished, and user-friendly (clear typography, category navigation, inline help).
+- [ ] UI is visually rich, polished, and user-friendly (clear typography, category navigation, inline help). — *Partially delivered in Phase 3; enhanced in Phase 4 with Tailwind/Radix*
 
 ### Out of Scope
 
@@ -61,7 +61,7 @@ A user can open any GSD `config.json`, understand exactly what every setting and
 |----------|-----------|---------|
 | CLI-launched local web app (loopback helper serves UI + does file I/O) | Satisfies "no server" while enabling real disk read/write and easy `npx` install across platforms | ✓ Delivered in Phase 2 — Fastify on 127.0.0.1 with an ephemeral port, browser auto-opened at a tokenized URL |
 | Loopback binding is NOT treated as a trust boundary | Any page in the user's browser can `fetch()` 127.0.0.1 — the classic local-server CSRF/DNS-rebinding class that has bitten other local tools | ✓ Delivered in Phase 2 — Host allowlist (root scope) + `/api`-scoped Origin guard + CORS lock + per-launch `x-gsd-token`. Static assets are deliberately token-free so the page can load and *then* present its token. |
-| Hybrid schema: bundled curated canonical schema + refresh from gsd-core repo | Offline-reliable beginner docs, yet stays current with gsd-core changes | Bundled half delivered in Phase 1; live reconcile is Phase 6 |
+| Hybrid schema: bundled curated canonical schema + refresh from gsd-core repo | Offline-reliable beginner docs, yet stays current with gsd-core changes | ✓ Delivered in Phase 1 (bundled) + Phase 6 (live reconcile); bundled schema refreshed to gsd-core v1.11.0 (2026-08-22) |
 | Discovery via manual add + remembered list, plus optional chosen-folder scan | Predictable and safe; avoids surprising machine-wide crawling | — Pending (Phase 3) |
 | Full version-history snapshots with diff + one-click revert | Strongest protection against corruption/data loss | ✓ Delivered in Phase 5 — complete per-config timeline, redacted structural diff, safe restore through the normal save pipeline, pre-restore recovery snapshots, retryable outcomes, and responsive keyboard-accessible review UI |
 | React + Vite + TypeScript frontend, public npm package | Rich UI, maintainable, trivially shareable | npm package delivered in Phase 2 (`npm pack` → 3 files, 21.3 KB, UI bundled inside). The React/Vite frontend replaces Phase 2's placeholder page in Phase 3. |
@@ -84,4 +84,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-07-20 after Phase 5 (Version History UI) completed*
+*Last updated: 2026-08-22 — Phase 4 (Pool Editors & Model Profile Specialization) marked complete; schema refreshed to gsd-core v1.11.0*
