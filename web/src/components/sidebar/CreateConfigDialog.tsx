@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent, type ChangeEvent } from 'react';
+import { createPortal } from 'react-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { previewCreateConfig, createConfig } from '../../api/workspace';
 import { pickerStatus, pickDirectory } from '../../api/picker';
@@ -55,7 +56,7 @@ export function CreateConfigDialog({ onClose }: CreateConfigDialogProps) {
     }
   };
 
-  return (
+  return createPortal(
     <div className="gsd-dialog-overlay" role="dialog" aria-modal="true" aria-labelledby="create-dialog-title">
       <div className="gsd-dialog">
         <h2 id="create-dialog-title">Create new config</h2>
@@ -104,6 +105,7 @@ export function CreateConfigDialog({ onClose }: CreateConfigDialogProps) {
           </Button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

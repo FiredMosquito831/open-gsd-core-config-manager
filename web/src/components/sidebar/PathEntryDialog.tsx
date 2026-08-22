@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent, type ChangeEvent } from 'react';
+import { createPortal } from 'react-dom';
 import { Button } from '../common/Button';
 import { pickerStatus, pickFile, pickDirectory } from '../../api/picker';
 
@@ -77,7 +78,7 @@ export function PathEntryDialog({
     }
   };
 
-  return (
+  return createPortal(
     <div className="gsd-dialog-overlay" role="dialog" aria-modal="true" aria-labelledby="path-dialog-title">
       <div className="gsd-dialog">
         <h2 id="path-dialog-title">{title}</h2>
@@ -111,6 +112,7 @@ export function PathEntryDialog({
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

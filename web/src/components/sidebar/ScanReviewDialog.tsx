@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Button } from '../common/Button';
 import type { ScanCandidate } from '../../api/workspace';
 
@@ -28,7 +29,7 @@ export function ScanReviewDialog({ candidates, onConfirm, onCancel }: ScanReview
     }
   };
 
-  return (
+  return createPortal(
     <div className="gsd-dialog-overlay" role="dialog" aria-modal="true" aria-labelledby="scan-dialog-title">
       <div className="gsd-dialog">
         <h2 id="scan-dialog-title">Review scan results</h2>
@@ -63,6 +64,7 @@ export function ScanReviewDialog({ candidates, onConfirm, onCancel }: ScanReview
           </Button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
