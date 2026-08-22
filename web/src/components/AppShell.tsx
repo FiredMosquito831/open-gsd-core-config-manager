@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react';
 import { SchemaStatusControl } from './schema/SchemaStatusControl';
+import { ApiKeysStatusControl } from './keys/ApiKeysStatusControl';
+import { ApiKeysWorkspace } from './keys/ApiKeysWorkspace';
 import { Icons, Icon } from './common/Icons';
 
 export interface AppShellProps {
@@ -10,7 +12,7 @@ export interface AppShellProps {
   /** Main pane surface. */
   editor: ReactNode;
   /** Dedicated workspace mode controls chapter/search visibility and landmark name. */
-  mode?: 'editor' | 'history' | 'schema';
+  mode?: 'editor' | 'history' | 'schema' | 'keys';
   /** Whether the left sidebar pane is currently open. */
   leftOpen: boolean;
   /** Whether the middle chapter pane is currently open. */
@@ -51,6 +53,7 @@ export function AppShell({
           <Icons.sidebar size={16} />
         </button>
         <SchemaStatusControl />
+        <ApiKeysStatusControl />
         {mode === 'editor' && <button
           type="button"
           className="gsd-rail-button"
@@ -94,7 +97,7 @@ export function AppShell({
               placeholder="Search by key, title, explanation, or option meaning"
             />
           </div>}
-          {editor}
+          {mode === 'keys' ? <ApiKeysWorkspace /> : editor}
         </div>
       </main>
     </div>

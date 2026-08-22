@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import type { KeyStatusDto } from '../../../packages/server/src/api-types';
 
 interface UiState {
   activeConfigId: string | null;
@@ -12,12 +13,15 @@ interface UiState {
   focusedOriginChapter: string | null;
   profileEditorOpen: boolean;
   profileSessionLabel: string;
-  workspaceMode: 'editor' | 'history' | 'schema';
+  workspaceMode: 'editor' | 'history' | 'schema' | 'keys';
   selectedHistorySeq: number | null;
+  keysStatus: KeyStatusDto[] | null;
   restoreNotice: { configId: string; timestamp: string; warning?: boolean } | null;
   setActiveConfigId: (id: string | null) => void;
   openHistory: () => void;
   openSchemaMaintenance: () => void;
+  openKeys: () => void;
+  setKeysStatus: (keysStatus: KeyStatusDto[] | null) => void;
   backToEditor: () => void;
   selectHistorySnapshot: (seq: number | null) => void;
   showRestoreNotice: (configId: string, timestamp: string, warning?: boolean) => void;
@@ -48,10 +52,13 @@ export const useUiStore = create<UiState>((set) => ({
   profileSessionLabel: '',
   workspaceMode: 'editor',
   selectedHistorySeq: null,
+  keysStatus: null,
   restoreNotice: null,
   setActiveConfigId: (activeConfigId) => set((state) => ({ activeConfigId, focusedPath: null, focusedOriginChapter: null, profileEditorOpen: false, profileSessionLabel: '', selectedHistorySeq: state.workspaceMode === 'history' ? null : state.selectedHistorySeq })),
   openHistory: () => set({ workspaceMode: 'history', selectedHistorySeq: null }),
   openSchemaMaintenance: () => set({ workspaceMode: 'schema' }),
+  openKeys: () => set({ workspaceMode: 'keys' }),
+  setKeysStatus: (keysStatus) => set({ keysStatus }),
   backToEditor: () => set({ workspaceMode: 'editor' }),
   selectHistorySnapshot: (selectedHistorySeq) => set({ selectedHistorySeq }),
   showRestoreNotice: (configId, timestamp, warning) => set({ restoreNotice: { configId, timestamp, warning } }),

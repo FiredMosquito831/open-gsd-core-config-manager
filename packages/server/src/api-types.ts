@@ -96,6 +96,42 @@ export interface SchemaProposalDto {
   documentationDiagnostics: readonly unknown[];
 }
 
+/** One channel's key-detection state for a search provider. */
+export interface KeyChannelStatusDto {
+  configured: boolean;
+}
+
+/** File-channel key state, including the resolved absolute key-file path. */
+export interface KeyFileChannelStatusDto extends KeyChannelStatusDto {
+  path: string;
+}
+
+/** Detection state for one search capability across both of its key channels. */
+export interface KeyStatusDto {
+  /** Config key, e.g. "brave_search". */
+  provider: string;
+  /** Human-readable name, e.g. "Brave Search". */
+  title: string;
+  /** Environment variable name, e.g. "BRAVE_API_KEY". */
+  envVar: string;
+  /** Key filename (no directory), e.g. "brave_api_key". */
+  fileSlug: string;
+  /** Where the user obtains this key, if known. */
+  homepage?: string;
+  /** True when a key is present via EITHER channel. */
+  configured: boolean;
+  channels: { envVar: KeyChannelStatusDto; file: KeyFileChannelStatusDto };
+}
+
+/** Request body for writing/clearing a single provider key. */
+export interface KeyWriteDto {
+  provider: string;
+  /** Secret value. Empty string clears the key. */
+  value: string;
+  /** Which channel(s) to write. */
+  channel: 'file' | 'env' | 'both';
+}
+
 export type SchemaRefreshResponse = ApiOk<{ status: SchemaStatusDto; proposal?: SchemaProposalDto; noChange?: true }>
   | ApiErr;
 export type SchemaActivationResponse = ApiOk<{ status: SchemaStatusDto }> | ApiErr;

@@ -41,6 +41,7 @@ import { historyRoutes } from './routes/history.js';
 import { schemaRoutes } from './routes/schema.js';
 import { workspaceRoutes } from './routes/workspace.js';
 import { pickerRoutes } from './routes/picker.js';
+import { keysRoutes } from './routes/keys.js';
 import { createRegistry, type ConfigRegistry } from './registry.js';
 import { createWorkspaceStore, type WorkspaceStore } from './workspace-store.js';
 import { ActiveSchemaManager } from './active-schema-manager.js';
@@ -130,6 +131,7 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
       await api.register(historyRoutes, { registry, activeSchemaManager, snapshotRoot: opts.snapshotRoot, warn: opts.warn });
       await api.register(workspaceRoutes, { workspaceStore });
       await api.register(pickerRoutes, { warn });
+      await api.register(keysRoutes);
     },
     { prefix: '/api' },
   );
