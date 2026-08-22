@@ -3,6 +3,11 @@ dist/
 *.tmp
 *.log
 
+# Playwright test artifacts (generated on every e2e run)
+playwright-report/
+test-results/
+.playwright-cache/
+
 # OS cruft
 .DS_Store
 Thumbs.db
