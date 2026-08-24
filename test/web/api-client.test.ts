@@ -1,11 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('../../web/src/bootstrap/token.js', () => ({
-  getLaunchToken: vi.fn(() => 'test-token-123'),
-  consumeLaunchToken: vi.fn(),
-}));
-
 import { apiFetch, ApiError } from '../../web/src/api/client.js';
 import * as configs from '../../web/src/api/configs.js';
 import * as schema from '../../web/src/api/schema.js';
@@ -28,20 +23,13 @@ function firstFetchCall() {
 }
 
 describe('apiFetch', () => {
-  it('attaches x-gsd-token to /api requests', async () => {
+  it('sends no credentials for /api requests (loopback trust model)', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(mockJsonResponse({ ok: true }));
     await apiFetch('/api/configs');
     const { init } = firstFetchCall();
     const headers = new Headers(init?.headers);
-    expect(headers.get('x-gsd-token')).toBe('test-token-123');
-  });
-
-  it('does not attach a token to non-/api requests', async () => {
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(mockJsonResponse({ ok: true }));
-    await apiFetch('/assets/main.js');
-    const { init } = firstFetchCall();
-    const headers = new Headers(init?.headers);
     expect(headers.has('x-gsd-token')).toBe(false);
+    expect(headers.has('authorization')).toBe(false);
   });
 
   it('returns typed ApiOk payload', async () => {
@@ -70,7 +58,6 @@ describe('apiFetch', () => {
     await apiFetch('/api/configs', { headers: { 'x-extra': 'yes' } });
     const { init } = firstFetchCall();
     const headers = new Headers(init?.headers);
-    expect(headers.get('x-gsd-token')).toBe('test-token-123');
     expect(headers.get('x-extra')).toBe('yes');
   });
 
@@ -133,11 +120,10 @@ describe('route wrappers', () => {
     expect(fetchSpy).toHaveBeenCalledWith('/api/workspace/configs', expect.any(Object));
   });
 
-  it('history API wrappers use token-aware encoded opaque routes without document bodies', async () => {
+  it('history API wrappers use encoded opaque routes without document bodies', async () => {
     const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(mockJsonResponse({ ok: true, snapshots: [] }));
     await configs.listConfigHistory('id / unsafe');
     expect(fetchSpy).toHaveBeenCalledWith('/api/configs/id%20%2F%20unsafe/history', expect.any(Object));
-    expect(new Headers(firstFetchCall().init?.headers).get('x-gsd-token')).toBe('test-token-123');
 
     fetchSpy.mockResolvedValueOnce(mockJsonResponse({ ok: true, detail: {} }));
     await configs.loadHistoryComparison('id-1', 7);

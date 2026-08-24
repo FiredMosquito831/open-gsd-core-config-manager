@@ -1,0 +1,5 @@
+/* Aggregate entry for feedback-infrastructure styles.
+   The integrator appends this @import to web/src/styles.css head alongside the
+   other theme/<area>.css sheets. Toast cards consume only design tokens, so this
+   file is a single pass-through import of the toast stack. */
+@import './toasts.css';

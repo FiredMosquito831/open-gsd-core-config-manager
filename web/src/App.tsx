@@ -3,11 +3,11 @@ import { ConfigEditor } from './components/editor/ConfigEditor';
 import { TrackedConfigSidebar } from './components/sidebar/TrackedConfigSidebar';
 import { ChapterNav } from './components/chapters/ChapterNav';
 import { HistoryWorkspace } from './components/history/HistoryWorkspace';
+import { WorkspaceHeader } from './components/common/WorkspaceHeader';
 import { useUiStore } from './state/uiStore';
+import { ToastHost } from './components/common/ToastHost';
 
-type AppProps = { connected: boolean };
-
-export function App({ connected }: AppProps) {
+export function App() {
   const {
     leftPaneOpen,
     middlePaneOpen,
@@ -19,7 +19,8 @@ export function App({ connected }: AppProps) {
   } = useUiStore();
 
   return (
-    <AppShell
+    <>
+      <AppShell
       mode={workspaceMode}
       leftOpen={leftPaneOpen}
       middleOpen={middlePaneOpen}
@@ -29,15 +30,10 @@ export function App({ connected }: AppProps) {
       onSearchQueryChange={setSearchQuery}
       sidebar={<TrackedConfigSidebar />}
       chapterNav={<ChapterNav />}
-      editor={
-        connected ? (
-          <ConfigEditor workspaceMode={workspaceMode} />
-        ) : (
-          <div className="gsd-connection-warning" role="alert">
-            No launch token found. Open the URL printed by the CLI to connect.
-          </div>
-        )
-      }
-    />
+      workspaceHeader={<WorkspaceHeader />}
+      editor={<ConfigEditor workspaceMode={workspaceMode} />}
+      />
+      <ToastHost />
+    </>
   );
 }

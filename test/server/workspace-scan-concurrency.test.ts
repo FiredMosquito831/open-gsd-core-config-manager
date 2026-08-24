@@ -25,20 +25,18 @@ import type { FastifyInstance } from 'fastify';
 import { buildApp } from '../../packages/server/src/app.js';
 
 const FAKE_PORT = 46044;
-const TOKEN = '77777777-7777-7777-8777-777777777777';
 const HOST = `127.0.0.1:${FAKE_PORT}`;
 const CORS_ORIGIN = `http://127.0.0.1:${FAKE_PORT}`;
 
 function makeContext() {
   return {
-    token: TOKEN,
     allowedHosts: new Set([HOST, `localhost:${FAKE_PORT}`]),
     corsOrigin: CORS_ORIGIN,
   };
 }
 
 function authHeaders(extra: Record<string, string> = {}): Record<string, string> {
-  return { host: HOST, 'x-gsd-token': TOKEN, ...extra };
+  return { host: HOST, ...extra };
 }
 
 let app: FastifyInstance;

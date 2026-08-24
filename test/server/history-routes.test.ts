@@ -9,17 +9,16 @@ import { readIndex } from '../../packages/server/src/snapshot-store/index.js';
 import { snapshotDirFor } from '../../packages/server/src/snapshot-store/paths.js';
 
 const PORT = 46005;
-const TOKEN = '55555555-5555-4555-8555-555555555555';
 const HOST = `127.0.0.1:${PORT}`;
 const ORIGIN = `http://127.0.0.1:${PORT}`;
 const SECRET = 'history-secret-sentinel-never-render-or-return';
 
 function context(): LaunchContext {
-  return { token: TOKEN, allowedHosts: new Set([HOST, `localhost:${PORT}`]), corsOrigin: ORIGIN };
+  return { allowedHosts: new Set([HOST, `localhost:${PORT}`]), corsOrigin: ORIGIN };
 }
 
 function headers(extra: Record<string, string> = {}): Record<string, string> {
-  return { host: HOST, origin: ORIGIN, 'x-gsd-token': TOKEN, ...extra };
+  return { host: HOST, origin: ORIGIN, ...extra };
 }
 
 let app: FastifyInstance;
@@ -91,12 +90,10 @@ describe('History API contracts (SAVE-05, SAVE-06)', () => {
     expect(valid.statusCode).toBe(200);
   });
 
-  it('rejects missing tokens, wrong origins and hosts before serving history data', async () => {
+  it('serves same-origin history reads but rejects wrong origins and hosts first', async () => {
     const id = await track();
     await save(id, { mode: 'interactive', workflow: { tdd_mode: true } });
     for (const requestHeaders of [
-      { host: HOST, origin: ORIGIN },
-      headers({ 'x-gsd-token': 'wrong-token' }),
       { ...headers(), origin: 'https://attacker.invalid' },
       { ...headers(), host: 'attacker.invalid' },
     ]) {

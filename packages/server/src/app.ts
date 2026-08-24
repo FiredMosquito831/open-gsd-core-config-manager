@@ -20,9 +20,8 @@
  *      plugin can affect the static routes registered in step 2.
  *
  * The logger defaults to OFF: the CLI's own stdout banner (02-UI-SPEC.md)
- * is the user-facing channel, and a quiet-by-default logger is the
- * simplest way to guarantee the one-time `?t=` query-string page load
- * never gets printed to a request log (T-02-20).
+ * is the user-facing channel, and a quiet-by-default logger keeps request
+ * noise out of the terminal.
  *
  * `buildApp()` never calls `listen()` — the CLI (Plan 06) owns the socket
  * lifecycle.
@@ -32,7 +31,6 @@ import fastifyCors from '@fastify/cors';
 import type { LaunchContext } from './context.js';
 import { registerHostGuard } from './plugins/host-guard.js';
 import { registerOriginGuard } from './plugins/origin-guard.js';
-import { registerTokenGuard } from './plugins/token-guard.js';
 import { buildCorsOptions } from './plugins/cors.js';
 import { registerStatic } from './static/serve.js';
 import { healthRoutes } from './routes/health.js';
@@ -119,12 +117,13 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
   // 2. Static SPA serving — deliberately OUTSIDE the /api plugin (Pitfall 1).
   await registerStatic(app, opts.clientRoot);
 
-  // 3. Encapsulated /api scope: CORS lock -> Origin guard -> token guard -> routes.
+  // 3. Encapsulated /api scope: CORS lock -> Origin guard -> routes.
+  //    No per-launch token guard: the server binds 127.0.0.1 only and the
+  //    Host + Origin guards already cover cross-origin/cross-host callers.
   await app.register(
     async (api) => {
       await api.register(fastifyCors, buildCorsOptions(opts.ctx));
       registerOriginGuard(api, opts.ctx);
-      registerTokenGuard(api, opts.ctx);
       await api.register(healthRoutes);
       await api.register(schemaRoutes, { activeSchemaManager, schemaRefreshService });
       await api.register(configRoutes, { registry, activeSchemaManager, snapshotRoot: opts.snapshotRoot, warn: opts.warn });

@@ -46,7 +46,7 @@ export function ApiKeysStatusControl() {
         onClick={openKeys}
         aria-busy={busy}
         aria-label={label}
-        title="Search API keys"
+        title="API keys"
       >
         <Icons.key size={16} />
         {!busy && count !== null && total > 0 && (

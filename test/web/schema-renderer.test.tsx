@@ -154,8 +154,8 @@ async function renderWithActiveConfig() {
   });
 
   renderWeb(<App connected />);
-  await waitFor(() => screen.getByText('p/config.json'));
-  fireEvent.click(screen.getByText('p/config.json'));
+  await waitFor(() => screen.getByText('p'));
+  fireEvent.click(screen.getByText('p'));
   await waitFor(() => screen.getByRole('tab', { name: 'Core' }));
 }
 

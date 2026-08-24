@@ -3,10 +3,13 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { listWorkspaceConfigs, locateWorkspace, removeWorkspace, subscribeToFileChanges, type ConfigFileChangeEvent } from '../../api/workspace';
 import { useUiStore } from '../../state/uiStore';
 import { Button } from '../common/Button';
+import { EmptyState } from '../common/EmptyState';
 import { MissingConfigActions } from './MissingConfigActions';
+import { useToastStore } from '../../state/toastStore';
 import { PathEntryDialog } from './PathEntryDialog';
 import { AddConfigMenu } from './AddConfigMenu';
 import { CreateConfigDialog } from './CreateConfigDialog';
+import { buildProjectIdentities } from '../../lib/path-identity';
 import type { TrackedWorkspaceConfig } from '../../../../packages/server/src/api-types';
 
 export function TrackedConfigSidebar() {
@@ -14,10 +17,9 @@ export function TrackedConfigSidebar() {
     queryKey: ['workspace', 'configs'],
     queryFn: listWorkspaceConfigs,
   });
-  const { activeConfigId, setActiveConfigId } = useUiStore();
+  const { activeConfigId, setActiveConfigId, dirtyConfigIds, createConfigOpen, setCreateConfigOpen, trackConfigOpen, setTrackConfigOpen } = useUiStore();
   const queryClient = useQueryClient();
   const [locatingId, setLocatingId] = useState<string | null>(null);
-  const [creating, setCreating] = useState(false);
   const [fileChanges, setFileChanges] = useState<Map<string, ConfigFileChangeEvent>>(new Map());
 
   const handleSelect = (config: TrackedWorkspaceConfig) => {
@@ -26,11 +28,13 @@ export function TrackedConfigSidebar() {
   };
 
   const handleRemove = async (id: string) => {
+    const removed = configs?.find((c) => c.id === id);
     await removeWorkspace(id);
     if (activeConfigId === id) {
       setActiveConfigId(null);
     }
     await queryClient.invalidateQueries({ queryKey: ['workspace', 'configs'] });
+    useToastStore.getState().push('info', 'Config removed', `${removed?.name ?? 'The config'} was untracked. The file on disk was not deleted.`);
   };
 
   const handleLocate = async (path: string) => {
@@ -64,21 +68,33 @@ export function TrackedConfigSidebar() {
   if (isLoading) return <div className="gsd-sidebar__loading">Loading tracked configs...</div>;
   if (error) return <div className="gsd-sidebar__error">Failed to load tracked configs.</div>;
 
+  const identities = buildProjectIdentities(configs ?? []);
+
   return (
     <div className="gsd-sidebar">
       <div className="gsd-sidebar__header">
         <h2 className="gsd-sidebar__heading">Tracked configs</h2>
         <div className="gsd-sidebar__actions">
           <AddConfigMenu />
-          <Button onClick={() => setCreating(true)}>Create new config</Button>
+          <Button onClick={() => setCreateConfigOpen(true)}>Create new config</Button>
         </div>
       </div>
       {!configs?.length ? (
-        <div className="gsd-sidebar__empty">No tracked configs yet.</div>
+        <EmptyState
+          variant="guided"
+          title="No configs tracked yet"
+          description="Add a GSD config to start editing. Configs live at .planning/config.json inside a project folder."
+          actions={<>
+            <Button onClick={() => setTrackConfigOpen(true)}>Add an existing config…</Button>
+            <Button variant="secondary" onClick={() => setCreateConfigOpen(true)}>Create new config…</Button>
+          </>}
+        />
       ) : (
         <ul className="gsd-sidebar__list" role="listbox" aria-label="Tracked configs">
           {configs.map((config) => {
             const change = fileChanges.get(config.id);
+            const identity = identities.get(config.id);
+            const isDirty = dirtyConfigIds.includes(config.id);
             return (
               <li
                 key={config.id}
@@ -108,8 +124,13 @@ export function TrackedConfigSidebar() {
                   disabled={config.status !== 'ok'}
                   aria-disabled={config.status !== 'ok'}
                 >
-                  <span className="gsd-sidebar__name">{config.name}</span>
-                  <span className="gsd-sidebar__path">{config.path}</span>
+                  <span className="gsd-sidebar__name" title={identity?.fullPath ?? config.path}>
+                    {identity?.name ?? config.name}
+                    {isDirty && <span className="gsd-sidebar__dirty-dot" aria-label="Unsaved changes" title="Unsaved changes" />}
+                  </span>
+                  <span className="gsd-sidebar__path" title={identity?.fullPath ?? config.path}>
+                    {identity?.shortPath ?? config.path}
+                  </span>
                   <span className={`gsd-sidebar__status gsd-sidebar__status--${config.status}`}>
                     {config.status === 'ok' ? 'Ready' : config.problem}
                   </span>
@@ -136,7 +157,7 @@ export function TrackedConfigSidebar() {
           onCancel={() => setLocatingId(null)}
         />
       )}
-      {creating && <CreateConfigDialog onClose={() => setCreating(false)} />}
+      {createConfigOpen && <CreateConfigDialog onClose={() => setCreateConfigOpen(false)} />}
     </div>
   );
 }

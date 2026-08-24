@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { renderWeb } from './render-helpers';
 import { App } from '../../web/src/App';
 import { useUiStore } from '../../web/src/state/uiStore.js';
@@ -115,8 +115,8 @@ async function renderWithActiveConfig() {
   });
 
   renderWeb(<App connected />);
-  await waitFor(() => screen.getByText('p/config.json'));
-  fireEvent.click(screen.getByText('p/config.json'));
+  await waitFor(() => screen.getByText('p'));
+  fireEvent.click(screen.getByText('p'));
   await waitFor(() => screen.getByRole('tab', { name: 'Core' }));
 }
 
@@ -204,7 +204,9 @@ describe('unknown key chapter', () => {
 
     fireEvent.click(screen.getByRole('tab', { name: 'Workflow' }));
     await waitFor(() => screen.getByTestId('field-workflow.tdd_mode'));
-    fireEvent.click(screen.getByLabelText('TDD Mode'));
+    // Booleans render as a custom on/off switch (radiogroup), not a checkbox.
+    // Toggle On to dirty the draft.
+    fireEvent.click(within(screen.getByTestId('field-workflow.tdd_mode')).getByRole('radio', { name: 'On' }));
     fireEvent.click(screen.getByRole('button', { name: /save changes/i }));
 
     await waitFor(() => expect(saveConfig).toHaveBeenCalled());

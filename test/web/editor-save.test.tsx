@@ -102,8 +102,8 @@ async function renderWithActiveConfig() {
   vi.mocked(loadConfig).mockResolvedValue(loadResult);
 
   renderWeb(<App connected />);
-  await waitFor(() => screen.getByText('p/config.json'));
-  fireEvent.click(screen.getByText('p/config.json'));
+  await waitFor(() => screen.getByText('p'));
+  fireEvent.click(screen.getByText('p'));
   await waitFor(() => screen.getByRole('tab', { name: 'Core' }));
 }
 
@@ -125,8 +125,9 @@ describe('editor save flow', () => {
     fireEvent.blur(input);
 
     await waitFor(() => {
-      const alert = screen.queryByRole('alert');
-      expect(alert).toBeTruthy();
+      // Validation is surfaced both inline (field card) and in the save-bar
+      // summary, so there can be more than one alert region.
+      expect(screen.getAllByRole('alert').length).toBeGreaterThan(0);
     });
 
     const saveButton = screen.getByRole('button', { name: 'Save changes' }) as HTMLButtonElement;
@@ -146,7 +147,7 @@ describe('editor save flow', () => {
 
     fireEvent.click(screen.getByRole('tab', { name: 'Workflow' }));
     await waitFor(() => screen.getByTestId('field-workflow.max_discuss_passes'));
-    fireEvent.click(screen.getByRole('button', { name: 'Reset project override' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Restore inherited value' }));
 
     fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
 
@@ -174,7 +175,7 @@ describe('editor save flow', () => {
     fireEvent.change(select, { target: { value: 'autonomous' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
 
-    await waitFor(() => expect(screen.getByRole('alert').textContent).toContain('changed on disk'));
+    await waitFor(() => expect(screen.getByText(/changed on disk/i)).toBeTruthy());
     expect((screen.getByLabelText('Mode') as HTMLSelectElement).value).toBe('autonomous');
     expect(screen.getByRole('button', { name: 'Reload and discard my draft' })).toBeTruthy();
   });

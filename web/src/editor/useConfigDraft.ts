@@ -8,6 +8,7 @@ import { buildProjectSaveCandidate, type ProjectChange } from '../schema/patchPr
 import { createClientValidator, type ClientValidationError } from '../schema/validation';
 import type { LoadResult, SchemaEntry } from '../../../packages/config-io/src/types';
 import type { ValidationSummaryError } from '../components/editor/ValidationSummary';
+import { useToastStore } from '../state/toastStore';
 
 type RuntimeNotice = { runtime: 'codex' | 'opencode'; settings: string[] } | null;
 
@@ -129,6 +130,7 @@ export function useConfigDraft(activeConfigId: string, loadResult: LoadedConfig,
         if (error instanceof ApiError && error.status === 409) draft.stale = true;
         else draft.serverErrors = normalizeServerErrors(error);
       });
+      useToastStore.getState().push('error', "Couldn't save your changes", error instanceof Error ? error.message : undefined);
       return 'blocked';
     } finally { setSaving(false); }
   }, [activeConfigId, form, loadResult, schema, validator]);

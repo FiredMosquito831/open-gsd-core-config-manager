@@ -1,5 +1,5 @@
 /**
- * Per-launch security context (D-04, D-05, D-06; 02-RESEARCH.md Pattern 3's
+ * Per-launch security context (D-04, D-06; 02-RESEARCH.md Pattern 3's
  * "ordering gotcha").
  *
  * The ephemeral port is not known until `listen()` resolves, but Fastify
@@ -11,12 +11,8 @@
  * is strictly before any request can reach the server, so there is no
  * window in which a request could observe a stale/empty context.
  */
-import { randomUUID } from 'node:crypto';
-
 /** The per-launch security state every guard plugin reads at request time. */
 export interface LaunchContext {
-  /** Per-launch `crypto.randomUUID()` token (D-05). Never logged, never echoed back to a caller. */
-  token: string;
   /** `127.0.0.1:<port>` and `localhost:<port>`, populated by `sealLaunchContext` (D-06). Empty until then — fails closed. */
   allowedHosts: Set<string>;
   /** `http://127.0.0.1:<port>`, populated by `sealLaunchContext` (D-06). `null` until then — fails closed. */
@@ -24,14 +20,13 @@ export interface LaunchContext {
 }
 
 /**
- * Mints the per-launch token. `allowedHosts`/`corsOrigin` start
+ * Creates the launch context. `allowedHosts`/`corsOrigin` start
  * empty/`null` — the port is not known yet — so every guard that reads
  * them must fail closed against this initial state, not assume it is
  * already sealed.
  */
-export function createLaunchContext(token?: string): LaunchContext {
+export function createLaunchContext(): LaunchContext {
   return {
-    token: token ?? randomUUID(),
     allowedHosts: new Set(),
     corsOrigin: null,
   };

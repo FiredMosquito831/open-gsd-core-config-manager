@@ -54,8 +54,8 @@ describe('sidebar', () => {
     renderWeb(<App connected />);
 
     await waitFor(() => {
-      expect(screen.getByText('alpha/config.json')).toBeTruthy();
-      expect(screen.getByText('beta/config.json')).toBeTruthy();
+      expect(screen.getByText('alpha')).toBeTruthy();
+      expect(screen.getByText('beta')).toBeTruthy();
     });
   });
 
@@ -76,8 +76,8 @@ describe('sidebar', () => {
 
     renderWeb(<App connected />);
 
-    await waitFor(() => screen.getByText('alpha/config.json'));
-    fireEvent.click(screen.getByText('alpha/config.json'));
+    await waitFor(() => screen.getByText('alpha'));
+    fireEvent.click(screen.getByText('alpha'));
 
     await waitFor(() => screen.getByText('Config editor'));
     expect(loadConfig).toHaveBeenCalledWith('1');
@@ -91,10 +91,11 @@ describe('sidebar', () => {
 
     renderWeb(<App connected />);
 
-    await waitFor(() => screen.getByText('beta/config.json'));
-    const button = screen.getByText('beta/config.json').closest('button') as HTMLButtonElement;
+    await waitFor(() => screen.getByText('beta'));
+    const button = screen.getByText('beta').closest('button') as HTMLButtonElement;
     expect(button.disabled).toBe(true);
-    expect(screen.getByText('Config file not found')).toBeTruthy();
+    // The problem is surfaced in both the status pill and the recovery block.
+    expect(screen.getByText('Config file not found', { selector: '.gsd-missing-actions__problem' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Locate again' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Remove' })).toBeTruthy();
   });
@@ -108,8 +109,11 @@ describe('sidebar', () => {
 
     renderWeb(<App connected />);
 
-    await waitFor(() => screen.getByText('beta/config.json'));
+    await waitFor(() => screen.getByText('beta'));
     fireEvent.click(screen.getByRole('button', { name: 'Remove' }));
+    // Removal is now confirm-gated: the Remove button opens a confirmation dialog.
+    const confirm = await screen.findByRole('button', { name: 'Stop tracking' });
+    fireEvent.click(confirm);
 
     await waitFor(() => {
       expect(removeWorkspace).toHaveBeenCalledWith('2');
@@ -130,7 +134,7 @@ describe('sidebar', () => {
 
     renderWeb(<App connected />);
 
-    await waitFor(() => screen.getByText('beta/config.json'));
+    await waitFor(() => screen.getByText('beta'));
     fireEvent.click(screen.getByRole('button', { name: 'Locate again' }));
 
     const input = await waitFor(() => screen.getByPlaceholderText('/home/projects/my-project/.planning/config.json'));
@@ -156,9 +160,10 @@ describe('add menu', () => {
     });
 
     fireEvent.click(screen.getByRole('button', { name: 'Add' }));
-    expect(screen.getByRole('menuitem', { name: 'File picker' })).toBeTruthy();
-    expect(screen.getByRole('menuitem', { name: 'Absolute path' })).toBeTruthy();
-    expect(screen.getByRole('menuitem', { name: 'Scan chosen folder' })).toBeTruthy();
+    // Menu items carry a description, so match on the label substring.
+    expect(screen.getByRole('menuitem', { name: /Add existing config/ })).toBeTruthy();
+    expect(screen.getByRole('menuitem', { name: /Add by path/ })).toBeTruthy();
+    expect(screen.getByRole('menuitem', { name: /Scan a folder/ })).toBeTruthy();
   });
 
   it('never submits fake browser paths; routes to path entry', async () => {
@@ -175,9 +180,10 @@ describe('add menu', () => {
 
     await waitFor(() => screen.getByRole('button', { name: 'Add' }));
     fireEvent.click(screen.getByRole('button', { name: 'Add' }));
-    fireEvent.click(screen.getByRole('menuitem', { name: 'File picker' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: /Add existing config/ }));
 
-    expect(screen.getByText(/OS file picker/i)).toBeTruthy();
+    // The path-entry dialog opens (no longer an inline "OS file picker" block).
+    expect(screen.getByRole('heading', { name: 'Add an existing config' })).toBeTruthy();
 
     const input = screen.getByPlaceholderText('/home/projects/my-project/.planning/config.json');
     fireEvent.change(input, { target: { value: '/delta/.planning/config.json' } });
@@ -202,7 +208,7 @@ describe('add menu', () => {
 
     await waitFor(() => screen.getByRole('button', { name: 'Add' }));
     fireEvent.click(screen.getByRole('button', { name: 'Add' }));
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Absolute path' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: /Add by path/ }));
 
     const input = screen.getByPlaceholderText('/home/projects/my-project/.planning/config.json');
     fireEvent.change(input, { target: { value: '/epsilon/.planning/config.json' } });
@@ -234,7 +240,7 @@ describe('scan', () => {
 
     await waitFor(() => screen.getByRole('button', { name: 'Add' }));
     fireEvent.click(screen.getByRole('button', { name: 'Add' }));
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Scan chosen folder' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: /Scan a folder/ }));
 
     const input = screen.getByPlaceholderText('/home/projects');
     fireEvent.change(input, { target: { value: '/projects' } });
@@ -295,7 +301,7 @@ describe('create', () => {
     expect(screen.getByText(/A config already exists/i)).toBeTruthy();
 
     fireEvent.click(screen.getByLabelText(/I understand/i));
-    fireEvent.click(screen.getByRole('button', { name: 'Create config' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Replace existing config' }));
 
     await waitFor(() => {
       expect(createConfig).toHaveBeenCalledWith('/zeta', true);

@@ -10,7 +10,7 @@
  * #5140).
  *
  * Sequencing is load-bearing and must not be reordered:
- *   1. `createLaunchContext()` — mints the per-launch token
+ *   1. `createLaunchContext()` — creates the launch context
  *      (`crypto.randomUUID()`, D-05). Never hand-rolled.
  *   2. `buildApp({ ctx, clientRoot, warn })` — composes the guarded
  *      Fastify app (Plan 04/05). Never calls `listen()` itself.
@@ -78,8 +78,6 @@ export interface BootstrapOptions {
   port?: number;
   /** Whether to auto-launch the browser after bind. */
   open: boolean;
-  /** Fixed token for testing (default: random). */
-  token?: string;
 }
 
 export interface BootstrapDeps {
@@ -95,7 +93,6 @@ export interface BootstrapHandle {
   app: FastifyInstance;
   url: string;
   port: number;
-  token: string;
   ctx: LaunchContext;
   /** Awaited close — always await this, never fire-and-forget (02-RESEARCH.md Pitfall 2). */
   shutdown: () => Promise<void>;
@@ -106,7 +103,7 @@ export async function bootstrap(opts: BootstrapOptions, deps: BootstrapDeps = {}
   const openFn = deps.open ?? ((url: string) => open(url));
   const clientRoot = deps.clientRoot ?? defaultClientRoot();
 
-  const ctx = createLaunchContext(opts.token);
+  const ctx = createLaunchContext();
   const workspaceStore = createWorkspaceStore({ appDataRoot: appDataRoot() });
   const app = await buildApp({
     ctx,
@@ -126,7 +123,7 @@ export async function bootstrap(opts: BootstrapOptions, deps: BootstrapDeps = {}
   // Start file watching for tracked configs
   workspaceStore.startWatching();
 
-  const url = `http://127.0.0.1:${port}/?t=${ctx.token}`;
+  const url = `http://127.0.0.1:${port}/`;
   out.banner(url);
 
   if (opts.open) {
@@ -171,7 +168,7 @@ export async function bootstrap(opts: BootstrapOptions, deps: BootstrapDeps = {}
     out.stopped();
   }
 
-  return { app, url, port, token: ctx.token, ctx, shutdown };
+  return { app, url, port, ctx, shutdown };
 }
 
 export interface RegisterSignalHandlersDeps {

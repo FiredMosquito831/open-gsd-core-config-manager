@@ -15,8 +15,34 @@ interface FieldCardProps {
   onResetField: (path: string) => void;
 }
 
+/** Render a leaf value as compact, human-readable chip text. */
+function displayScalar(value: unknown): string {
+  if (value === null) return '(unset)';
+  if (value === undefined) return '—';
+  if (typeof value === 'boolean') return value ? 'true' : 'false';
+  if (typeof value === 'string') return value === '' ? '""' : value;
+  return String(value);
+}
+
+/** First sentence of a paragraph — the default scan-time summary. */
+function firstSentence(text: string): string {
+  const match = text.match(/^.*?[.!?](?=\s|$)/);
+  return match ? match[0].trim() : text.trim();
+}
+
+/** Pull JSON-Schema numeric constraints off the entry when present. */
+function readConstraints(entry: IndexedField['entry']): { min?: number; max?: number; step?: number } | undefined {
+  const record = entry as unknown as Record<string, unknown>;
+  const min = typeof record.minimum === 'number' ? record.minimum : undefined;
+  const max = typeof record.maximum === 'number' ? record.maximum : undefined;
+  const step = typeof record.multipleOf === 'number' ? record.multipleOf : undefined;
+  if (min === undefined && max === undefined && step === undefined) return undefined;
+  return { min, max, step };
+}
+
 export function FieldCard({ field, leaf, control, onFieldChange, onResetField }: FieldCardProps) {
-  const [expanded, setExpanded] = useState(false);
+  const [explainOpen, setExplainOpen] = useState(false);
+  const [optionsOpen, setOptionsOpen] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
   const { highlightTarget, clearHighlight } = useUiStore();
   const isHighlighted = highlightTarget === field.path;
@@ -24,6 +50,7 @@ export function FieldCard({ field, leaf, control, onFieldChange, onResetField }:
   const provenance = leaf?.from;
   const effectiveValue = leaf?.value;
   const canReset = provenance === 'project';
+  const defaultValue = field.entry.default;
 
   const { field: controllerField, fieldState } = useController({
     name: field.path,
@@ -31,6 +58,8 @@ export function FieldCard({ field, leaf, control, onFieldChange, onResetField }:
   });
 
   const displayValue = controllerField.value !== undefined ? controllerField.value : effectiveValue;
+  const isDirty = Boolean(fieldState.isDirty);
+  const isInvalid = Boolean(fieldState.error);
 
   useEffect(() => {
     if (!isHighlighted || !cardRef.current) return;
@@ -45,17 +74,25 @@ export function FieldCard({ field, leaf, control, onFieldChange, onResetField }:
     onResetField(field.path);
   };
 
+  const summary = field.description ? firstSentence(field.description) : '';
+  const isEnum = Boolean(field.enumValues && field.enumValues.length > 0);
   const describedOptions = Object.keys(field.optionMeanings);
   const hasContentGap =
-    field.enumValues &&
-    field.enumValues.length > 0 &&
-    describedOptions.length < field.enumValues.length;
+    isEnum && field.enumValues!.length > 0 && describedOptions.length < field.enumValues!.length;
+  const cardClass = [
+    'gsd-field-card',
+    isHighlighted ? 'gsd-field-card--highlighted' : '',
+    isDirty ? 'gsd-field-card--dirty' : '',
+    isInvalid ? 'gsd-field-card--invalid' : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
 
   return (
     <div
       ref={cardRef}
       data-testid={`field-${field.path}`}
-      className={`gsd-field-card ${isHighlighted ? 'gsd-field-card--highlighted' : ''}`}
+      className={cardClass}
       tabIndex={-1}
     >
       <div className="gsd-field-card__header">
@@ -63,27 +100,47 @@ export function FieldCard({ field, leaf, control, onFieldChange, onResetField }:
           <label className="gsd-field-card__title" htmlFor={id}>
             {field.title}
           </label>
-          <div className="gsd-field-card__path">{field.path}</div>
         </div>
-        <div className="gsd-field-card__provenance">
-          {provenance && (
-            <span className={`gsd-provenance gsd-provenance--${provenance}`}>
-              {provenanceLabel(provenance)}
-            </span>
-          )}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.25rem' }}>
+          <span className="gsd-field-card__path">{field.path}</span>
+          {isDirty && <span className="gsd-field-card__edited-tag">Edited</span>}
         </div>
       </div>
 
-      <p className="gsd-field-card__description">{field.description}</p>
+      {summary && <p className="gsd-field-card__summary">{summary}</p>}
+
+      <div className="gsd-field-card__chips">
+        <span className="gsd-field-card__chip">
+          <span className="gsd-field-card__chip-label">Effective</span>
+          <span className="gsd-field-card__chip-value">{displayScalar(effectiveValue)}</span>
+        </span>
+        {provenance && (
+          <span className={`gsd-field-card__chip gsd-field-card__chip--source gsd-provenance--${provenance}`}>
+            <span className="gsd-field-card__chip-label">Source</span>
+            <span>{provenanceLabel(provenance)}</span>
+          </span>
+        )}
+        {defaultValue !== undefined && (
+          <span className="gsd-field-card__chip">
+            <span className="gsd-field-card__chip-label">Default</span>
+            <span className="gsd-field-card__chip-value">{displayScalar(defaultValue)}</span>
+          </span>
+        )}
+      </div>
+
+      {isDirty && provenance !== 'project' && (
+        <p className="gsd-field-card__override-note">Your edit will override the inherited value.</p>
+      )}
 
       <div className="gsd-field-card__control">
-        {field.enumValues && field.enumValues.length > 0 ? (
+        {isEnum ? (
           <EnumCombobox
             id={id}
             label={field.title}
             value={displayValue}
-            options={field.enumValues}
+            options={field.enumValues!}
             meanings={field.optionMeanings}
+            describedById={`${id}-meaning`}
             onChange={(value) => {
               controllerField.onChange(value);
               onFieldChange(field.path, value);
@@ -96,6 +153,7 @@ export function FieldCard({ field, leaf, control, onFieldChange, onResetField }:
             label={field.title}
             value={displayValue}
             type={field.entry.type}
+            constraints={readConstraints(field.entry)}
             onChange={(value) => {
               controllerField.onChange(value);
               onFieldChange(field.path, value);
@@ -118,48 +176,58 @@ export function FieldCard({ field, leaf, control, onFieldChange, onResetField }:
             className="gsd-button gsd-button--ghost gsd-button--sm"
             onClick={handleReset}
           >
-            Reset project override
+            Restore inherited value
           </button>
         )}
         <button
           type="button"
           className="gsd-button gsd-button--ghost gsd-button--sm"
-          onClick={() => setExpanded((v) => !v)}
-          aria-expanded={expanded}
+          onClick={() => setExplainOpen((v) => !v)}
+          aria-expanded={explainOpen}
         >
-          {expanded ? 'Hide details' : 'Show details'}
+          {explainOpen ? 'Hide explanation' : 'What this controls'}
         </button>
+        {isEnum && (
+          <button
+            type="button"
+            className="gsd-button gsd-button--ghost gsd-button--sm"
+            onClick={() => setOptionsOpen((v) => !v)}
+            aria-expanded={optionsOpen}
+          >
+            {optionsOpen ? 'Hide options' : `Compare options (${field.enumValues!.length})`}
+          </button>
+        )}
       </div>
 
-      {expanded && (
-        <div className="gsd-field-card__details">
-          {field.enumValues && field.enumValues.length > 0 && (
-            <div className="gsd-field-card__options">
-              <h4>Option meanings</h4>
-              <dl>
-                {field.enumValues.map((option) => {
-                  const key = String(option);
-                  const meaning = field.optionMeanings[key];
-                  return (
-                    <div key={key} className="gsd-field-card__option">
-                      <dt>{option === null ? '(unset)' : key}</dt>
-                      <dd>{meaning || <span className="gsd-content-gap">No description yet</span>}</dd>
-                    </div>
-                  );
-                })}
-              </dl>
-              {hasContentGap && (
-                <p className="gsd-content-gap-notice">
-                  Option meanings missing for some values. Curated explanations will appear here
-                  once added to the schema.
-                </p>
-              )}
-            </div>
-          )}
+      {explainOpen && (
+        <div className="gsd-field-card__disclosure">
+          <h4 className="gsd-field-card__disclosure-title">What this controls</h4>
+          <p className="gsd-field-card__explanation">{field.description}</p>
+        </div>
+      )}
 
-          <div className="gsd-field-card__current">
-            <span>Current value:</span>
-            <code>{displayValue === undefined ? 'undefined' : JSON.stringify(displayValue)}</code>
+      {optionsOpen && isEnum && (
+        <div className="gsd-field-card__disclosure">
+          <h4 className="gsd-field-card__disclosure-title">Option meanings</h4>
+          <div className="gsd-field-card__options">
+            <dl>
+              {field.enumValues!.map((option) => {
+                const key = String(option);
+                const meaning = field.optionMeanings[key];
+                return (
+                  <div key={key} className="gsd-field-card__option">
+                    <dt>{option === null ? '(unset)' : key}</dt>
+                    <dd>{meaning || <span className="gsd-content-gap">No description yet</span>}</dd>
+                  </div>
+                );
+              })}
+            </dl>
+            {hasContentGap && (
+              <p className="gsd-content-gap-notice">
+                Option meanings missing for some values. Curated explanations will appear here
+                once added to the schema.
+              </p>
+            )}
           </div>
         </div>
       )}

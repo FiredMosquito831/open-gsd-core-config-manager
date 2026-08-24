@@ -1,11 +1,11 @@
 /**
- * SEC-01/SEC-02/D-04 security suite (02-VALIDATION.md Wave 0 gap,
- * 02-04-PLAN.md Task 1). Drives `buildApp()` purely through
- * `app.inject()` — no real listening socket, no `supertest`/`undici`.
+ * SEC-01/D-06 security suite (02-VALIDATION.md Wave 0 gap, 02-04-PLAN.md
+ * Task 1). Drives `buildApp()` purely through `app.inject()` — no real
+ * listening socket, no `supertest`/`undici`.
  *
- * `buildApp`/`LaunchContext` do not exist yet at the time this file is
- * written — this suite is RED until Task 2 (context + plugins) and Task 3
- * (app composition) land. That is the intended TDD state.
+ * The per-launch token guard was removed by owner decision: the server
+ * binds loopback only, and the Host allowlist + exact-string Origin guard
+ * remain the enforcement boundary. These tests keep guarding THAT boundary.
  *
  * Test titles are load-bearing: 02-VALIDATION.md's Per-Task Verification
  * Map references several of them by `-t "<title>"`, so they are named
@@ -20,8 +20,6 @@ import { buildApp } from '../../packages/server/src/app.js';
 import type { LaunchContext } from '../../packages/server/src/context.js';
 
 const FAKE_PORT = 45999;
-const FAKE_TOKEN = '11111111-1111-4111-8111-111111111111';
-const WRONG_TOKEN = '22222222-2222-4222-8222-222222222222';
 const HOST = `127.0.0.1:${FAKE_PORT}`;
 const CORS_ORIGIN = `http://127.0.0.1:${FAKE_PORT}`;
 const FIXTURE_MARKER = 'gsdcm-security-test-fixture';
@@ -36,7 +34,6 @@ function makeClientRoot(): string {
 
 function makeContext(): LaunchContext {
   return {
-    token: FAKE_TOKEN,
     allowedHosts: new Set([HOST, `localhost:${FAKE_PORT}`]),
     corsOrigin: CORS_ORIGIN,
   };
@@ -67,7 +64,7 @@ describe('host guard — rejects bad Host header (SEC-01)', () => {
     const res = await app.inject({
       method: 'GET',
       url: '/api/health',
-      headers: { host: 'evil.example.com', 'x-gsd-token': FAKE_TOKEN },
+      headers: { host: 'evil.example.com' },
     });
     expectForbiddenShape(res);
     expect(res.body).not.toContain('evil.example.com');
@@ -79,51 +76,37 @@ describe('origin guard — rejects cross-origin (SEC-01, D-06)', () => {
     const res = await app.inject({
       method: 'GET',
       url: '/api/health',
-      headers: { host: HOST, 'x-gsd-token': FAKE_TOKEN, origin: 'https://attacker.example' },
+      headers: { host: HOST, origin: 'https://attacker.example' },
     });
     expectForbiddenShape(res);
     expect(res.body).not.toContain('attacker.example');
   });
 });
 
-describe('token guard — rejects missing token on reads (SEC-02, D-04)', () => {
-  it('rejects missing token on reads', async () => {
+describe('api reads — served on the loopback host without a launch token', () => {
+  it('serves /api/health with no token header', async () => {
     const res = await app.inject({
       method: 'GET',
       url: '/api/health',
       headers: { host: HOST },
     });
-    expectForbiddenShape(res);
-  });
-});
-
-describe('token guard — rejects wrong token (SEC-02, D-04)', () => {
-  it('rejects wrong token', async () => {
-    const res = await app.inject({
-      method: 'GET',
-      url: '/api/health',
-      headers: { host: HOST, 'x-gsd-token': WRONG_TOKEN },
-    });
-    expectForbiddenShape(res);
-    expect(res.body).not.toContain(WRONG_TOKEN);
-  });
-});
-
-describe('token guard — accepts a valid token on an allowlisted host (SEC-02)', () => {
-  it('accepts a valid token on an allowlisted host', async () => {
-    const res = await app.inject({
-      method: 'GET',
-      url: '/api/health',
-      headers: { host: HOST, 'x-gsd-token': FAKE_TOKEN },
-    });
     expect(res.statusCode).toBe(200);
     const body = res.json() as { ok: boolean };
     expect(body.ok).toBe(true);
   });
+
+  it('ignores a stale x-gsd-token header from older clients', async () => {
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/health',
+      headers: { host: HOST, 'x-gsd-token': 'stale-token' },
+    });
+    expect(res.statusCode).toBe(200);
+  });
 });
 
-describe('static assets — unguarded by token (SEC-02, D-04, Pitfall 1 regression guard)', () => {
-  it('serves static assets without a token', async () => {
+describe('static assets — unguarded (Pitfall 1 regression guard)', () => {
+  it('serves static assets', async () => {
     const resRoot = await app.inject({ method: 'GET', url: '/', headers: { host: HOST } });
     expect(resRoot.statusCode).toBe(200);
     expect(resRoot.body).toContain(FIXTURE_MARKER);
@@ -150,14 +133,16 @@ describe('SPA fallback — unknown non-API route (T-02-22 regression guard)', ()
   });
 });
 
-describe('token guard — rejects missing token on the mutation route (SEC-02, literal requirement)', () => {
-  it('rejects missing token', async () => {
+describe('mutation route — reachable on the loopback host', () => {
+  it('routes a PUT past the guards to route-level validation', async () => {
     const res = await app.inject({
       method: 'PUT',
       url: '/api/configs/00000000000000000000000000000000',
       headers: { host: HOST },
       payload: { config: { a: 1 } },
     });
-    expectForbiddenShape(res);
+    // No token guard upstream anymore: whatever comes back comes from the
+    // route itself (404 unknown id), NOT a guard-level 403 envelope.
+    expect(res.statusCode).not.toBe(403);
   });
 });

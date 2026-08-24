@@ -39,8 +39,7 @@ const CLIENT_ENTRY = join(REPO_ROOT, 'dist', 'client', 'index.html');
 const REPO_NODE_MODULES = resolve(require.resolve('@fastify/static/package.json'), '..', '..', '..');
 
 /** Matches 02-UI-SPEC.md's frozen launch-banner URL shape. */
-const BANNER_URL_PATTERN =
-  /http:\/\/127\.0\.0\.1:(\d+)\/\?t=([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/;
+const BANNER_URL_PATTERN = /http:\/\/127\.0\.0\.1:(\d+)\//;
 
 interface PackedFile {
   path: string;
@@ -238,8 +237,8 @@ describe('extracted-tarball smoke run (DIST-01, DIST-03, DIST-04)', () => {
         stderrBuf += chunk.toString('utf8');
       });
 
-      // 5. Wait for the banner, parse port + token from it.
-      const { port, token } = await new Promise<{ port: number; token: string }>((res, rej) => {
+      // 5. Wait for the banner and parse the bound port from it.
+      const { port } = await new Promise<{ port: number }>((res, rej) => {
         const timer = setTimeout(() => {
           void terminateProcessTree(child!);
           rej(new Error(`smoke run: timed out waiting for launch banner. stderr:\n${stderrBuf}`));
@@ -253,7 +252,7 @@ describe('extracted-tarball smoke run (DIST-01, DIST-03, DIST-04)', () => {
           if (match) {
             clearTimeout(timer);
             child?.stdout?.off('data', onData);
-            res({ port: Number(match[1]), token: match[2] });
+            res({ port: Number(match[1]) });
           }
         }
         child?.stdout?.on('data', onData);
@@ -271,11 +270,8 @@ describe('extracted-tarball smoke run (DIST-01, DIST-03, DIST-04)', () => {
       const expectedHtml = readFileSync(join(packageDir, 'dist', 'client', 'index.html'), 'utf8');
       expect(rootBody).toBe(expectedHtml);
 
-      // 7. GET /api/health with the x-gsd-token header -- proves the
-      // guarded API works in the shipped artifact.
-      const healthRes = await fetch(`http://127.0.0.1:${port}/api/health`, {
-        headers: { 'x-gsd-token': token },
-      });
+      // 7. GET /api/health -- proves the API works in the shipped artifact.
+      const healthRes = await fetch(`http://127.0.0.1:${port}/api/health`);
       expect(healthRes.status).toBe(200);
       const healthBody = (await healthRes.json()) as { ok: boolean; version?: string };
       expect(healthBody.ok).toBe(true);
@@ -293,17 +289,13 @@ describe('extracted-tarball smoke run (DIST-01, DIST-03, DIST-04)', () => {
       // extracted process. The package contains no packages/** sources, so
       // these responses prove tsup inlined both schema artifacts rather than
       // resolving them from the repository at runtime.
-      const schemaRes = await fetch(`http://127.0.0.1:${port}/api/schema`, {
-        headers: { 'x-gsd-token': token },
-      });
+      const schemaRes = await fetch(`http://127.0.0.1:${port}/api/schema`);
       expect(schemaRes.status).toBe(200);
       const schemaBody = (await schemaRes.json()) as { ok: boolean; schema: Record<string, unknown> };
       expect(schemaBody.ok).toBe(true);
       expect(Object.keys(schemaBody.schema).length).toBeGreaterThan(0);
 
-      const schemaStatusRes = await fetch(`http://127.0.0.1:${port}/api/schema/status`, {
-        headers: { 'x-gsd-token': token },
-      });
+      const schemaStatusRes = await fetch(`http://127.0.0.1:${port}/api/schema/status`);
       expect(schemaStatusRes.status).toBe(200);
       const schemaStatusBody = (await schemaStatusRes.json()) as {
         ok: boolean;

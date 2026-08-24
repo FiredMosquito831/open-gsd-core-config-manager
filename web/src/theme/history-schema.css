@@ -1,0 +1,237 @@
+/*
+ * history-schema.css — Beginner-readable History & Schema maintenance.
+ * Dark OLED first; light mirrors via :root[data-theme='light'] handled by the
+ * token layer. Uses ONLY design tokens (no raw hex). State is conveyed by
+ * words + icons/colors/borders, never color alone.
+ */
+
+/* ----- Snapshot diff: Before/After header ----- */
+.gsd-history-diff__sides {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.gsd-history-diff__side {
+  font-weight: 600;
+  color: var(--gsd-text);
+}
+.gsd-history-diff__sides > [aria-hidden='true'] {
+  color: var(--gsd-text-faint);
+}
+
+/* ----- Snapshot diff: change summary list ----- */
+.gsd-history-diff__counts {
+  gap: 0.5rem;
+}
+.gsd-history-diff__count--added { color: var(--gsd-success); }
+.gsd-history-diff__count--changed { color: var(--gsd-accent); }
+.gsd-history-diff__count--removed { color: var(--gsd-danger); }
+
+.gsd-history-diff__changes {
+  list-style: none;
+  margin: 1rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.gsd-history-diff__change {
+  padding: 0.75rem 0.875rem;
+  border: 1px solid var(--gsd-border);
+  border-left-width: 3px;
+  border-radius: var(--gsd-radius-sm);
+  background: var(--gsd-surface);
+}
+.gsd-history-diff__change--added { border-left-color: var(--gsd-success); }
+.gsd-history-diff__change--changed { border-left-color: var(--gsd-accent); }
+.gsd-history-diff__change--removed { border-left-color: var(--gsd-danger); }
+
+.gsd-history-diff__change-primary {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.gsd-history-diff__state { font-weight: 600; }
+.gsd-history-diff__change--added .gsd-history-diff__state { color: var(--gsd-success); }
+.gsd-history-diff__change--changed .gsd-history-diff__state { color: var(--gsd-accent); }
+.gsd-history-diff__change--removed .gsd-history-diff__state { color: var(--gsd-danger); }
+.gsd-history-diff__label { font-weight: 600; color: var(--gsd-text); }
+.gsd-history-diff__chapter {
+  font-size: var(--gsd-fs-meta);
+  color: var(--gsd-text-muted);
+  padding: 0.125rem 0.5rem;
+  border: 1px solid var(--gsd-border);
+  border-radius: 999px;
+}
+.gsd-history-diff__desc {
+  margin: 0.5rem 0 0;
+  font-size: var(--gsd-fs-meta);
+  color: var(--gsd-text-muted);
+  overflow-wrap: anywhere;
+}
+.gsd-history-diff__technical {
+  margin-top: 0.5rem;
+  font-size: var(--gsd-fs-meta);
+}
+.gsd-history-diff__technical > summary {
+  cursor: pointer;
+  color: var(--gsd-text-muted);
+}
+.gsd-history-diff__technical > summary:hover { color: var(--gsd-text); }
+.gsd-history-diff__technical code {
+  display: block;
+  margin-top: 0.375rem;
+  padding: 0.5rem;
+  border: 1px solid var(--gsd-border);
+  border-radius: var(--gsd-radius-sm);
+  background: var(--gsd-bg-muted);
+  font-family: var(--gsd-font-mono);
+  overflow-wrap: anywhere;
+}
+
+/* ----- Snapshot diff: Before/After value blocks ----- */
+.gsd-history-diff__values {
+  margin: 0.625rem 0 0;
+  display: grid;
+  gap: 0.25rem;
+}
+.gsd-history-diff__value-row {
+  display: grid;
+  grid-template-columns: 9.5rem minmax(0, 1fr);
+  gap: 0.5rem;
+  align-items: baseline;
+}
+.gsd-history-diff__value-row > dt {
+  margin: 0;
+  font-size: var(--gsd-fs-meta);
+  color: var(--gsd-text-muted);
+}
+.gsd-history-diff__value-row > dd {
+  margin: 0;
+  font-family: var(--gsd-font-mono);
+  font-size: var(--gsd-fs-code);
+  overflow-wrap: anywhere;
+}
+.gsd-history-diff__value { color: var(--gsd-text); }
+.gsd-history-diff__value--absent,
+.gsd-history-diff__value--empty {
+  color: var(--gsd-text-faint);
+  font-style: italic;
+  font-family: var(--gsd-font-ui);
+}
+.gsd-history-diff__value-meaning {
+  display: block;
+  margin-top: 0.125rem;
+  font-family: var(--gsd-font-ui);
+  font-size: var(--gsd-fs-meta);
+  color: var(--gsd-text-muted);
+  overflow-wrap: anywhere;
+}
+
+/* ----- History diff tree: explicit absent / empty value states ----- */
+.gsd-history-diff-tree__value {
+  font-family: var(--gsd-font-mono);
+  color: var(--gsd-text);
+}
+.gsd-history-diff-tree__value--absent,
+.gsd-history-diff-tree__value--empty,
+.gsd-history-diff-tree__values pre.gsd-history-diff-tree__value--absent {
+  color: var(--gsd-text-faint);
+  font-style: italic;
+  font-family: var(--gsd-font-ui);
+}
+
+/* ----- History: draft-saved status (within flow, not a dead-end) ----- */
+.gsd-history__state--info {
+  min-height: 0;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--gsd-accent);
+  border-radius: var(--gsd-radius);
+  background: var(--gsd-accent-subtle);
+  color: var(--gsd-text);
+  align-items: flex-start;
+}
+
+/* ----- Timeline: changed-count breakdown ----- */
+.gsd-history-timeline__count-part--added { color: var(--gsd-success); }
+.gsd-history-timeline__count-part--changed { color: var(--gsd-accent); }
+.gsd-history-timeline__count-part--removed { color: var(--gsd-danger); }
+
+/* ----- Schema: update progress (honest, indeterminate) ----- */
+.gsd-schema-progress { display: grid; gap: 0.75rem; }
+.gsd-schema-stages {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.25rem;
+  counter-reset: stage;
+}
+.gsd-schema-stage {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--gsd-border);
+  border-radius: var(--gsd-radius-sm);
+  background: var(--gsd-surface);
+  color: var(--gsd-text-muted);
+  font-size: var(--gsd-fs-meta);
+}
+.gsd-schema-stage::before {
+  counter-increment: stage;
+  content: counter(stage);
+  display: inline-grid;
+  place-items: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 999px;
+  border: 1px solid var(--gsd-border-strong);
+  font-size: 0.75rem;
+  color: var(--gsd-text-muted);
+}
+.gsd-schema-stage--current {
+  color: var(--gsd-text);
+  border-color: var(--gsd-accent);
+  background: var(--gsd-accent-subtle);
+}
+.gsd-schema-stage--current::before {
+  border-color: var(--gsd-accent);
+  color: var(--gsd-accent-contrast);
+  background: var(--gsd-accent-strong);
+}
+.gsd-schema-progress__note {
+  margin: 0;
+  font-size: var(--gsd-fs-meta);
+  color: var(--gsd-text-muted);
+}
+
+/* ----- Schema: source provenance plain-language note ----- */
+.gsd-schema-source-note {
+  margin: 0.375rem 0 0;
+  font-size: var(--gsd-fs-meta);
+  color: var(--gsd-text-muted);
+}
+
+/* ----- Schema: per-change impact sentence + technical details ----- */
+.gsd-schema-change__impact {
+  margin: 0.75rem 0 0;
+  color: var(--gsd-text);
+  overflow-wrap: anywhere;
+}
+.gsd-schema-change__technical {
+  margin-top: 0.75rem;
+  font-size: var(--gsd-fs-meta);
+}
+.gsd-schema-change__technical > summary {
+  cursor: pointer;
+  color: var(--gsd-text-muted);
+}
+.gsd-schema-change__technical > summary:hover { color: var(--gsd-text); }
+.gsd-schema-change__technical dl {
+  margin: 0.5rem 0 0;
+  display: grid;
+  gap: 0.25rem;
+}

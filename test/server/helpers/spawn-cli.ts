@@ -31,25 +31,22 @@ const CLI_ENTRY = join(REPO_ROOT, 'packages', 'cli', 'src', 'cli.ts');
 
 /**
  * Matches the frozen launch-banner URL shape from 02-UI-SPEC.md:
- * `http://127.0.0.1:<port>/?t=<token>` where `<token>` is a
- * `crypto.randomUUID()` (36-char lowercase hex + hyphens). Anchored to the
- * loopback host only — a URL with any other host must not match.
+ * `http://127.0.0.1:<port>/`. Anchored to the loopback host only — a URL
+ * with any other host must not match.
  */
-const BANNER_URL_PATTERN =
-  /http:\/\/127\.0\.0\.1:(\d+)\/\?t=([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/;
+const BANNER_URL_PATTERN = /http:\/\/127\.0\.0\.1:(\d+)\//;
 
 /** Pure parser: scans a stdout chunk for the launch-banner URL. */
-export function parseBannerUrl(chunk: string): { url: string; port: number; token: string } | null {
+export function parseBannerUrl(chunk: string): { url: string; port: number } | null {
   const match = BANNER_URL_PATTERN.exec(chunk);
   if (!match) return null;
-  const [url, portStr, token] = match;
-  return { url, port: Number(portStr), token };
+  const [url, portStr] = match;
+  return { url, port: Number(portStr) };
 }
 
 export interface SpawnedCli {
   proc: ChildProcess;
   port: number;
-  token: string;
   url: string;
   stdout: () => string;
   stderr: () => string;
@@ -104,7 +101,7 @@ export async function spawnCli(args: string[], opts: SpawnCliOptions = {}): Prom
     proc.on('exit', (code, signal) => resolve({ code, signal }));
   });
 
-  const banner = await new Promise<{ url: string; port: number; token: string }>((resolve, reject) => {
+  const banner = await new Promise<{ url: string; port: number }>((resolve, reject) => {
     let settled = false;
 
     const timer = setTimeout(async () => {
@@ -149,7 +146,6 @@ export async function spawnCli(args: string[], opts: SpawnCliOptions = {}): Prom
   return {
     proc,
     port: banner.port,
-    token: banner.token,
     url: banner.url,
     stdout: () => stdoutBuf,
     stderr: () => stderrBuf,

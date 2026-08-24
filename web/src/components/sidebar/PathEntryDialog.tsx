@@ -1,6 +1,7 @@
-import { useEffect, useState, type FormEvent, type ChangeEvent } from 'react';
+import { useEffect, useId, useRef, useState, type FormEvent, type ChangeEvent } from 'react';
 import { createPortal } from 'react-dom';
 import { Button } from '../common/Button';
+import { useFocusModal } from '../../lib/focusModal';
 import { pickerStatus, pickFile, pickDirectory } from '../../api/picker';
 
 interface PathEntryDialogProps {
@@ -40,6 +41,15 @@ export function PathEntryDialog({
   const [submitting, setSubmitting] = useState(false);
   const [browsing, setBrowsing] = useState(false);
   const [pickerAvailable, setPickerAvailable] = useState(true);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const descriptionId = useId();
+
+  useFocusModal(true, dialogRef, {
+    onDismiss: onCancel,
+    dismissable: !submitting,
+    initialFocus: inputRef,
+  });
 
   // Probe once: hide the Browse button entirely on platforms with no native
   // picker backend (headless box / WSL without Windows interop) so the UX never
@@ -79,15 +89,16 @@ export function PathEntryDialog({
   };
 
   return createPortal(
-    <div className="gsd-dialog-overlay" role="dialog" aria-modal="true" aria-labelledby="path-dialog-title">
+    <div ref={dialogRef} className="gsd-dialog-overlay" role="dialog" aria-modal="true" aria-labelledby="path-dialog-title" aria-describedby={description ? descriptionId : undefined}>
       <div className="gsd-dialog">
         <h2 id="path-dialog-title">{title}</h2>
-        {description && <p>{description}</p>}
+        {description && <p id={descriptionId}>{description}</p>}
         <form className="gsd-dialog__form" onSubmit={handleSubmit}>
           <label className="gsd-dialog__label">
             {pathLabel}
             <div className="gsd-dialog__path-row">
               <input
+                ref={inputRef}
                 className="gsd-dialog__input"
                 type="text"
                 value={path}

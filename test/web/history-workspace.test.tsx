@@ -97,13 +97,16 @@ describe('History workspace contract (SAVE-05)', () => {
     expect(rows).toHaveLength(2);
     expect(rows[0].getAttribute('aria-current')).toBe('true');
     expect(within(rows[0]).getByText('Snapshot #7')).toBeTruthy();
-    expect(within(rows[0]).getByText(/Calculating changes…|keys? changed/)).toBeTruthy();
+    // The timeline now shows a scannable breakdown (e.g. "3 changed · 1 added").
+    expect(within(rows[0]).getByText(/Calculating changes…|changed/)).toBeTruthy();
     expect(within(rows[0]).getByText(/just now|ago/)).toBeTruthy();
   });
 
   it('renders Snapshot-to-current orientation, exhaustive changed paths, text states, and unchanged controls', async () => {
     renderWeb(<HistoryWorkspace configId="cfg-1" configName="project/config.json" draft={null} />);
-    expect(await screen.findByText('Snapshot → Current saved file')).toBeTruthy();
+    // Orientation is now shown as "Before: snapshot" → "After: current saved file".
+    expect(await screen.findByText('Before: snapshot')).toBeTruthy();
+    expect(await screen.findByText('After: current saved file')).toBeTruthy();
     expect(screen.getByText(/Added: 1/)).toBeTruthy();
     expect(screen.getByText(/Changed:/)).toBeTruthy();
     expect(screen.getAllByText('deeply.nested.added').length).toBeGreaterThan(0);
@@ -115,7 +118,7 @@ describe('History workspace contract (SAVE-05)', () => {
 
   it('projects sensitive values before all diff rendering and never provides a reveal control', async () => {
     renderWeb(<HistoryWorkspace configId="cfg-1" configName="project/config.json" draft={null} />);
-    await screen.findByText('Snapshot → Current saved file');
+    await screen.findByText('Before: snapshot');
     expect(document.body.textContent).not.toContain(SECRET);
     expect(screen.queryByText(/Show full value/)).toBeNull();
   });
@@ -124,7 +127,9 @@ describe('History workspace contract (SAVE-05)', () => {
     vi.mocked(listHistory).mockResolvedValueOnce([]);
     renderWeb(<HistoryWorkspace configId="empty" configName="empty/config.json" draft={null} />);
     expect(await screen.findByText('No saved versions yet')).toBeTruthy();
-    expect(screen.getByText('History starts after you change and successfully save this existing config. Your current file is not shown as a restorable version.')).toBeTruthy();
+    // The redesigned empty state explains the safety model rather than claiming
+    // a fabricated current version.
+    expect(screen.getByText(/Every time you change and successfully save/)).toBeTruthy();
     expect(screen.queryByText('Current version')).toBeNull();
   });
 
@@ -176,7 +181,11 @@ describe('History workspace contract (SAVE-05)', () => {
     expect((within(dialog).getByRole('button', { name: 'Cancel' }) as HTMLButtonElement).disabled).toBe(true);
 
     resolveSave('saved');
-    await waitFor(() => expect(screen.queryByRole('alertdialog')).toBeNull());
+    // The redesign keeps the selected snapshot selected and reopens the restore
+    // review (draftSaved notice) so the user continues into the restore instead
+    // of starting over. The flow stays alive and the queries are invalidated.
+    await waitFor(() => expect(screen.queryByRole('alertdialog')).toBeTruthy());
+    expect(screen.getByText(/Draft saved\. Review the snapshot before restoring/)).toBeTruthy();
     expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ['config', 'cfg-1'] });
     expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ['history', 'cfg-1'] });
   });
@@ -347,7 +356,7 @@ describe('History workspace contract (SAVE-05)', () => {
     renderWeb(<HistoryWorkspace configId="cfg-many" configName="many/config.json" draft={null} />);
 
     await waitFor(() => expect(screen.getAllByRole('button', { name: /Snapshot #/ })).toHaveLength(5));
-    await waitFor(() => expect(screen.getAllByText('1 key changed')).toHaveLength(5));
+    await waitFor(() => expect(screen.getAllByText('1 changed')).toHaveLength(5));
     expect(screen.queryAllByText('Calculating changes…')).toHaveLength(0);
     expect(vi.mocked(getHistorySnapshot).mock.calls.map(([, seq]) => seq)).toEqual(expect.arrayContaining([7, 6, 5, 4, 3]));
   });

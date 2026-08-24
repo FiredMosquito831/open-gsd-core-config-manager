@@ -17,3 +17,6 @@ desktop.ini
 .vscode/*
 !.vscode/extensions.json
 .idea/
+
+# UI audit scratch (screenshots, workflow dumps) — never ship
+.tmp-ui-audit/

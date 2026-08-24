@@ -10,9 +10,8 @@
  * (ReDoS). The loopback origin is a single known value computed once after
  * bind, so pattern matching buys nothing here and only adds risk.
  *
- * `credentials: false` — the token travels as a header (`x-gsd-token`),
- * never a cookie, so this model has no CSRF-via-cookie surface to protect
- * at all.
+ * `credentials: false` — no cookies are used, so this model has no
+ * CSRF-via-cookie surface to protect at all.
  *
  * This plugin alone does NOT make the server reject a cross-origin
  * request (see `<cors_correction>` in 02-04-PLAN.md and `origin-guard.ts`)
@@ -39,6 +38,6 @@ export function buildCorsOptions(ctx: LaunchContext): FastifyCorsOptions {
     },
     credentials: false,
     methods: ['GET', 'PUT', 'POST'],
-    allowedHeaders: ['content-type', 'x-gsd-token'],
+    allowedHeaders: ['content-type'],
   };
 }

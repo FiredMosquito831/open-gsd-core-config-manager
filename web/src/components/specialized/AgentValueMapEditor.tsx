@@ -7,15 +7,18 @@ interface AgentValueMapEditorProps {
   descriptor: SpecializedDescriptor;
   value: unknown;
   onChange: (value: Record<string, unknown>) => void;
+  onRequestRemove?: (agent: string) => void;
 }
 
 const KNOWN_AGENTS = getAgentCatalog();
 
-export function AgentValueMapEditor({ descriptor, value, onChange }: AgentValueMapEditorProps) {
+export function AgentValueMapEditor({ descriptor, value, onChange, onRequestRemove }: AgentValueMapEditorProps) {
   const map = useMemo(() => value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {}, [value]);
   const supported = descriptor.allowedValues ?? [];
   const available = KNOWN_AGENTS.filter((agent) => !(agent in map));
   const add = (agent: string) => onChange({ ...map, [agent]: supported[0] });
+  // Removal goes through the parent's confirm dialog when provided so agent
+  // maps and ordinary maps share one safety level (audit: inconsistent removal).
   const remove = (agent: string) => {
     const next = { ...map };
     delete next[agent];
@@ -31,7 +34,7 @@ export function AgentValueMapEditor({ descriptor, value, onChange }: AgentValueM
           <div key={agent} className={`gsd-agent-map-editor__row ${isKnown ? '' : 'gsd-agent-map-editor__row--unsupported'}`}>
             <strong>{agent}</strong>
             {isKnown ? <EnumCombobox id={`agent-${agent}`} label={`${agent} value`} value={current} options={supported} meanings={descriptor.allowedDescriptions ?? {}} onChange={(next) => onChange({ ...map, [agent]: next })} /> : <span className="gsd-agent-map-editor__readonly">Unsupported value preserved: {String(current)}</span>}
-            {isKnown && <button type="button" className="gsd-button gsd-button--danger gsd-button--sm" onClick={() => remove(agent)}>Remove</button>}
+            {isKnown && <button type="button" className="gsd-button gsd-button--danger gsd-button--sm" onClick={() => (onRequestRemove ? onRequestRemove(agent) : remove(agent))} aria-label={`Remove ${agent}`}>Remove</button>}
           </div>
         );
       })}

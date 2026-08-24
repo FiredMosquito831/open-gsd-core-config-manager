@@ -1,6 +1,5 @@
 import { test, expect } from '@playwright/test';
 
-const TEST_TOKEN = 'test-token-12345';
 
 // The editor renders chapter content only once a tracked config is selected, so
 // every test that touches the editor must first select a "Ready" config from the
@@ -20,7 +19,7 @@ test.describe.configure({ retries: 2 });
 
 test.describe('GSD Config Manager - Core Features', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto(`/?t=${TEST_TOKEN}`, { waitUntil: 'networkidle', timeout: 60000 });
+    await page.goto('/', { waitUntil: 'networkidle', timeout: 60000 });
     await expect(page.locator('.gsd-sidebar__heading:has-text("Tracked configs")')).toBeVisible({ timeout: 30000 });
     await selectFirstReadyConfig(page);
   });
@@ -190,13 +189,13 @@ test.describe('GSD Config Manager - Core Features', () => {
     await page.click('.gsd-add-menu button:has-text("Add")');
     await expect(page.locator('[role="menu"]')).toBeVisible({ timeout: 5000 });
 
-    // Menu item is labeled "Absolute path" (not "Add existing config").
-    await page.click('[role="menuitem"]:has-text("Absolute path")');
+    // Menu item is labeled "Add by path…" (not "Add existing config").
+    await page.click('[role="menuitem"]:has-text("Add by path")');
 
-    // PathEntryDialog should open (heading is "Add config by absolute path"; the path
-    // field is labeled "Absolute path", not "Enter the absolute path").
+    // The "path" mode PathEntryDialog opens (heading is "Add config by path";
+    // the path field is labeled "Absolute path", not "Enter the absolute path").
     await expect(page.locator('[role="dialog"]')).toBeVisible({ timeout: 10000 });
-    await expect(page.locator('h2', { hasText: 'Add config by absolute path' })).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('h2', { hasText: 'Add config by path' })).toBeVisible({ timeout: 5000 });
 
     // Cancel
     await page.click('button:has-text("Cancel")');
@@ -206,7 +205,7 @@ test.describe('GSD Config Manager - Core Features', () => {
 
 test.describe('GSD Config Manager - Specialized Editors', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto(`/?t=${TEST_TOKEN}`, { waitUntil: 'networkidle', timeout: 60000 });
+    await page.goto('/', { waitUntil: 'networkidle', timeout: 60000 });
     await expect(page.locator('.gsd-sidebar__heading:has-text("Tracked configs")')).toBeVisible({ timeout: 30000 });
     await selectFirstReadyConfig(page);
   });
@@ -403,7 +402,7 @@ test.describe('GSD Config Manager - Specialized Editors', () => {
 
 test.describe('GSD Config Manager - UI Responsiveness', () => {
   test('Resize - sidebar collapse/expand', async ({ page }) => {
-    await page.goto(`/?t=${TEST_TOKEN}`, { waitUntil: 'networkidle', timeout: 60000 });
+    await page.goto('/', { waitUntil: 'networkidle', timeout: 60000 });
     // .gsd-sidebar__heading matches both "Tracked configs" and "Chapters"; take the first.
     await expect(page.locator('.gsd-sidebar__heading').first()).toBeVisible({ timeout: 30000 });
 
@@ -417,7 +416,7 @@ test.describe('GSD Config Manager - UI Responsiveness', () => {
   });
 
   test('Resize - chapter pane collapse/expand', async ({ page }) => {
-    await page.goto(`/?t=${TEST_TOKEN}`, { waitUntil: 'networkidle', timeout: 60000 });
+    await page.goto('/', { waitUntil: 'networkidle', timeout: 60000 });
     await expect(page.locator('.gsd-chapter-nav')).toBeVisible({ timeout: 30000 });
 
     // Collapse chapter pane

@@ -51,6 +51,8 @@ import {
   X as XIcon,
   ArrowUp,
   ArrowDown,
+  Sun,
+  Moon,
 } from 'lucide-react';
 
 import type { LucideProps } from 'lucide-react';
@@ -124,6 +126,10 @@ export const Icons = {
   // Layout
   layout: Layout,
   grid: Grid,
+
+  // Theme
+  sun: Sun,
+  moon: Moon,
 
   // Version history
   history_: HistoryIcon,

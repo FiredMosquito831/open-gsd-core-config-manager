@@ -46,20 +46,18 @@ function retainedProposalService(initial: SchemaProposal): SchemaRefreshService 
 }
 
 const FAKE_PORT = 46002;
-const TOKEN = '44444444-4444-4444-8444-444444444444';
 const HOST = `127.0.0.1:${FAKE_PORT}`;
 const CORS_ORIGIN = `http://127.0.0.1:${FAKE_PORT}`;
 
 function makeContext() {
   return {
-    token: TOKEN,
     allowedHosts: new Set([HOST, `localhost:${FAKE_PORT}`]),
     corsOrigin: CORS_ORIGIN,
   };
 }
 
 function authHeaders(extra: Record<string, string> = {}): Record<string, string> {
-  return { host: HOST, 'x-gsd-token': TOKEN, origin: CORS_ORIGIN, ...extra };
+  return { host: HOST, origin: CORS_ORIGIN, ...extra };
 }
 
 let app: FastifyInstance;
@@ -79,7 +77,7 @@ afterEach(async () => {
 });
 
 describe('GET /api/schema', () => {
-  it('requires x-gsd-token and returns the active schema keys', async () => {
+  it('returns the active schema keys on the loopback origin', async () => {
     const res = await app.inject({ method: 'GET', url: '/api/schema', headers: authHeaders() });
     expect(res.statusCode).toBe(200);
     const body = res.json() as { ok: boolean; schema: Record<string, unknown> };
@@ -87,10 +85,10 @@ describe('GET /api/schema', () => {
     expect(Object.keys(body.schema)).toEqual(Object.keys(getBundledSchema()));
   });
 
-  it('rejects a request without the token', async () => {
+  it('serves requests without any token header', async () => {
     const res = await app.inject({ method: 'GET', url: '/api/schema', headers: { host: HOST, origin: CORS_ORIGIN } });
-    expect(res.statusCode).toBe(403);
-    expect(res.json()).toMatchObject({ ok: false });
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toMatchObject({ ok: true });
   });
 });
 
@@ -99,8 +97,7 @@ describe('schema lifecycle routes', () => {
     { method: 'GET' as const, url: '/api/schema/status' },
     { method: 'POST' as const, url: '/api/schema/refresh' },
     { method: 'POST' as const, url: '/api/schema/reset' },
-  ])('remains token, Origin, and Host guarded for $method $url', async ({ method, url }) => {
-    expect((await app.inject({ method, url, headers: { host: HOST, origin: CORS_ORIGIN } })).statusCode).toBe(403);
+  ])('remains Origin- and Host-guarded for $method $url', async ({ method, url }) => {
     expect((await app.inject({ method, url, headers: authHeaders({ origin: 'http://evil.invalid' }) })).statusCode).toBe(403);
     expect((await app.inject({ method, url, headers: authHeaders({ host: `evil.invalid:${FAKE_PORT}` }) })).statusCode).toBe(403);
   });

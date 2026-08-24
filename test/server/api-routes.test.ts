@@ -8,7 +8,7 @@
  * `/api` scope. That is the intended TDD state.
  *
  * Drives `buildApp()` purely through `app.inject()` — no real listening
- * socket, no HTTP client library — with a valid `x-gsd-token` on every
+ * socket, no HTTP client library — against the loopback-guarded /api
  * request. Each test gets a fresh `mkdtempSync` project dir (a copy of
  * `test/fixtures/project-config.json`, never mutated in place) and a fresh
  * `mkdtempSync` app-data root, injected into `buildApp` via the
@@ -24,7 +24,6 @@ import { buildApp } from '../../packages/server/src/app.js';
 import type { LaunchContext } from '../../packages/server/src/context.js';
 
 const FAKE_PORT = 46001;
-const TOKEN = '33333333-3333-4333-8333-333333333333';
 const HOST = `127.0.0.1:${FAKE_PORT}`;
 const CORS_ORIGIN = `http://127.0.0.1:${FAKE_PORT}`;
 
@@ -33,14 +32,13 @@ const FIXTURE_RAW = readFileSync(FIXTURE_PATH, 'utf8');
 
 function makeContext(): LaunchContext {
   return {
-    token: TOKEN,
     allowedHosts: new Set([HOST, `localhost:${FAKE_PORT}`]),
     corsOrigin: CORS_ORIGIN,
   };
 }
 
 function authHeaders(extra: Record<string, string> = {}): Record<string, string> {
-  return { host: HOST, 'x-gsd-token': TOKEN, ...extra };
+  return { host: HOST, ...extra };
 }
 
 let app: FastifyInstance;

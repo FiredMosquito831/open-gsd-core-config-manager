@@ -1,5 +1,3 @@
-import { getLaunchToken } from '../bootstrap/token';
-
 export class ApiError extends Error {
   constructor(
     public readonly errors: Array<{ message: string; [k: string]: unknown }>,
@@ -12,12 +10,6 @@ export class ApiError extends Error {
 
 export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
   const headers = new Headers(init.headers);
-  if (path.startsWith('/api')) {
-    const token = getLaunchToken();
-    if (token) {
-      headers.set('x-gsd-token', token);
-    }
-  }
 
   const response = await fetch(path, { ...init, headers });
 

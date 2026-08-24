@@ -1,38 +1,69 @@
-import { useState } from 'react';
+import { useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Button } from '../common/Button';
+import { useFocusModal } from '../../lib/focusModal';
+import { useToastStore } from '../../state/toastStore';
 import type { ScanCandidate } from '../../api/workspace';
 
 interface ScanReviewDialogProps {
   candidates: ScanCandidate[];
-  onConfirm: (selected: string[]) => Promise<void>;
+  /** Track a single candidate. Rejects are caught per-item and reported inline. */
+  track: (path: string) => Promise<unknown>;
+  /** Called once every selected candidate was added successfully. */
+  onDone: () => void;
   onCancel: () => void;
 }
 
-export function ScanReviewDialog({ candidates, onConfirm, onCancel }: ScanReviewDialogProps) {
+export function ScanReviewDialog({ candidates, track, onDone, onCancel }: ScanReviewDialogProps) {
   const [selected, setSelected] = useState<Set<string>>(() => new Set(candidates.filter((c) => c.status === 'new').map((c) => c.path)));
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const descriptionId = useId();
+
+  useFocusModal(true, dialogRef, {
+    onDismiss: onCancel,
+    dismissable: !submitting,
+  });
 
   const toggle = (path: string) => {
     const next = new Set(selected);
     if (next.has(path)) next.delete(path);
     else next.add(path);
     setSelected(next);
+    setError(null);
   };
 
   const handleConfirm = async () => {
     setSubmitting(true);
-    try {
-      await onConfirm(Array.from(selected));
-    } finally {
-      setSubmitting(false);
+    setError(null);
+    const failedPaths: string[] = [];
+    for (const path of selected) {
+      try {
+        await track(path);
+      } catch {
+        failedPaths.push(path);
+      }
     }
+    setSubmitting(false);
+    if (failedPaths.length > 0) {
+      const added = selected.size - failedPaths.length;
+      setError(
+        added > 0
+          ? `Added ${added} config(s). ${failedPaths.length} could not be added — check the path and try again.`
+          : `Couldn't add these configs. Check that each path exists and that you have permission to read it.`,
+      );
+      return;
+    }
+    useToastStore.getState().push('success', 'Configs added', `${selected.size} config(s) tracked.`);
+    onDone();
   };
 
   return createPortal(
-    <div className="gsd-dialog-overlay" role="dialog" aria-modal="true" aria-labelledby="scan-dialog-title">
+    <div ref={dialogRef} className="gsd-dialog-overlay" role="dialog" aria-modal="true" aria-labelledby="scan-dialog-title" aria-describedby={descriptionId}>
       <div className="gsd-dialog">
         <h2 id="scan-dialog-title">Review scan results</h2>
+        <p id={descriptionId}>Select the configs you want to track. Already-tracked configs are disabled. Nothing is written to disk until you click Add selected.</p>
         <ul className="gsd-scan-list">
           {candidates.map((candidate) => (
             <li key={candidate.path} className="gsd-scan-list__item">
@@ -55,12 +86,13 @@ export function ScanReviewDialog({ candidates, onConfirm, onCancel }: ScanReview
             </li>
           ))}
         </ul>
+        {error && <p className="gsd-dialog__error" role="alert">{error}</p>}
         <div className="gsd-dialog__actions">
-          <Button type="button" variant="ghost" onClick={onCancel}>
+          <Button type="button" variant="ghost" onClick={onCancel} disabled={submitting}>
             Cancel
           </Button>
           <Button type="button" variant="primary" onClick={handleConfirm} disabled={selected.size === 0 || submitting}>
-            Add selected
+            {submitting ? 'Adding…' : 'Add selected'}
           </Button>
         </div>
       </div>

@@ -43,3 +43,13 @@ class EventSourceStub extends EventTarget {
 const g = globalThis as Record<string, unknown>;
 if (!g.ResizeObserver) g.ResizeObserver = ResizeObserverStub;
 if (!g.EventSource) g.EventSource = EventSourceStub;
+
+// Desktop viewport for unit tests. jsdom's default innerWidth is 1024, which
+// trips AppShell's responsive auto-collapse (<=1100px collapses the chapter
+// pane and aria-hides it, dropping chapter tabs from the accessibility tree
+// that testing-library queries). Unit tests exercise the desktop editor layout,
+// so pin a wide viewport here; responsive behavior has its own dedicated tests.
+if (typeof window !== 'undefined') {
+  Object.defineProperty(window, 'innerWidth', { writable: true, configurable: true, value: 1280 });
+  Object.defineProperty(window, 'innerHeight', { writable: true, configurable: true, value: 900 });
+}

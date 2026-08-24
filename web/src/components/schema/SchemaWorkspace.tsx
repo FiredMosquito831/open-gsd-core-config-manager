@@ -12,6 +12,7 @@ import {
 import { loadConfig } from '../../api/configs';
 import { useUiStore } from '../../state/uiStore';
 import { SchemaChangeSummary } from './SchemaChangeSummary';
+import { useToastStore } from '../../state/toastStore';
 
 type Failure = 'refresh' | 'activate' | 'cancel' | 'reset' | null;
 const stages = ['Checking release', 'Fetching pinned archive', 'Validating sources', 'Preparing review'];
@@ -21,7 +22,7 @@ function formatDate(date?: string): string | undefined {
 }
 
 function sourceName(source: SchemaStatusDto['source']): string {
-  return source === 'refreshed' ? 'Refreshed' : 'Bundled';
+  return source === 'refreshed' ? 'Downloaded from gsd-core' : 'App-shipped schema';
 }
 
 function ResetDialog({
@@ -112,6 +113,7 @@ export function SchemaWorkspace(): React.ReactElement {
   const [filter, setFilter] = useState<'all' | 'added' | 'changed' | 'deprecated' | 'documentation'>('all');
   const [expanded, setExpanded] = useState(new Set<string>());
   const [resetOpen, setResetOpen] = useState(false);
+  const [retrying, setRetrying] = useState(false);
 
   const status = statusQuery.data;
 
@@ -164,8 +166,10 @@ export function SchemaWorkspace(): React.ReactElement {
       setNotice(
         `Schema version ${next.gsdCoreVersion} is now active. Editor fields and validation were refreshed.`
       );
+      useToastStore.getState().push('success', `Schema version ${next.gsdCoreVersion} is now active`);
     } catch {
       setFailure('activate');
+      useToastStore.getState().push('error', "Couldn't activate this schema update");
     } finally {
       setActivating(false);
     }
@@ -197,15 +201,26 @@ export function SchemaWorkspace(): React.ReactElement {
       setNotice(
         `Bundled schema version ${next.gsdCoreVersion} is now active. Editor fields and validation were refreshed.`
       );
+      useToastStore.getState().push('success', `Bundled schema version ${next.gsdCoreVersion} is now active`);
     } catch {
       setFailure('reset');
       setResetOpen(false);
+      useToastStore.getState().push('error', "Couldn't reset to the bundled schema");
     } finally {
       setResetting(false);
     }
   };
 
-  const retry = failure === 'refresh' ? check : failure === 'activate' ? activate : failure === 'cancel' ? cancel : () => setResetOpen(true);
+  // A failed *initial* status load must refetch status (not open the unavailable
+  // reset dialog, which only renders once a status exists). Lifecycle failures
+  // (refresh/activate/cancel) retry their own action; only a 'reset' failure
+  // falls back to opening the reset dialog.
+  const retry = statusQuery.isError && !failure
+    ? () => { setRetrying(true); void statusQuery.refetch().finally(() => setRetrying(false)); }
+    : failure === 'refresh' ? check
+    : failure === 'activate' ? activate
+    : failure === 'cancel' ? cancel
+    : () => setResetOpen(true);
 
   return (
     <section className="gsd-schema-workspace" aria-label="Schema maintenance" data-schema-backstop="desktop-overflow">
@@ -228,7 +243,7 @@ export function SchemaWorkspace(): React.ReactElement {
           </button>
         </header>
         <div role="status" aria-live="polite" className="gsd-schema-live">
-          {checking ? 'Checking latest stable release… Still active.' : notice}
+          {checking ? 'Checking latest stable release… Still active.' : retrying ? 'Retrying schema status check…' : notice}
         </div>
         {statusQuery.isError || failure ? (
           <div role="alert" className="gsd-schema-alert">
@@ -272,6 +287,11 @@ export function SchemaWorkspace(): React.ReactElement {
               <p>
                 <strong>{sourceName(status.source)}</strong> &middot; gsd-core v{status.gsdCoreVersion}
               </p>
+              <p className="gsd-schema-source-note">
+                {status.source === 'refreshed'
+                  ? 'This was downloaded from gsd-core and validated on this machine. The app-shipped schema remains available as a fallback.'
+                  : 'This is the schema shipped with the app and is the recommended fallback. You can download a newer one from gsd-core any time.'}
+              </p>
               {formatDate(status.source === 'bundled' ? status.generatedAt : status.activatedAt) && (
                 <p>
                   {status.source === 'bundled' ? 'Generated' : 'Activated'}:{' '}
@@ -297,15 +317,18 @@ export function SchemaWorkspace(): React.ReactElement {
           )}
         </section>
         {checking ? (
-          <section aria-label="Update progress">
+          <section aria-label="Update progress" className="gsd-schema-progress">
             <button type="button" className="gsd-button gsd-button--primary gsd-button--md" disabled>
               Checking latest stable release&hellip;
             </button>
-            <ol>
-              {stages.map((stage) => (
-                <li key={stage}>{stage}</li>
+            <ol className="gsd-schema-stages">
+              {stages.map((stage, index) => (
+                <li key={stage} className={`gsd-schema-stage${index === 0 ? ' gsd-schema-stage--current' : ''}`} aria-current={index === 0 ? 'step' : undefined}>
+                  {stage}
+                </li>
               ))}
             </ol>
+            <p className="gsd-schema-progress__note">Progress is indeterminate — this depends on the helper connecting to gsd-core. We’ll show the review as soon as it’s ready.</p>
           </section>
         ) : proposal ? (
           <>

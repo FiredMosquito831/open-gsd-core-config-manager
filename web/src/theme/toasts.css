@@ -1,0 +1,190 @@
+/* Toast host + cards — token-based feedback stack. Dark-first (no data-theme),
+   light via :root[data-theme='light'] where the tokens redefine. */
+
+.gsd-toast-host {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  width: min(22rem, calc(100vw - 2rem));
+  pointer-events: none;
+}
+
+.gsd-toast {
+  pointer-events: auto;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 0.6rem;
+  padding: 0.7rem 0.75rem;
+  border: 1px solid var(--gsd-border);
+  border-left-width: 3px;
+  border-radius: var(--gsd-radius);
+  background: var(--gsd-surface-elevated);
+  box-shadow: var(--gsd-shadow-md);
+  color: var(--gsd-text);
+  font-size: var(--gsd-fs-body);
+  line-height: 1.45;
+  transform-origin: center bottom;
+  animation: gsd-toast-in var(--gsd-dur-base) var(--gsd-ease) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gsd-toast {
+    animation: none;
+  }
+}
+
+@keyframes gsd-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes gsd-toast-out {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(0.5rem) scale(0.98);
+  }
+}
+
+/* Exit animation plays while the store holds the toast in its `leaving` state,
+   before the final unmount. Paired with the entrance keyframe via --gsd-dur-*. */
+.gsd-toast--leaving {
+  pointer-events: none;
+  animation: gsd-toast-out var(--gsd-dur-base) var(--gsd-ease) both;
+}
+
+/* Kind accents — paired with icon + label; never color alone. */
+.gsd-toast--info {
+  border-left-color: var(--gsd-accent);
+}
+
+.gsd-toast--success {
+  border-left-color: var(--gsd-success);
+}
+
+.gsd-toast--warning {
+  border-left-color: var(--gsd-warning);
+}
+
+.gsd-toast--error {
+  border-left-color: var(--gsd-danger);
+}
+
+.gsd-toast__icon {
+  display: grid;
+  place-items: center;
+  margin-top: 0.1rem;
+  flex: 0 0 auto;
+}
+
+.gsd-toast__icon--info {
+  color: var(--gsd-accent);
+}
+
+.gsd-toast__icon--success {
+  color: var(--gsd-success);
+}
+
+.gsd-toast__icon--warning {
+  color: var(--gsd-warning);
+}
+
+.gsd-toast__icon--error {
+  color: var(--gsd-danger);
+}
+
+.gsd-toast__body {
+  min-width: 0;
+}
+
+.gsd-toast__message {
+  margin: 0;
+  color: var(--gsd-text);
+  overflow-wrap: anywhere;
+}
+
+.gsd-toast__visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.gsd-toast__detail {
+  margin-top: 0.35rem;
+}
+
+.gsd-toast__detail-toggle {
+  display: inline;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--gsd-accent);
+  font: inherit;
+  font-size: var(--gsd-fs-meta);
+  cursor: pointer;
+}
+
+.gsd-toast__detail-toggle:hover {
+  text-decoration: underline;
+}
+
+.gsd-toast__detail-toggle:focus-visible {
+  border-radius: var(--gsd-radius-sm);
+  outline: 2px solid var(--gsd-focus-ring);
+  outline-offset: 2px;
+}
+
+.gsd-toast__detail-text {
+  margin: 0.35rem 0 0;
+  color: var(--gsd-text-muted);
+  font-size: var(--gsd-fs-meta);
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.gsd-toast__detail-text code,
+.gsd-toast__detail-text kbd {
+  font-family: var(--gsd-font-mono);
+  font-size: var(--gsd-fs-code);
+  color: var(--gsd-text);
+}
+
+.gsd-toast__dismiss {
+  display: grid;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  flex: 0 0 auto;
+  padding: 0;
+  border: 0;
+  border-radius: var(--gsd-radius-sm);
+  background: transparent;
+  color: var(--gsd-text-muted);
+  cursor: pointer;
+  transition: background var(--gsd-dur-fast) var(--gsd-ease), color var(--gsd-dur-fast) var(--gsd-ease);
+}
+
+.gsd-toast__dismiss:hover {
+  background: var(--gsd-surface-hover);
+  color: var(--gsd-text);
+}

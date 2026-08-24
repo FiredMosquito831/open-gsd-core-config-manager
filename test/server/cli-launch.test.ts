@@ -41,25 +41,19 @@ describe('starts and serves (DIST-01)', () => {
     async () => {
       currentSpawned = await spawnCli(['--no-open']);
       expect(currentSpawned.port).toBeGreaterThan(0);
-      expect(currentSpawned.token).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
 
-      const authed = await fetch(`http://127.0.0.1:${currentSpawned.port}/api/health`, {
-        headers: { 'x-gsd-token': currentSpawned.token },
-      });
-      expect(authed.status).toBe(200);
-      const body = (await authed.json()) as { ok: boolean };
+      const health = await fetch(`http://127.0.0.1:${currentSpawned.port}/api/health`);
+      expect(health.status).toBe(200);
+      const body = (await health.json()) as { ok: boolean };
       expect(body.ok).toBe(true);
-
-      const unauthed = await fetch(`http://127.0.0.1:${currentSpawned.port}/api/health`);
-      expect(unauthed.status).toBe(403);
     },
     20_000,
   );
 });
 
-describe('opens browser with token (DIST-02)', () => {
+describe('opens the browser on the loopback URL (DIST-02)', () => {
   it(
-    'opens browser with token',
+    'opens browser with the launch URL',
     async () => {
       const calls: string[] = [];
       const fakeOpen = async (url: string): Promise<void> => {
@@ -69,11 +63,7 @@ describe('opens browser with token (DIST-02)', () => {
       const handle = await bootstrap({ port: 0, open: true }, { open: fakeOpen, out: silentOutput() });
       try {
         expect(calls).toHaveLength(1);
-        expect(calls[0]).toMatch(
-          /^http:\/\/127\.0\.0\.1:\d+\/\?t=[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
-        );
-        const token = new URL(calls[0]).searchParams.get('t');
-        expect(token).toBe(handle.token);
+        expect(calls[0]).toMatch(/^http:\/\/127\.0\.0\.1:\d+\/$/);
         const addr = handle.app.server.address() as AddressInfo;
         expect(addr.address).toBe('127.0.0.1');
       } finally {

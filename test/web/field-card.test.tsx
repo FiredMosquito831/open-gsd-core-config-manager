@@ -134,8 +134,8 @@ async function renderWithActiveConfig() {
   vi.mocked(loadConfig).mockResolvedValue(loadResult);
 
   renderWeb(<App connected />);
-  await waitFor(() => screen.getByText('p/config.json'));
-  fireEvent.click(screen.getByText('p/config.json'));
+  await waitFor(() => screen.getByText('p'));
+  fireEvent.click(screen.getByText('p'));
   await waitFor(() => screen.getByRole('tab', { name: 'Core' }));
 }
 
@@ -165,27 +165,30 @@ describe('FieldCard', () => {
     await renderWithActiveConfig();
     fireEvent.click(screen.getByRole('tab', { name: 'Core' }));
     await waitFor(() => screen.getByTestId('field-mode'));
-    expect(screen.getByRole('button', { name: 'Reset project override' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Restore inherited value' })).toBeTruthy();
 
     fireEvent.click(screen.getByRole('tab', { name: 'Review' }));
     await waitFor(() => screen.getByTestId('field-review.strategy'));
-    expect(screen.queryByRole('button', { name: 'Reset project override' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Restore inherited value' })).toBeNull();
   });
 
   it('expands to reveal deeper details', async () => {
     await renderWithActiveConfig();
     fireEvent.click(screen.getByRole('tab', { name: 'Core' }));
     await waitFor(() => screen.getByTestId('field-mode'));
-    fireEvent.click(screen.getByRole('button', { name: 'Show details' }));
+    // Enum option meanings now live under the "Compare options" disclosure.
+    fireEvent.click(screen.getByRole('button', { name: /Compare options/ }));
     await waitFor(() => screen.getByText('Human-in-the-loop'));
-    expect(screen.getByText('Agent decides')).toBeTruthy();
+    // The meaning appears in the combobox (selected value) and again in the
+    // Compare options disclosure, so tolerate more than one occurrence.
+    expect(screen.getAllByText('Agent decides').length).toBeGreaterThan(0);
   });
 
   it('shows a content gap when enum options lack prose', async () => {
     await renderWithActiveConfig();
     fireEvent.click(screen.getByRole('tab', { name: 'Review' }));
     await waitFor(() => screen.getByTestId('field-review.strategy'));
-    fireEvent.click(screen.getByRole('button', { name: 'Show details' }));
+    fireEvent.click(screen.getByRole('button', { name: /Compare options/ }));
     await waitFor(() => screen.getByText(/Option meanings missing/));
   });
 });
