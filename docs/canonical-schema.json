@@ -1,0 +1,1681 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/FiredMosquito831/open-gsd-core-config-manager/canonical-schema.json",
+  "title": "GSD (open-gsd/gsd-core) canonical configuration",
+  "description": "Every known config.json key for gsd-core v1.11.0 with its canonical default value, allowed values, and plain-language meaning. Generated from the GSD Config Manager bundled schema (tag v1.11.0).",
+  "version": "1.11.0",
+  "generatedFrom": {
+    "gsdCoreTag": "v1.11.0",
+    "tool": "gsd-config-manager"
+  },
+  "keys": {
+    "agent_skills": {
+      "type": "object",
+      "category": "Capabilities",
+      "description": "Assigns skill sets to specific agent types, extending what individual agents know how to do. Each key is an agent type (e.g. `gsd-executor`) and each value is either a single skill-set path string (e.g. `skills/review`) or an array of skill-set paths to assign multiple skill sets to one agent type. Paths must be separate array elements — do not comma-join them into one string. This is validated by the dynamic pattern `agent_skills.<agent-type>`. Use this to give particular agents extra domain or workflow skills without changing the global skill configuration.",
+      "default": {}
+    },
+    "agent_skills_security.trusted_global_roots": {
+      "type": "array",
+      "category": "Security",
+      "description": "An opt-in allowlist of extra trusted root directories for `global:` skills, widening the symlink-safety boundary. By default, a `global:<name>` skill whose `SKILL.md` real path (after resolving symlinks) escapes the runtime's global skills directory (e.g. `~/.claude/skills/`) is rejected as a symlink-escape; listing a root here tells GSD to also accept skills whose real target lives under one of those directories. Each entry is canonicalized — `~/` is expanded to your home directory, non-absolute paths are dropped — so a symlinked team skills dir (e.g. `~/shared/skills`) is accepted. Set this to safely load global skills that live outside the default global skills directory.",
+      "default": []
+    },
+    "brave_search": {
+      "type": "boolean",
+      "category": "Discovery",
+      "description": "Turns on Brave web search as a source for the research agent, letting it pull live results from the public web when planning a phase. Enable this when you want GSD to supplement its knowledge with up-to-date information from the internet — useful for fast-moving topics where training data is stale. It only takes effect if a Brave API key is configured (via the BRAVE_API_KEY environment variable or a ~/.gsd/brave_api_key file).",
+      "default": false,
+      "editor": {
+        "editable": false,
+        "editor": "read-only-unsupported",
+        "path": "brave_search",
+        "sensitive": true,
+        "sourceEvidence": []
+      }
+    },
+    "capabilities.auto_update": {
+      "type": "boolean",
+      "category": "Capabilities",
+      "description": "Controls whether installed third-party capabilities are allowed to auto-update to newer versions. Off by default, so capabilities stay at their installed version until you explicitly update them. Even when you turn this on, GSD re-prompts for explicit consent whenever a new version changes its executable surface (hooks, command modules, or MCP servers) compared to what's installed — the consent you gave was for a specific surface, not a blank cheque for future changes. Enable this when you want capabilities to update freely within the same surface; leave it off when you want to approve every update manually.",
+      "default": false
+    },
+    "capabilities.strict_known_registries": {
+      "type": "array | null",
+      "category": "Capabilities",
+      "description": "Controls where GSD is allowed to install third-party capabilities from, acting as a supply-chain trust gate. When `null` or unset (the default), installs from any external source are allowed — the normal consent prompt still applies. An empty array `[]` is lockdown: all external installs are blocked and only local-path installs are permitted. An array of hosts like `[\"github.com\", \"npm\"]` is an allowlist — only those source hosts are permitted, and matching is host-based (so a lookalike like `evilgithub.com` is rejected even when `github.com` is allowed). A malformed value fails closed (install refused). Set this to lock down capability installs on shared or sensitive machines.",
+      "default": null
+    },
+    "claude_md_assembly.blocks": {
+      "type": "object | null",
+      "category": "General",
+      "description": "A map of named content blocks that are assembled into CLAUDE.md, where each key is a block/section name and its value is the markdown content for that section. Use this to inject modular, reusable snippets — such as coding standards or project conventions — into the assembled instruction file without hand-editing the whole thing."
+    },
+    "claude_md_assembly.mode": {
+      "type": "string | null",
+      "category": "General",
+      "description": "Controls how your CLAUDE.md file is assembled and delivered to the agent when a phase runs. In 'embed' mode the file's contents are inlined directly into the prompt, while 'link' mode references it by path so the agent reads it on demand. Pick the mode that matches how you prefer context to be injected into a session.",
+      "default": null,
+      "allowedValues": [
+        {
+          "value": "embed",
+          "meaning": "Inline the full contents of CLAUDE.md directly into the agent's prompt. This guarantees the guidance is present up front and costs more tokens, which is ideal when you want the instructions always visible to the model."
+        },
+        {
+          "value": "link",
+          "meaning": "Reference CLAUDE.md by file path instead of inlining it, so the agent reads it on demand. This keeps the initial prompt smaller and lets the model pull in guidance only when it needs it."
+        },
+        {
+          "value": null,
+          "meaning": ""
+        }
+      ]
+    },
+    "claude_md_path": {
+      "type": "string",
+      "category": "General",
+      "description": "Tells GSD where to find the project's CLAUDE.md instruction file, the markdown file of guidance and context that gets assembled into your AI agent's system prompt. The default points to .claude/CLAUDE.md at the repo root, which is the standard location; change it only if your project keeps that file somewhere else so GSD can still locate and assemble it.",
+      "default": "./.claude/CLAUDE.md"
+    },
+    "claude_orchestration.enabled": {
+      "type": "boolean",
+      "category": "Claude Orchestration",
+      "description": "Master toggle for the Claude orchestration capability, which is off by default and currently in BETA. When true, it unlocks the Workflow-tool execution backend and the ultraplan plan-offload surface, changing how execute-phase dispatches work. When false, loop behavior is identical to a non-Claude runtime that uses inline or manual dispatch.",
+      "default": false
+    },
+    "claude_orchestration.execution_backend": {
+      "type": "string",
+      "category": "Claude Orchestration",
+      "description": "Chooses which execute-phase dispatch backend to use when the Claude orchestration capability is enabled. 'auto' picks the Workflow backend only when the runtime, Workflow tool, and minimum Agent SDK version all line up, otherwise falling back to inline. The other two modes force a specific backend, still failing closed to inline if requirements are not met.",
+      "default": "auto",
+      "allowedValues": [
+        {
+          "value": "auto",
+          "meaning": "The default. GSD uses the Workflow backend only when it is actually available and the Agent SDK meets the minimum version; otherwise it silently falls back to inline. Best for most users."
+        },
+        {
+          "value": "workflow",
+          "meaning": "Forces the Workflow-tool dispatch backend. If the Workflow tool is missing or the Agent SDK is below claude_orchestration.min_agent_sdk_version, it fails closed to inline. Use this when you explicitly want Workflow-style dispatch."
+        },
+        {
+          "value": "inline",
+          "meaning": "Forces the traditional one-agent-per-message inline dispatch, ignoring tool availability entirely. Use this to get the pre-orchestration behavior even on a capable Claude runtime."
+        }
+      ]
+    },
+    "claude_orchestration.min_agent_sdk_version": {
+      "type": "string",
+      "category": "Claude Orchestration",
+      "description": "The minimum Anthropic Agent SDK version required to activate the Workflow backend when execution_backend is 'auto'. It defaults to the release that introduced the Workflow tool. Raise this to pin a higher floor; any runtime reporting an older or unknown SDK version falls back to inline dispatch.",
+      "default": "0.3.149"
+    },
+    "code_quality.fallow.enabled": {
+      "type": "boolean",
+      "category": "Code Quality",
+      "description": "Enables the fallow code-quality runner, which runs fallow's static analysis as a structural pre-pass before code review. When true, GSD invokes fallaw against your configured scope and profile to surface dead code, duplication, and complexity issues. It fails closed (off) when unset, so you must explicitly opt in.",
+      "default": false
+    },
+    "code_quality.fallow.mcp": {
+      "type": "boolean",
+      "category": "Code Quality",
+      "description": "When true, the fallaw quality step uses the MCP (Model Context Protocol) integration path rather than the direct CLI invocation. This lets fallaw leverage MCP-served analysis if your environment is set up for it. It defaults to false, which uses the standard direct binary invocation.",
+      "default": false
+    },
+    "code_quality.fallow.profile": {
+      "type": "string",
+      "category": "Code Quality",
+      "description": "Selects the strictness of the fallow quality profile, which maps to a maximum acceptable 'crap' score threshold. 'minimal' is the most lenient (threshold 50), 'standard' is the balanced default (threshold 30), and 'strict' is the tightest (threshold 15). Higher strictness means more issues get flagged.",
+      "default": "standard",
+      "allowedValues": [
+        {
+          "value": "minimal",
+          "meaning": "The most lenient profile, with a max crap score of 50. Lets most code through and only surfaces the worst problems. Use this early in a project or for prototypes."
+        },
+        {
+          "value": "standard",
+          "meaning": "The default balanced profile, with a max crap score of 30. A good everyday setting that flags meaningful issues without being noisy."
+        },
+        {
+          "value": "strict",
+          "meaning": "The tightest profile, with a max crap score of 15. Surfaces many more issues; best for mature codebases or gate-critical phases where quality bar is high."
+        }
+      ]
+    },
+    "code_quality.fallow.scope": {
+      "type": "string",
+      "category": "Code Quality",
+      "description": "Controls how much code fallow analyzes: either just the files belonging to the current phase ('phase') or the entire repository at that point ('repo'). The default is 'phase', which is faster and focused on your active change. Use 'repo' when you want a whole-project quality gate.",
+      "default": "phase",
+      "allowedValues": [
+        {
+          "value": "phase",
+          "meaning": "Analyzes only the files touched by the current phase. Faster and focused, this is the default and recommended choice for per-phase quality gating."
+        },
+        {
+          "value": "repo",
+          "meaning": "Analyzes the entire repository. Slower but catches cross-cutting quality issues; use this when you want a project-wide quality pre-pass."
+        }
+      ]
+    },
+    "commit_docs": {
+      "type": "boolean",
+      "category": "Planning",
+      "description": "The top-level form of planning.commit_docs — both keys do exactly the same thing and are equivalent. It controls whether GSD commits your .planning/ artifacts (SUMMARY.md, STATE.md, ROADMAP.md, etc.) into git. If you set both this and planning.commit_docs to different values, this top-level one wins.",
+      "default": true
+    },
+    "context": {
+      "type": "string | null",
+      "category": "Workflow",
+      "description": "Selects an execution context profile that adjusts agent behavior for a class of work. `dev` tunes agents for general development tasks, `research` for investigation and exploration, and `review` for code-review workflows. This influences prompt framing and tool use so the same phase-type agents behave differently depending on the kind of work being done. Change this when you want a global shift in how agents approach their tasks — for example switching a phase to `research` to get more exploratory behavior.",
+      "default": null,
+      "allowedValues": [
+        {
+          "value": "dev",
+          "meaning": "Development context — agents are tuned for building, editing, and iterating on code. The default framing for most phases."
+        },
+        {
+          "value": "research",
+          "meaning": "Research context — agents are tuned for investigation, exploration, and gathering information rather than changing code."
+        },
+        {
+          "value": "review",
+          "meaning": "Review context — agents are tuned for inspecting and reviewing existing code, evaluating quality, and surfacing issues."
+        },
+        {
+          "value": null,
+          "meaning": ""
+        }
+      ]
+    },
+    "context_window": {
+      "type": "number",
+      "category": "Model & Routing",
+      "description": "Sets the context-window size (in tokens) that GSD uses to estimate how much text an agent can read and write in one session. The default of 200000 matches Claude's standard 200K window; set it to `1000000` when using 1M-context models so the orchestrator plans reads and cross-phase context injection against the larger limit. When this reaches 500000 or above, workflows enable adaptive context enrichment such as full-body reads of prior SUMMARYs and deeper anti-pattern reference scans.",
+      "default": 200000
+    },
+    "dynamic_routing": {
+      "type": "object | null",
+      "category": "Model & Routing",
+      "description": "Enables dynamic model routing with failure-tier escalation (#3024). When `enabled` is true, the resolver picks a model from a tier-mapped table (`tier_models`) based on each agent's default routing tier (light/standard/heavy), and escalates an agent to the next tier up on an orchestrator-detected soft failure — up to `max_escalations` times. `escalate_on_failure` turns this retry-and-escalate behavior on or off. Dynamic routing is ignored unless `enabled` is true. Use this to let the system automatically retry failed agents on stronger models instead of failing the phase."
+    },
+    "effort.agent_overrides": {
+      "type": "object",
+      "category": "Effort",
+      "description": "A per-agent map that overrides the effort level for specific agent types, taking precedence over both `effort.routing_tier_defaults` and `effort.default`. Each key is an agent type (e.g. `gsd-executor`, `gsd-planner`, `gsd-codebase-mapper`) and each value is an effort level (`minimal`/`low`/`medium`/`high`/`xhigh`/`max`). Use this when a specific agent needs more or less reasoning than its tier default — for example giving the planner `max` effort while keeping mappers at `low`. Effort is baked into agent files at install time via `effort sync`, so a change here may not take effect until agent files are re-synced.",
+      "default": {},
+      "editor": {
+        "editable": true,
+        "editor": "agent-map",
+        "path": "effort.agent_overrides",
+        "sensitive": false,
+        "sourceEvidence": [
+          "docs/CONFIGURATION.md#effort.agent_overrides"
+        ]
+      }
+    },
+    "effort.default": {
+      "type": "string",
+      "category": "Effort",
+      "description": "Sets the default reasoning-effort level (a `model_reasoning_effort`-style knob) applied to every agent that does not have a more specific effort setting. On supported runtimes this controls how deeply an agent thinks about a task before responding — higher effort gives more thorough reasoning at the cost of more tokens and latency. Change this when you want a baseline shift in reasoning thoroughness across the whole project; individual agents can still be overridden via `effort.agent_overrides` and the per-runtime tier defaults.",
+      "default": "high",
+      "allowedValues": [
+        {
+          "value": "minimal",
+          "meaning": "The shallowest reasoning — agents answer with the least deliberation. Fastest and cheapest, but may skip careful analysis. Use for trivial, well-specified tasks."
+        },
+        {
+          "value": "low",
+          "meaning": "Light reasoning. A budget-friendly level for straightforward work where deep deliberation is wasted."
+        },
+        {
+          "value": "medium",
+          "meaning": "Moderate reasoning. A middle ground for everyday tasks that benefit from some thought but don't need exhaustive analysis."
+        },
+        {
+          "value": "high",
+          "meaning": "Thorough reasoning — the default. Agents think carefully through most tasks; a good balance of quality and cost for normal development."
+        },
+        {
+          "value": "xhigh",
+          "meaning": "Very deep reasoning for agents doing complex architecture or debugging work where the extra deliberation pays off."
+        },
+        {
+          "value": "max",
+          "meaning": "Maximum reasoning effort. Agents deliberate as deeply as the runtime allows; most expensive, reserved for the hardest decisions."
+        }
+      ]
+    },
+    "effort.routing_tier_defaults": {
+      "type": "object",
+      "category": "Effort",
+      "description": "Sets the default effort level for each agent routing tier (`light`, `standard`, `heavy`). Light agents are cheap, high-volume workers (mappers, scanners, auditors); standard agents are the research/execution workhorses; heavy agents are the deep-reasoning planners and debuggers. Each tier key (`light`, `standard`, `heavy`) takes an effort value from the effort enum. Change this to retune how much reasoning each class of agent gets by default; per-agent `effort.agent_overrides` still wins over these tier defaults.",
+      "default": {
+        "heavy": "xhigh",
+        "light": "low",
+        "standard": "high"
+      }
+    },
+    "exa_search": {
+      "type": "boolean",
+      "category": "Discovery",
+      "description": "Turns on Exa as a semantic search provider for the research agent, which finds results by meaning rather than just keyword matching. Enable this when you want the planner to surface conceptually related documentation and resources even when the exact terms differ. It only takes effect with a valid Exa API key (EXA_API_KEY or ~/.gsd/exa_api_key).",
+      "default": false,
+      "editor": {
+        "editable": false,
+        "editor": "read-only-unsupported",
+        "path": "exa_search",
+        "sensitive": true,
+        "sourceEvidence": []
+      }
+    },
+    "executor.stall_detect_interval_minutes": {
+      "type": "number",
+      "category": "Workflow",
+      "description": "How often, in minutes, the system checks whether an executor agent has stalled. This is the polling interval for the stall detector, not the threshold for what counts as stalled. Lower values catch hangs a little faster but add a trivial amount of overhead. The default of five minutes is a sensible cadence.",
+      "default": 5
+    },
+    "executor.stall_threshold_minutes": {
+      "type": "number",
+      "category": "Workflow",
+      "description": "How many minutes an executor agent must be unresponsive before it is considered stalled and acted upon. If an agent's task takes legitimately longer than this (for example, a huge refactor or a slow build), raise the threshold to avoid false stall reports. The default of ten minutes suits most phases.",
+      "default": 10
+    },
+    "external_job.artifact_dir": {
+      "type": "string",
+      "category": "External Job",
+      "description": "Root directory for per-job artifact folders, into which the scheduler adapter writes outputs such as Artifacts/jobs/<jobid>/. It avoids hardcoding cluster- or project-specific log paths in GSD itself. Override with the GSD_EXTERNAL_JOB_ARTIFACT_DIR environment variable if you need a different location at runtime.",
+      "default": "Artifacts/jobs"
+    },
+    "external_job.backend": {
+      "type": "string",
+      "category": "External Job",
+      "description": "Selects which scheduler backend the external-job capability targets. SLURM is the first and currently only supported adapter; the field exists as a pluggability seam for future backends like LSF, PBS, or Kubernetes batch. GSD core never interprets this value directly — the adapter does.",
+      "default": "slurm",
+      "allowedValues": [
+        {
+          "value": "slurm",
+          "meaning": "Use the SLURM scheduler adapter to submit and poll external jobs. This is the only currently supported backend, so leave it as slurm unless a future GSD release documents additional options."
+        }
+      ]
+    },
+    "external_job.enabled": {
+      "type": "boolean",
+      "category": "External Job",
+      "description": "Master toggle for the async external-job producer capability, which lets an executor submit long-running work to an external scheduler instead of running it inline. The core loop always consumes job manifests, but it never writes a new manifest unless this is true. Keep it false unless you are integrating with a cluster scheduler.",
+      "default": false
+    },
+    "external_job.poll_timeout_ms": {
+      "type": "number",
+      "category": "External Job",
+      "description": "Hard timeout in milliseconds for the scheduler poll subprocess (for example squeue, with a sacct fallback). It bounds how long GSD waits for a status query to return. The default is 15000 ms. Increase it if your scheduler's query commands are slow under load.",
+      "default": 15000
+    },
+    "external_job.submit_timeout_ms": {
+      "type": "number",
+      "category": "External Job",
+      "description": "Hard timeout in milliseconds for the scheduler submit subprocess (for example sbatch). It bounds how long GSD waits for a job submission command to complete. The default is 30000 ms. Increase it if your cluster's submission step is slow during bursts.",
+      "default": 30000
+    },
+    "fast_mode.agent_overrides": {
+      "type": "object",
+      "category": "Effort",
+      "description": "A per-agent map that overrides the fast-mode behavior for specific agent types when fast mode is enabled. Each key is an agent type and each value is a boolean (`true` = fast, `false` = normal). This takes precedence over `fast_mode.routing_tier_defaults`. Use this to force a particular agent into (or out of) fast mode regardless of its tier — for example keeping the planner on normal reasoning while letting the executor go fast.",
+      "default": {},
+      "editor": {
+        "editable": true,
+        "editor": "agent-map",
+        "path": "fast_mode.agent_overrides",
+        "sensitive": false,
+        "sourceEvidence": [
+          "docs/CONFIGURATION.md#fast_mode.agent_overrides"
+        ]
+      }
+    },
+    "fast_mode.enabled": {
+      "type": "boolean",
+      "category": "Effort",
+      "description": "Master toggle for GSD's fast-mode behavior. When enabled, the runtime activates faster execution paths — agents resolve to the fast-mode tier configuration (`fast_mode.routing_tier_defaults`) instead of the normal effort tiers, trading some reasoning depth for speed and lower token use. Off by default, so agents use the normal effort routing unless you opt in. Enable this when you want snappier, cheaper agent runs and are willing to accept lighter reasoning.",
+      "default": false
+    },
+    "fast_mode.routing_tier_defaults": {
+      "type": "object",
+      "category": "Effort",
+      "description": "Sets the fast-mode behavior for each agent routing tier (`light`, `standard`, `heavy`) when fast mode is enabled. Each tier key takes a boolean: `true` means that tier runs in fast mode, `false` means it keeps normal reasoning. The default is `light: true, standard: false, heavy: false` — only the cheap, high-volume workers get fast. Change this to expand or contract which classes of agent use fast mode.",
+      "default": {
+        "heavy": false,
+        "light": true,
+        "standard": false
+      }
+    },
+    "features": {
+      "type": "object | null",
+      "category": "Features",
+      "description": "A namespace object that holds toggles for optional GSD capabilities, where each key is a feature name and each value is a boolean turning that feature on or off. Add feature flags here — such as 'thinking_partner' or 'global_learnings' — to enable advanced behaviors without changing core workflow settings."
+    },
+    "features.global_learnings": {
+      "type": "boolean",
+      "category": "Features",
+      "description": "Enables injection of global learnings — reusable insights stored in ~/.gsd/knowledge/ — into the prompts your agents receive. Turn this on when you want lessons from past projects to automatically inform new planning and execution sessions. Use it together with learnings.max_inject to cap how many are injected.",
+      "default": false
+    },
+    "features.thinking_partner": {
+      "type": "boolean",
+      "category": "Features",
+      "description": "Enables conditional extended-thinking at key workflow decision points, where the model pauses for deeper reasoning during architectural tradeoff analysis in the discuss and plan phases. Turn this on when you want more thorough, deliberative reasoning on complex decisions at the cost of extra compute. It defaults off.",
+      "default": false
+    },
+    "firecrawl": {
+      "type": "boolean",
+      "category": "Discovery",
+      "description": "Enables Firecrawl as a page-scraping source for the research agent, used specifically to fetch and extract the content of known URLs rather than performing broad web searches. Turn this on when you need the planner to visit specific pages — like documentation sites or reference articles — and pull their contents into the planning context. It only works if a Firecrawl API key is present (FIRECRAWL_API_KEY or ~/.gsd/firecrawl_api_key).",
+      "default": false,
+      "editor": {
+        "editable": false,
+        "editor": "read-only-unsupported",
+        "path": "firecrawl",
+        "sensitive": true,
+        "sourceEvidence": []
+      }
+    },
+    "gates.confirm_breakdown": {
+      "type": "boolean",
+      "category": "Gates",
+      "description": "Requires confirmation when GSD breaks a phase's work into tasks or plans. With this on, the system shows you the proposed breakdown and waits for approval before committing to it, giving you a chance to reshape the split before execution. Turn it off if you want GSD to break down work automatically without review.",
+      "default": true
+    },
+    "gates.confirm_phases": {
+      "type": "boolean",
+      "category": "Gates",
+      "description": "Requires confirmation when creating or modifying the phase list for a milestone. With this on, GSD asks you to approve the set of phases before it writes them to ROADMAP.md, so you can rename, reorder, or drop phases before work is planned against them. Turn it off if you want GSD to derive phases automatically without a manual checkpoint.",
+      "default": true
+    },
+    "gates.confirm_plan": {
+      "type": "boolean",
+      "category": "Gates",
+      "description": "Requires confirmation before a finalized plan is handed off for execution. With this on, GSD presents the completed PLAN.md and waits for your approval before the executor starts, giving you a last chance to adjust scope, sequencing, or acceptance criteria. Turn it off if you want plans to flow straight into execution without a human checkpoint.",
+      "default": true
+    },
+    "gates.confirm_project": {
+      "type": "boolean",
+      "category": "Gates",
+      "description": "Requires confirmation during project setup before GSD finalizes the project definition. With this on, GSD shows you the proposed project structure, goals, and requirements before writing PROJECT.md and related artifacts, so you can correct misunderstandings before they cascade into planning. Turn it off if you want GSD to bootstrap a project definition without a manual review step.",
+      "default": true
+    },
+    "gates.confirm_roadmap": {
+      "type": "boolean",
+      "category": "Gates",
+      "description": "Requires confirmation when GSD builds or updates the roadmap (ROADMAP.md). With this on, the system presents the milestone/phase roadmap and waits for your approval before committing it, letting you adjust ordering, naming, or scope before plans are derived. Turn it off if you want roadmap updates to apply automatically.",
+      "default": true
+    },
+    "gates.confirm_transition": {
+      "type": "boolean",
+      "category": "Gates",
+      "description": "Requires confirmation before marking a phase complete and moving on to the next one. With this on, GSD pauses at the end of a phase and asks whether to advance — even in custom/autonomous modes that suppress other prompts — so you can verify that the phase truly finished before the next begins. Turn it off if you want phase transitions to happen automatically without a stopping point.",
+      "default": true
+    },
+    "gates.execute_next_plan": {
+      "type": "boolean",
+      "category": "Gates",
+      "description": "Requires confirmation before GSD starts executing the next plan within a phase. With this on, the system identifies which plan is up next and waits for approval before dispatching the executor, letting you pause between plans or stop early. Turn it off if you want all plans in a phase to run back to back without a human checkpoint.",
+      "default": true
+    },
+    "gates.issues_review": {
+      "type": "boolean",
+      "category": "Gates",
+      "description": "Requires acknowledgment when a finished plan's SUMMARY.md reports issues encountered during execution. With this on, GSD presents the listed issues and waits for you to acknowledge them before continuing, ensuring problems are seen rather than silently logged. In yolo mode the issues are logged without blocking, but interactive mode pauses so you can decide what to do about them.",
+      "default": true
+    },
+    "git.base_branch": {
+      "type": "string | null",
+      "category": "Git",
+      "description": "The target branch that GSD opens pull requests against and merges back into when a milestone completes. When left as null, GSD auto-detects it by asking git which remote HEAD points to (commonly main or master), so most projects can leave this unset unless your integration branch has an unusual name like develop.",
+      "default": null
+    },
+    "git.branching_strategy": {
+      "type": "string",
+      "category": "Git",
+      "description": "Controls whether GSD automatically creates isolated git branches to keep phase or milestone work separate from your main codebase. With no branching, all commits land on your current branch; with branching, GSD spins up a dedicated branch for each phase or an entire milestone so you can review, merge, or discard the work cleanly.",
+      "default": "none",
+      "allowedValues": [
+        {
+          "value": "none",
+          "meaning": "No automatic branching — every commit goes straight to your current branch. Best for solo developers or simple projects where you don't need isolated review branches."
+        },
+        {
+          "value": "phase",
+          "meaning": "GSD creates and switches to a fresh branch at the start of every phase, using the phase_branch_template naming pattern (e.g. gsd/phase-03-authentication). Ideal when you want code review per phase or the ability to roll back a single phase without disturbing others."
+        },
+        {
+          "value": "milestone",
+          "meaning": "GSD creates one branch for the entire milestone at the first execute-phase, so every phase in that milestone commits to the same branch. Perfect for release branches and staging environments where an entire version ships as one unit."
+        }
+      ]
+    },
+    "git.create_tag": {
+      "type": "boolean",
+      "category": "Git",
+      "description": "Whether GSD should automatically create a git tag when a milestone is completed, giving you a permanent named snapshot (like a release marker) you can check out or compare later. Keep this on when you want a lightweight, zero-effort way to mark every finished version in your repo's history.",
+      "default": true
+    },
+    "git.milestone_branch_template": {
+      "type": "string",
+      "category": "Git",
+      "description": "The naming pattern GSD uses when it auto-creates a branch for an entire milestone. It supports the template variables {milestone} (the milestone version like \"v1.0\") and {slug} (a lowercase, hyphenated milestone name), so a template like gsd/{milestone}-{slug} produces branches such as gsd/v1.0-mvp.",
+      "default": "gsd/{milestone}-{slug}"
+    },
+    "git.phase_branch_template": {
+      "type": "string",
+      "category": "Git",
+      "description": "The naming pattern GSD uses when it auto-creates a branch for a single phase. It supports the template variables {phase} (a zero-padded phase number like \"03\") and {slug} (a lowercase, hyphenated version of the phase name), so a template like gsd/phase-{phase}-{slug} produces branches such as gsd/phase-03-authentication.",
+      "default": "gsd/phase-{phase}-{slug}"
+    },
+    "git.quick_branch_template": {
+      "type": "string | null",
+      "category": "Git",
+      "description": "An optional branch-naming template GSD uses for quick-task runs, which are smaller one-off tasks that aren't part of a full phase. It supports the {slug} template variable for a short hyphenated name. When left as null, quick tasks just stay on the current branch with no automatic branch creation.",
+      "default": null
+    },
+    "granularities": {
+      "type": "object | null",
+      "category": "Planning",
+      "description": "Per-phase-type overrides of planning granularity (e.g. deeper planning for execution than for research)."
+    },
+    "granularity": {
+      "type": "string",
+      "category": "Planning",
+      "description": "Controls how deeply GSD breaks down a phase into individual tasks when it creates a plan. Coarse produces a small number of large, broad steps; fine produces many small, precise steps; and standard is the balanced middle ground. Choose finer granularity when you want tighter control or easier incremental commits, and coarser when you trust the agent to figure out the details.",
+      "default": "standard",
+      "allowedValues": [
+        {
+          "value": "coarse",
+          "meaning": "Generates a short plan with a few large, high-level steps. Best when the work is simple, the agent already understands the codebase well, or you prefer to let the executor fill in the details rather than micromanage it from the plan."
+        },
+        {
+          "value": "standard",
+          "meaning": "Produces a moderate number of reasonably scoped tasks. This is the default and works well for most phases, giving the executor clear direction without over-specifying every small step."
+        },
+        {
+          "value": "fine",
+          "meaning": "Produces many small, narrowly scoped tasks. Use this when you want tight control over each commit, are onboarding a new area of the codebase, or prefer reviewing and verifying the work in small, safe increments."
+        }
+      ]
+    },
+    "graphify.auto_update": {
+      "type": "boolean",
+      "category": "Graphify",
+      "description": "When true (and graphify.enabled is also true), GSD installs a PostToolUse hook that runs graphify update automatically after commits and similar git operations on the default branch. This keeps your knowledge graph fresh without manual rebuilds. It is off by default because it adds background work on every matching git operation.",
+      "default": false
+    },
+    "graphify.build_timeout": {
+      "type": "number",
+      "category": "Graphify",
+      "description": "The maximum number of seconds GSD allows a graphify build to run before timing it out, passed through as the build's timeout. The default is 300 seconds (5 minutes). Raise this for very large codebases where indexing legitimately takes longer; lower it if you want faster feedback that a build is stuck.",
+      "default": 300
+    },
+    "graphify.enabled": {
+      "type": "boolean",
+      "category": "Graphify",
+      "description": "Enables the graphify knowledge-graph command and skill, which builds a structured graph of your codebase's semantic relationships under .planning/graphs/. When true, GSD can build, query, and diff a graph of modules, decisions, and dependencies that planning and research runs use to understand the project. It requires the external graphify tool to be installed.",
+      "default": false
+    },
+    "graphify.graph_path": {
+      "type": "string",
+      "category": "Graphify",
+      "description": "An optional absolute or project-relative path to a shared graph.json file, overriding the default .planning/graphs/graph.json location. Use this when multiple sibling projects should read from one umbrella-level knowledge graph without each keeping its own mirror. When empty, GSD uses the standard per-project location.",
+      "default": ""
+    },
+    "hooks.context_warnings": {
+      "type": "boolean",
+      "category": "Hooks",
+      "description": "Controls whether GSD surfaces warnings when the context budget is nearing or has been exceeded during a phase. When enabled, you'll be alerted that the model's context window is under pressure so you can pause or trim work before quality drops. Leave this on as a safeguard against silently degrading outputs.",
+      "default": true
+    },
+    "hooks.workflow_guard": {
+      "type": "boolean",
+      "category": "Hooks",
+      "description": "Toggles a protective hook that guards workflow execution by checking conditions before a workflow proceeds, helping prevent accidental or out-of-order operations. Keep this disabled unless you specifically want an extra checkpoint gating your workflow runs. It defaults off.",
+      "default": false
+    },
+    "intel.enabled": {
+      "type": "boolean",
+      "category": "Intel",
+      "description": "Enables the queryable codebase intelligence system under .planning/intel/. When true, the /gsd-map-codebase --query command builds and queries a JSON index of your codebase so later planning and research runs can answer structured questions about your project's structure. Keep it false unless you want that index built and maintained.",
+      "default": false
+    },
+    "jina": {
+      "type": "boolean",
+      "category": "Discovery",
+      "description": "Enables Jina as both a documentation reader and a page-scraping source for the research agent, allowing it to fetch and read the contents of documentation pages and known URLs. Turn this on when you want the planner to follow links and extract full page content during research. Unlike most providers, Jina defaults to enabled even without an explicit API key, but a JINA_API_KEY (or ~/.gsd/jina_api_key) makes access more reliable.",
+      "default": false
+    },
+    "learnings.max_inject": {
+      "type": "number",
+      "category": "Learnings",
+      "description": "Sets the maximum number of global learning entries injected into an agent's prompt in a single session, capping how much stored knowledge influences the model at once. Increase this when you want more historical lessons in play; lower it to keep prompts lean. It only has an effect when features.global_learnings is enabled, and defaults to 10.",
+      "default": 10
+    },
+    "manager.flags.discuss": {
+      "type": "string",
+      "category": "Manager",
+      "description": "Extra CLI flags that GSD passes to /gsd-discuss-phase whenever the manager dispatches it. Use this to standardize discuss behavior — for example, '--auto --analyze' — without retyping flags every time. An empty string means no extra flags are added.",
+      "default": ""
+    },
+    "manager.flags.execute": {
+      "type": "string",
+      "category": "Manager",
+      "description": "Extra CLI flags that GSD passes to the execute workflow whenever the manager dispatches it. Use this to standardize execution flags for manager-triggered runs. An empty string means no extra flags are added.",
+      "default": ""
+    },
+    "manager.flags.plan": {
+      "type": "string",
+      "category": "Manager",
+      "description": "Extra CLI flags that GSD passes to the plan workflow whenever the manager dispatches it. Use this to apply consistent planning flags across manager-driven runs. An empty string means no extra flags are added.",
+      "default": ""
+    },
+    "mempalace.auto_capture_hooks": {
+      "type": "boolean",
+      "category": "Mempalace",
+      "description": "Reserved for future use. Eventually this will install MemPalace's native Claude Code stop/precompact hooks to passively capture mid-session context without an explicit phase boundary. It is currently not implemented and enabling it has no effect, so leave it false.",
+      "default": false
+    },
+    "mempalace.capture_artifacts": {
+      "type": "boolean",
+      "category": "Mempalace",
+      "description": "When true, GSD files key phase artifacts — CONTEXT, PLAN, SUMMARY, and learnings — into the palace at phase boundaries. This is how the palace accumulates a searchable history of your project over time. Disable it if you do not want phase documents persisted into the memory store.",
+      "default": true
+    },
+    "mempalace.cross_project_tunnels": {
+      "type": "boolean",
+      "category": "Mempalace",
+      "description": "When true, GSD proposes or creates cross-wing tunnels after a ship, linking this project's palace to related wings in other projects. Tunnels let one project recall relevant memories from another. This is off by default because it mutates the palace structure based on inferred relationships.",
+      "default": false
+    },
+    "mempalace.diary_journal": {
+      "type": "boolean",
+      "category": "Mempalace",
+      "description": "When true, GSD writes a per-agent diary entry at ship time, recording what each agent did and decided during the phase. These diary entries become part of the palace's narrative history and can be recalled later for context. Turn it off if you find the diary entries redundant with your SUMMARY files.",
+      "default": true
+    },
+    "mempalace.enabled": {
+      "type": "boolean",
+      "category": "Mempalace",
+      "description": "Master toggle for the MemPalace long-term memory capability. When true, GSD maintains a searchable memory palace that stores decisions, patterns, artifacts, and diary entries across your phases, so future planning runs can recall context from earlier work. Keep this false unless you want GSD to invest time writing and recalling from a separate memory store alongside your regular planning files.",
+      "default": false
+    },
+    "mempalace.memory_mode": {
+      "type": "string",
+      "category": "Mempalace",
+      "description": "Controls how MemPalace relates to GSD's native .planning/graphs/ memory during recall and capture. It decides whether the palace is an extra layer on top of native memory, the primary source of truth for knowledge-graph queries, or a full replacement for native memory. Every mode degrades gracefully: if the palace is unreachable, GSD falls back to native memory so no work is lost.",
+      "default": "augment",
+      "allowedValues": [
+        {
+          "value": "augment",
+          "meaning": "The default and safest choice. MemPalace sits alongside your native .planning/graphs/ as an additive layer — native memory stays authoritative, and the palace contributes extra recalled context. Pick this when you want richer recall without changing how your existing knowledge graph is queried."
+        },
+        {
+          "value": "kg_backend",
+          "meaning": "Knowledge-graph queries resolve against the palace's temporal knowledge graph first, with .planning/graphs/ as a fallback. Use this once you have built up a palace knowledge graph you trust and want it to be the primary source of truth for relationship queries."
+        },
+        {
+          "value": "replace",
+          "meaning": "Recall resolves through the palace as the source of truth, with native memory only as a fallback. This is the most aggressive option — choose it when you want the palace to fully own your project's memory and are comfortable relying on it."
+        }
+      ]
+    },
+    "mempalace.mirror_kg": {
+      "type": "boolean",
+      "category": "Mempalace",
+      "description": "When true, decisions and learnings are mirrored into MemPalace's temporal knowledge graph as structured facts. This gives the palace queryable, time-aware relationships (who decided what, when, and why) rather than just a pile of documents. Turn it off if you want artifact storage without the knowledge-graph indexing.",
+      "default": true
+    },
+    "mempalace.recall_on_discuss": {
+      "type": "boolean",
+      "category": "Mempalace",
+      "description": "When true, GSD runs a wake-up and search recall step right before the discuss phase begins, injecting relevant memories from the palace into the conversation. This helps surface earlier decisions and patterns while you are scoping and questioning, so you do not re-litigate things the project already settled.",
+      "default": true
+    },
+    "mempalace.recall_on_plan": {
+      "type": "boolean",
+      "category": "Mempalace",
+      "description": "When true, GSD produces a MEMORY-RECALL.md file before planning, summarizing palace memories relevant to the upcoming phase. The planner then consumes this file so plans can build on prior decisions rather than re-deriving them. Turning it off means plans will not receive this prepared recall summary.",
+      "default": true
+    },
+    "mempalace.wing": {
+      "type": "string",
+      "category": "Mempalace",
+      "description": "Names the MemPalace wing this project writes to and reads from. A wing is an isolated memory namespace, so different projects or contexts can keep separate palaces. When left empty, GSD derives a sensible wing name from your project_code or project directory, which is usually what you want for a single project.",
+      "default": ""
+    },
+    "mode": {
+      "type": "string",
+      "category": "General",
+      "description": "Decides how autonomously GSD runs when it performs work. In interactive mode, GSD pauses at gates and asks for confirmation before doing risky or expensive actions, which is ideal when you want to review each step. In yolo mode, GSD runs straight through without prompting, useful for trusted, repeatable tasks or when you are watching the output and can stop it manually.",
+      "default": "interactive",
+      "allowedValues": [
+        {
+          "value": "interactive",
+          "meaning": "GSD shows you gates and confirmation prompts before committing to significant actions (for example, before running a plan or advancing to the next phase). Pick this when you want a human in the loop, are learning the tool, or are working on production code where an unwanted action would be costly."
+        },
+        {
+          "value": "yolo",
+          "meaning": "GSD runs autonomously without stopping to ask for confirmation, letting a phase or task execute end to end. Use this only when you are actively watching the output and trust the plan completely, such as on throwaway experiments or well-rehearsed workflows where a mistaken prompt accept would be harmless."
+        }
+      ]
+    },
+    "model_overrides": {
+      "type": "object | null",
+      "category": "Model & Routing",
+      "description": "A per-agent map that overrides the model chosen by the active `model_profile` (or phase-type `models` slot) for specific agent types. Each key is an agent type (e.g. `gsd-executor`, `gsd-planner`, `gsd-codebase-mapper`) and each value is a tier alias (`opus`/`sonnet`/`haiku`/`inherit`) or a fully-qualified model ID such as `o3`, `openai/o3`, or `google/gemini-2.5-pro`. Use this when the global profile is right for 90% of agents but you want to force one or two agents cheaper or more powerful — for example forcing the codebase-mapper to Haiku for a fan-out, or the executor to Opus for a delicate change. These overrides take precedence over both the phase-type map and the profile table.",
+      "editor": {
+        "editable": true,
+        "editor": "agent-map",
+        "path": "model_overrides",
+        "sensitive": false,
+        "sourceEvidence": [
+          "docs/CONFIGURATION.md#model_overrides"
+        ]
+      }
+    },
+    "model_policy.budget": {
+      "type": "string | null",
+      "category": "Model & Routing",
+      "description": "Picks which cost tier within the selected `model_policy.provider` preset the resolver uses for every agent, with `low` being the cheapest and `high` the most expensive. This is a global cost dial that works with the provider preset table: `high` maps each agent tier to the provider's premium model, `low` to its budget model, and `medium` to a middle ground. Change this when you want to raise or lower spending across the whole provider preset without changing the provider itself.",
+      "default": null,
+      "allowedValues": [
+        {
+          "value": "high",
+          "meaning": "Use the provider's highest-cost tier mapping — the most expensive (and usually most capable) model for each agent tier. Use when quality matters more than cost."
+        },
+        {
+          "value": "medium",
+          "meaning": "Use the provider's middle-cost tier mapping. A balanced choice when you want better-than-budget quality without the top-tier price."
+        },
+        {
+          "value": "low",
+          "meaning": "Use the provider's lowest-cost tier mapping — the cheapest model for each agent tier. Use when conserving quota is the priority."
+        },
+        {
+          "value": null,
+          "meaning": ""
+        }
+      ]
+    },
+    "model_policy.high": {
+      "type": "string | null",
+      "category": "Model & Routing",
+      "description": "A concrete model ID the resolver uses as the high-cost tier fallback, primarily for the `generic` provider path. When `model_policy.provider` is `generic` (or when the provider preset needs a high-end override), this value is returned as the model for any agent resolved to the top tier. Set this to a fully-qualified model ID your runtime recognizes (e.g. `o3`, `google/gemini-2.5-pro`). Leave `null` when using a built-in provider preset.",
+      "default": null
+    },
+    "model_policy.low": {
+      "type": "string | null",
+      "category": "Model & Routing",
+      "description": "A concrete model ID the resolver uses as the low-cost tier fallback, primarily for the `generic` provider path. When `model_policy.provider` is `generic`, this value is returned as the model for any agent resolved to the budget tier. Set this to a fully-qualified model ID your runtime recognizes. Leave `null` when using a built-in provider preset.",
+      "default": null
+    },
+    "model_policy.medium": {
+      "type": "string | null",
+      "category": "Model & Routing",
+      "description": "A concrete model ID the resolver uses as the medium-cost tier fallback, primarily for the `generic` provider path. When `model_policy.provider` is `generic`, this value is returned as the model for any agent resolved to the middle tier. Set this to a fully-qualified model ID your runtime recognizes. Leave `null` when using a built-in provider preset.",
+      "default": null
+    },
+    "model_policy.provider": {
+      "type": "string | null",
+      "category": "Model & Routing",
+      "description": "Selects a provider preset the model resolver uses to translate tiers (opus/sonnet/haiku) and a budget (high/medium/low) into concrete model IDs, instead of the default Claude catalog. Pick `anthropic`, `anthropic-fable`, `openai`, `google`, or `qwen` to use that provider's built-in preset table. Use `generic` (or set this to `null`) when you want to supply your own model IDs directly via `model_policy.high`/`medium`/`low`. Change this when running GSD against a non-Claude runtime and you want the resolver to pick that provider's native models.",
+      "default": null,
+      "allowedValues": [
+        {
+          "value": "openai",
+          "meaning": "Use the OpenAI provider preset so tiers resolve to GPT-5.6 models (Sol/Terra/Luna) with provider-appropriate reasoning-effort settings. Use this when your runtime is OpenAI/Codex."
+        },
+        {
+          "value": "anthropic",
+          "meaning": "Use the Anthropic provider preset so tiers resolve to Claude Opus 4.5/4.8, Sonnet 5, and Haiku 4.5. This is the natural Claude default when you want budget-aware tier resolution."
+        },
+        {
+          "value": "anthropic-fable",
+          "meaning": "Use the Anthropic-Fable preset, which promotes high-budget tiers to Fable 5 instead of Opus. Use this when you want Anthropic tooling with Fable as the top tier."
+        },
+        {
+          "value": "google",
+          "meaning": "Use the Google provider preset so tiers resolve to Gemini models (Flash-Lite, Flash 3, 3.1 Pro). Use this when your runtime is a Gemini-based CLI."
+        },
+        {
+          "value": "qwen",
+          "meaning": "Use the Qwen provider preset so tiers resolve to Qwen3 models (Max, Coder Plus, Coder Next). Use this when your runtime is Qwen-based."
+        },
+        {
+          "value": "generic",
+          "meaning": "A sentinel provider with no built-in model IDs — you must supply each tier's model via `model_policy.high`/`medium`/`low`. Use this for fully custom provider/model pairings that don't match a built-in preset."
+        },
+        {
+          "value": null,
+          "meaning": ""
+        }
+      ]
+    },
+    "model_policy.runtime_tiers": {
+      "type": "object | null",
+      "category": "Model & Routing",
+      "description": "A nested map that overrides the default model for each opus/sonnet/haiku tier on a specific runtime (#3587). The top-level keys are runtime names (e.g. `claude`, `codex`, `qwen`, `openceline`, etc.), and each value is an object with `opus`, `sonnet`, and `haiku` sub-keys holding the concrete model ID for that tier on that runtime. This is the same shape as `model_profile_overrides` but nested under `model_policy` and validated by a dynamic config pattern (`model_policy.runtime_tiers.<runtime>.<opus|sonnet|haiku>`). Use this when you want a provider-policy flavor of runtime-specific tier overrides. Each sub-tier value must be one of `opus`, `sonnet`, or `haiku`.",
+      "editor": {
+        "editable": true,
+        "editor": "runtime-tier-map",
+        "path": "model_policy.runtime_tiers",
+        "sensitive": false,
+        "sourceEvidence": [
+          "docs/CONFIGURATION.md#model_policy.runtime_tiers.<runtime>.<tier>"
+        ]
+      }
+    },
+    "model_profile": {
+      "type": "string",
+      "category": "Model & Routing",
+      "description": "Selects a global model-selection preset (a 'profile') that controls which Claude-tier model every GSD subagent is spawned with. Each profile maps every agent type to a tier (opus / sonnet / haiku / inherit), giving you a single dial for quality vs. cost: stronger models produce better plans and reasoning but burn more tokens and money. Change this when you want to shift the whole project toward higher quality or lower cost without configuring each agent individually.",
+      "default": "balanced",
+      "allowedValues": [
+        {
+          "value": "quality",
+          "meaning": "Maximum reasoning power across the board — decision-making agents run on Opus while read-only verification uses Sonnet. Use this when you have quota available and the work is architecturally critical and worth the premium."
+        },
+        {
+          "value": "balanced",
+          "meaning": "The default smart-allocation profile: Opus only for planning (where architecture decisions happen), and Sonnet for execution, research, and verification. Best everyday choice for normal development that wants a good balance of quality and cost."
+        },
+        {
+          "value": "budget",
+          "meaning": "Minimal Opus usage — Sonnet for anything that writes code, and Haiku for research and verification. Use this when conserving quota, doing high-volume work, or running less critical phases where top-tier reasoning isn't essential."
+        },
+        {
+          "value": "adaptive",
+          "meaning": "Role-based cost optimization — Opus for planning and debugging, Sonnet for execution/research/verification, and Haiku for high-volume structured jobs like mapping and auditing. Best when you want to optimize cost without sacrificing plan quality, especially for solo development on paid API tiers."
+        },
+        {
+          "value": "inherit",
+          "meaning": "Every agent resolves to the session's currently-selected model instead of a fixed tier. Required when using non-Anthropic providers (OpenRouter, local models, Codex, OpenCode, etc.) so GSD does not silently spawn Anthropic models and incur unexpected costs. Also useful when you switch models interactively with `/model`."
+        }
+      ],
+      "editor": {
+        "editable": true,
+        "editor": "profile-select",
+        "path": "model_profile",
+        "sensitive": false,
+        "sourceEvidence": [
+          "docs/CONFIGURATION.md#model_profile"
+        ]
+      }
+    },
+    "model_profile_overrides": {
+      "type": "object | null",
+      "category": "Model & Routing",
+      "description": "A per-runtime override map that replaces the built-in default model for each opus/sonnet/haiku tier on a specific runtime. The top-level keys are runtime names (e.g. `claude`, `codex`, `qwen`, `opencode`, `copilot`, `hermes`, `kilo`, `pi`), and each value is an object with `opus`, `sonnet`, and `haiku` sub-keys holding a concrete model ID. This lets you retarget a profile's tier labels onto different model IDs per runtime — for example, making `codex.sonnet` resolve to `gpt-5.6-terra`. Validated by the dynamic pattern `model_profile_overrides.<runtime>.<opus|sonnet|haiku>`, and unknown runtimes/tiers are warned about at load time. Use this when you want to keep a profile but change the concrete model a tier maps to on a particular runtime.",
+      "editor": {
+        "editable": true,
+        "editor": "runtime-tier-map",
+        "path": "model_profile_overrides",
+        "sensitive": false,
+        "sourceEvidence": [
+          "docs/CONFIGURATION.md#model_profile_overrides.<runtime>.<tier>"
+        ]
+      }
+    },
+    "models": {
+      "type": "object | null",
+      "category": "Model & Routing",
+      "description": "A coarse per-phase-type map that sets the model tier for all agents belonging to a phase type, so you can tune at the phase level without learning the agent taxonomy. Each key is one of the six phase types — `planning`, `discuss`, `research`, `execution`, `verification`, `completion` — and each value is a tier alias: `opus`, `sonnet`, `haiku`, or `inherit`. For example, `{\"planning\":\"opus\",\"execution\":\"sonnet\",\"verification\":\"sonnet\"}` runs planners on Opus and everything else on Sonnet. This is simpler than per-agent overrides but less precise; per-agent `model_overrides` wins over it, and it wins over the profile table."
+    },
+    "parallelization": {
+      "type": "boolean | object",
+      "category": "Workflow",
+      "description": "Top-level switch that decides whether GSD can run multiple plan tasks or executor agents at the same time instead of one after another. You can set it to a simple true/false, or use the object form to fine-tune how parallelism works. Turn it on to speed up large phases with independent plans; turn it off for simpler debugging or when your tooling does not support parallel agent execution.",
+      "default": true
+    },
+    "parallelization.enabled": {
+      "type": "boolean",
+      "category": "Workflow",
+      "description": "The on/off switch for parallelism when you are using the object form of the parallelization setting. When true, GSD runs eligible waves concurrently; when false, everything runs sequentially. This mirrors the simple boolean form but lets you keep the other parallelization sub-settings alongside it.",
+      "default": true
+    },
+    "parallelization.max_concurrent_agents": {
+      "type": "number",
+      "category": "Workflow",
+      "description": "Caps how many executor agents GSD spawns at the same time during a parallel wave. A higher number can finish large phases faster on powerful machines, while a lower number reduces resource use and contention. The default of three is a practical balance for most projects.",
+      "default": 3
+    },
+    "parallelization.min_plans_for_parallel": {
+      "type": "number",
+      "category": "Workflow",
+      "description": "The minimum number of remaining eligible plans needed before GSD switches into parallel execution. If fewer plans than this remain, GSD runs them sequentially to avoid paying the overhead of parallelism on tiny batches. The default of two means a single leftover plan always runs sequentially.",
+      "default": 2
+    },
+    "parallelization.plan_level": {
+      "type": "boolean",
+      "category": "Workflow",
+      "description": "Decides whether independent whole plans within a wave can run at the same time. When true and multiple plans are eligible, GSD dispatches several executor agents in parallel, one per plan. This is the most common form of parallelism and gives the biggest speedup when plans do not depend on each other.",
+      "default": true
+    },
+    "parallelization.skip_checkpoints": {
+      "type": "boolean",
+      "category": "Workflow",
+      "description": "Controls whether executor agents in parallel waves wait for intermediate checkpoint gates between tasks. When true, agents push through tasks without pausing for checkpoint approvals, which keeps parallel execution fast and avoids blocking one agent behind another's gate. Disable this if you want checkpoint reviews even at the cost of slower parallel runs.",
+      "default": true
+    },
+    "parallelization.task_level": {
+      "type": "boolean",
+      "category": "Workflow",
+      "description": "Enables finer-grained parallelism by splitting tasks within a single plan across multiple agents, rather than only running whole plans in parallel. This is more aggressive and can interfere with tasks that must run in order, so it defaults to false. Enable it only when a plan contains many clearly independent subtasks.",
+      "default": false
+    },
+    "perplexity": {
+      "type": "boolean",
+      "category": "Discovery",
+      "description": "Turns on Perplexity as a web search provider for the research agent, which returns synthesized answers drawn from across the web with source citations. Enable this when you want planning research to receive conversational, summarized answers rather than raw result lists. It only takes effect if a Perplexity API key is configured (PERPLEXITY_API_KEY or ~/.gsd/perplexity_api_key).",
+      "default": false
+    },
+    "phase_commit_docs": {
+      "type": "object | null",
+      "category": "Planning",
+      "description": "A per-phase override that lets you set commit_docs for a single phase without changing the global default. For example, phase_commit_docs.03 forces a specific behavior just for phase 3. This per-phase value outranks both the explicit config setting and any gitignore auto-detection, so it's the most targeted way to control whether one particular phase's planning is committed."
+    },
+    "phase_id_convention": {
+      "type": "string | null",
+      "category": "General",
+      "description": "Controls whether phase IDs carry a milestone prefix (`\"milestone-prefixed\"`) or use plain integer numbering (`null`). With the default `null`, phases are numbered simply within their milestone; setting `\"milestone-prefixed\"` makes phase integer prefixes encode their milestone relationship so cross-milestone phase numbering stays unique and ordered (see W021 for the related health warning). Leave `null` unless you need milestone-aware phase numbering across many milestones.",
+      "default": null,
+      "allowedValues": [
+        {
+          "value": "milestone-prefixed",
+          "meaning": "Phase IDs are prefixed by milestone so cross-milestone phase integers remain unique and ordered. Use this when running many milestones whose phase numbers would otherwise collide."
+        },
+        {
+          "value": null,
+          "meaning": "No milestone prefix — phases use plain sequential numbering within their milestone (the default)."
+        }
+      ]
+    },
+    "phase_naming": {
+      "type": "string",
+      "category": "General",
+      "description": "Determines how phases are identified and numbered. `\"sequential\"` is the default and auto-increments phase IDs in a running sequence; `\"custom\"` lets you assign arbitrary string IDs to phases instead of being locked into the auto-increment sequence. Change to `custom` when you want human-meaningful phase identifiers or want to name phases in a way that auto-numbering doesn't support.",
+      "default": "sequential",
+      "allowedValues": [
+        {
+          "value": "sequential",
+          "meaning": "Auto-incrementing sequential phase IDs (the default). GSD numbers phases in order, which is simplest for most projects."
+        },
+        {
+          "value": "custom",
+          "meaning": "Arbitrary string phase IDs you choose yourself. Use when you want meaningful phase names instead of auto-numbered ones."
+        }
+      ]
+    },
+    "plan_review.source_grounding": {
+      "type": "boolean",
+      "category": "Review",
+      "description": "Controls whether plan-review checks each plan item against your actual codebase and trusted sources before treating it as valid, helping catch suggestions that aren't grounded in your real code or official documentation. Enable this when you want an extra safety net that flags invented file names, APIs, or libraries the planner may have hallucinated. This is a verification-only step and does not change how plans are initially created.",
+      "default": true
+    },
+    "plan_review.source_grounding_authority": {
+      "type": "string",
+      "category": "Review",
+      "description": "Chooses which tool or system plan-review uses as its source of truth when grounding plan items — that is, how it confirms that a file, symbol, or API your plan references actually exists. Pick the authority that matches the tooling available in your project: a quick text scan, a codebase intelligence index, or a code-analysis engine. The default (grep) works everywhere without extra setup; the richer options need their respective features enabled.",
+      "default": "grep",
+      "allowedValues": [
+        {
+          "value": "grep",
+          "meaning": "Use a fast text search (grep/ripgrep) across your codebase to verify references. This is the default: it works in any project with no extra setup and is the lightest-weight option, though it can't understand code structure or types."
+        },
+        {
+          "value": "intel",
+          "meaning": "Use the GSD codebase intelligence index (.planning/intel/) as the authority, which is built and queried via /gsd-map-codebase --query. More accurate than grep because it's a structured index, but requires the intel feature to be enabled and built."
+        },
+        {
+          "value": "treesitter",
+          "meaning": "Use Tree-sitter parsing to understand your code's structure when grounding references. This understands syntax and symbols more deeply than plain text search, so it can catch matches grep would miss, but it relies on available Tree-sitter grammars for your languages."
+        },
+        {
+          "value": "lsp",
+          "meaning": "Use a Language Server Protocol client as the authority, giving plan-review deep, semantic understanding of your code (definitions, references, types). Most accurate option for supported languages, but requires a running LSP server for your project."
+        },
+        {
+          "value": "scip",
+          "meaning": "Use SCIP (Sourcegraph's code intelligence platform) as the authority for precise, cross-file symbol references. Best for large codebases that already use SCIP indexing, but requires a SCIP index to be generated for your project."
+        }
+      ]
+    },
+    "planner.stall_detect_interval_minutes": {
+      "type": "number",
+      "category": "Planning",
+      "description": "How often, in minutes, the system checks whether the planner agent has stalled. This is the polling interval for the planner's stall detector. The default of five minutes is a reasonable balance between quick detection and low overhead.",
+      "default": 5
+    },
+    "planner.stall_threshold_minutes": {
+      "type": "number",
+      "category": "Planning",
+      "description": "How many minutes the planner must be unresponsive before it is considered stalled and acted upon. If your plans are unusually large or your model is slow, raise this threshold to avoid premature stall reports. The default of ten minutes works for typical phases.",
+      "default": 10
+    },
+    "planning.commit_docs": {
+      "type": "boolean",
+      "category": "Planning",
+      "description": "Whether GSD should commit the planning artifacts in your .planning/ directory (files like SUMMARY.md, STATE.md, and ROADMAP.md) into git. When enabled, your full planning history is preserved alongside your code; when disabled, planning stays local on your machine, which is useful for open-source contributions or client projects where you don't want to publish your internal planning.",
+      "default": true
+    },
+    "planning.search_gitignored": {
+      "type": "boolean",
+      "category": "Planning",
+      "description": "Whether GSD should pass --no-ignore to broad ripgrep searches so they also match files that are normally hidden by .gitignore. Most GSD operations read files by explicit path and work either way, so this only matters when you run a wide search across the whole repo and expect results from gitignored locations like .planning/.",
+      "default": false
+    },
+    "planning.sub_repos": {
+      "type": "array",
+      "category": "Planning",
+      "description": "A list of child directories in your project that contain their own independent .git repositories. GSD keeps this array in sync with the filesystem automatically on every config load, so in most cases you don't need to edit it by hand — it simply tells GSD which folders are separate repos rather than ordinary subdirectories.",
+      "default": []
+    },
+    "profile-pipeline.enabled": {
+      "type": "boolean",
+      "category": "Profile Pipeline",
+      "description": "Enables the developer profiling pipeline commands, which scan prior Claude session history, extract messages, sample conversations, and write an AI-discoverable developer profile. When true, GSD can analyze how you work and tailor prompts accordingly. Keep it false unless you want that behavioral profiling pipeline active.",
+      "default": false
+    },
+    "project_code": {
+      "type": "string | null",
+      "category": "General",
+      "description": "A short prefix (for example `\"CK\"` or `\"APP\"`) prepended to generated phase directory and plan IDs, producing IDs like `CK-01-foundation` instead of `01-foundation`. This helps distinguish phases from different projects or workstreams when you share a `.planning/` structure or browse history. When `null`, phases are numbered without a prefix. Set this when you want a human-readable project tag baked into every phase identifier.",
+      "default": null
+    },
+    "ref_search": {
+      "type": "boolean",
+      "category": "Discovery",
+      "description": "Enables Ref as a documentation search provider for the research agent, giving it access to curated, official documentation sources that are treated as high-authority. Turn this on when you want the planner to prioritize vetted, official reference material over general web results, which improves answer accuracy for library- and framework-specific questions. It only takes effect with a Ref API key (REF_API_KEY or ~/.gsd/ref_api_key).",
+      "default": false
+    },
+    "refactor.complexity_jump_delta": {
+      "type": "number",
+      "category": "General",
+      "description": "Complexity growth above which a refactor proposal is surfaced even when the absolute threshold is not reached. Measured against the function's anchor — the score recorded the last time the function was consciously dispositioned — so it accumulates across phases and catches slow creep the absolute threshold would miss. Strictly greater, as with the threshold.",
+      "default": 5
+    },
+    "refactor.complexity_threshold": {
+      "type": "number",
+      "category": "General",
+      "description": "Absolute per-function complexity above which a refactor proposal is surfaced. Semantics match ESLint's `complexity: {max: N}` — the trigger is STRICTLY GREATER, so a score of exactly N does not trigger. Default 15 follows SonarSource's default; ESLint's own default is 20 and radon's rank C begins at 11. Raise it if proposals feel like noise.",
+      "default": 15
+    },
+    "refactor.trigger_enabled": {
+      "type": "boolean",
+      "category": "General",
+      "description": "Enable the complexity-triggered refactor hook. When true, an execute:post step evaluates the complexity of the files the phase touched and writes a scoped refactor proposal if a function crosses refactor.complexity_threshold or jumps past refactor.complexity_jump_delta. Opt-in; when false the hook never runs. Issue #1953.",
+      "default": false
+    },
+    "refactor.trigger_strict": {
+      "type": "boolean",
+      "category": "General",
+      "description": "Record an untriaged refactor proposal as an open `deviation` entry in the broken-windows ledger, so it becomes a tracked task that must be resolved before ship. Off by default and deliberately so: a blocking complexity number is a metric an executor can satisfy by splitting one coherent function into two incoherent ones, so the entry clears on the proposal being DISPOSITIONED (gsd-tools refactor accept|decline), never on the score improving. Ship blocking is the broken-windows capability's existing ship:pre gate — enable it with workflow.windows_enforce. With broken-windows absent, strict mode still records the proposal locally and says so; it cannot block on its own. Advisory mode (the default) surfaces the same proposal and tracks nothing.",
+      "default": false
+    },
+    "resolve_model_ids": {
+      "type": "boolean | string",
+      "category": "Model & Routing",
+      "description": "Controls whether the model resolver translates the tier aliases returned by the profile system into fully-qualified model IDs, or omits the model parameter entirely. `false` is the default and leaves aliases unresolved; `true` maps aliases to full Claude IDs (e.g. `sonnet` maps to a concrete Sonnet model); `\"omit\"` returns an empty model parameter so each agent uses the runtime's default model. Set this to `\"omit\"` (or `false` for non-Claude runtimes) when using Codex, OpenCode, Gemini CLI, Kilo, or any non-Claude runtime, so GSD does not pass Anthropic model IDs that the runtime cannot honor.",
+      "default": false
+    },
+    "response_language": {
+      "type": "string | null",
+      "category": "General",
+      "description": "Forces all user-facing questions and prompts from every phase and subagent to be written in a specific language (e.g. `\"Portuguese\"`, `\"Japanese\"`, `\"Spanish\"`). When set, GSD injects a directive into every spawned agent so it responds in that language instead of matching the user's input language. Leave `null` to let agents respond in whatever language the conversation is already using. Change this when you want the entire GSD experience to consistently use a particular language.",
+      "default": null
+    },
+    "review.default_reviewers": {
+      "type": "array | null",
+      "category": "Review",
+      "description": "Chooses which external AI reviewers a no-flag `/gsd-review` run uses, so you don't have to name them on the command line each time. Each entry is a reviewer slug like `\"gemini\"`, `\"codex\"`, or `\"opencode\"` — or a custom instance name you defined under `review.reviewer_instances`. This is a preference, not a hard requirement: explicit flags like `--gemini` and `--all` still override it, and reviewers that aren't installed on the current machine are silently skipped. Set this when you want `/gsd-review` to consistently use your favorite subset of reviewers.",
+      "default": null
+    },
+    "review.llama_cpp_host": {
+      "type": "string",
+      "category": "Review",
+      "description": "The base URL of the llama.cpp server (`llama-server`) that the `llama_cpp` reviewer lane talks to. The llama.cpp server exposes an OpenAI-compatible HTTP API, so GSD probes `${host}/v1/models` to detect it and sends review prompts straight to it — no separate CLI needed. The default is `http://localhost:8080`, the standard port for `llama-server`. Change this only when your llama.cpp server listens on a different port.",
+      "default": "http://localhost:8080"
+    },
+    "review.lm_studio_host": {
+      "type": "string",
+      "category": "Review",
+      "description": "The base URL of the LM Studio local model server that the `lm_studio` reviewer lane talks to. LM Studio serves models through an OpenAI-compatible HTTP API, so GSD probes `${host}/v1/models` to detect it and routes review requests there without any CLI binary. The default is `http://localhost:1234`, LM Studio's standard local port. Change this only when you run LM Studio on a non-default port.",
+      "default": "http://localhost:1234"
+    },
+    "review.max_prompt_tokens": {
+      "type": "number | null",
+      "category": "Review",
+      "description": "Sets a global token budget (in estimated tokens) for the assembled review prompt, capping how much context each reviewer receives in a single pass. When set, the prompt is deterministically trimmed — CONTEXT, RESEARCH, and REQUIREMENTS are dropped first, then PROJECT.md is shrunk and PLANs are truncated — so small-context reviewers don't overflow. This is a fallback default: per-reviewer overrides in `review.max_prompt_tokens_per_reviewer` take precedence for any reviewer they list. Set this when your reviewers (especially local models) hit token limits; leave `null` to send the full prompt unchanged.",
+      "default": null
+    },
+    "review.max_prompt_tokens_per_reviewer": {
+      "type": "object",
+      "category": "Review",
+      "description": "Provides per-reviewer token-budget overrides that take precedence over the global `review.max_prompt_tokens`, so each reviewer can get a cap matched to its own context window. The keys are reviewer slugs (`ollama`, `llama_cpp`, `lm_studio`, `gemini`, `claude`, `codex`, `opencode`, `qwen`, `cursor`) and each value is a number (the token cap) — unset reviewers fall back to `review.max_prompt_tokens`. This is the recommended knob for local model servers, which typically accept far fewer tokens than cloud APIs. Set this when your local reviewers overflow while cloud reviewers are fine, or vice versa.",
+      "default": {}
+    },
+    "review.max_prompt_tokens_per_reviewer.llama_cpp": {
+      "type": "number",
+      "category": "Review",
+      "description": "Prompt-token budget for the llama.cpp reviewer lane. Unset is -1, a sentinel: 0 is a legitimate value meaning \"do not trim this lane\", so it cannot double as \"not configured\".",
+      "default": -1
+    },
+    "review.max_prompt_tokens_per_reviewer.lm_studio": {
+      "type": "number",
+      "category": "Review",
+      "description": "Prompt-token budget for the LM Studio reviewer lane. Unset is -1, a sentinel: 0 is a legitimate value meaning \"do not trim this lane\", so it cannot double as \"not configured\".",
+      "default": -1
+    },
+    "review.max_prompt_tokens_per_reviewer.ollama": {
+      "type": "number",
+      "category": "Review",
+      "description": "Prompt-token budget for the Ollama reviewer lane. Unset is -1, a sentinel: 0 is a legitimate value meaning \"do not trim this lane\", so it cannot double as \"not configured\".",
+      "default": -1
+    },
+    "review.models": {
+      "type": "object",
+      "category": "Review",
+      "description": "A map that overrides which model each reviewer CLI uses during `/gsd-review`, so you can pin a specific model per reviewer instead of relying on the CLI's own default. The keys are reviewer slugs (`gemini`, `claude`, `codex`, `opencode`, `qwen`, `cursor`, `agy`, `ollama`, `lm_studio`, `llama_cpp`, `kimi-code`) and each value is a bare model ID string (e.g. `\"gemini-2.5-pro\"`, `\"gpt-5\"`, `\"claude-sonnet-4\"`, `\"codellama\"`) that GSD passes to that reviewer's `--model` flag. Cloud reviewers fall back to their CLI default when unset; the local-server reviewers (`ollama`/`lm_studio`/`llama_cpp`) fall back to the first model the server reports. Set this when you want a reviewer to use a specific model different from its default.",
+      "default": {}
+    },
+    "review.models.agy": {
+      "type": "string",
+      "category": "Review",
+      "description": "Model passed to the Antigravity reviewer lane. The key suffix is the lane binary/flag alias `agy`, not the slug `antigravity` — preserved verbatim so existing .planning/config.json files keep working.",
+      "default": ""
+    },
+    "review.models.claude": {
+      "type": "string",
+      "category": "Review",
+      "description": "Model passed to the Claude reviewer lane.",
+      "default": ""
+    },
+    "review.models.codex": {
+      "type": "string",
+      "category": "Review",
+      "description": "Model passed to the Codex reviewer lane.",
+      "default": ""
+    },
+    "review.models.gemini": {
+      "type": "string",
+      "category": "Review",
+      "description": "Model passed to the Gemini reviewer lane.",
+      "default": ""
+    },
+    "review.models.kimi-code": {
+      "type": "string",
+      "category": "Review",
+      "description": "Model passed to the Kimi Code reviewer lane.",
+      "default": ""
+    },
+    "review.models.llama_cpp": {
+      "type": "string",
+      "category": "Review",
+      "description": "Model requested from the llama.cpp reviewer lane; empty discovers the first model from /v1/models.",
+      "default": ""
+    },
+    "review.models.lm_studio": {
+      "type": "string",
+      "category": "Review",
+      "description": "Model requested from the LM Studio reviewer lane; empty discovers the first model from /v1/models.",
+      "default": ""
+    },
+    "review.models.ollama": {
+      "type": "string",
+      "category": "Review",
+      "description": "Model requested from the Ollama reviewer lane; empty discovers the first model from /v1/models.",
+      "default": ""
+    },
+    "review.models.opencode": {
+      "type": "string",
+      "category": "Review",
+      "description": "Model passed to the OpenCode reviewer lane.",
+      "default": ""
+    },
+    "review.ollama_host": {
+      "type": "string",
+      "category": "Review",
+      "description": "The base URL of the Ollama local model server that the `ollama` reviewer lane talks to. Ollama exposes an OpenAI-compatible HTTP API, so GSD probes `${host}/v1/models` to detect it and sends review prompts there — no CLI binary needed. The default is `http://localhost:11434`, which is Ollama's standard port. Change this only when you run Ollama on a non-default port or on a remote machine.",
+      "default": "http://localhost:11434"
+    },
+    "review.reviewer_instances": {
+      "type": "object",
+      "category": "Review",
+      "description": "Defines custom named reviewer identities so a single model-capable adapter (like OpenCode) can act as several independent reviewers in one `/gsd-review` pass — each with its own model. Each key is an instance name (`^[a-z0-9][a-z0-9-]*$`, and it must not collide with a built-in slug) and each value is an object with a required `cli` (a known reviewer adapter like `\"opencode\"`) plus optional `model` and `agent` strings passed through verbatim. Instances are only ever invoked when their name appears in `review.default_reviewers` — there are no per-instance CLI flags. Set this when you want multiple independent reviews from one adapter using different models, rather than relying on the built-in reviewers.",
+      "default": {}
+    },
+    "runtime": {
+      "type": "string | null",
+      "category": "Model & Routing",
+      "description": "Declares which runtime/machine-learning provider GSD's model resolver and effort rendering should target, so tier labels map to that runtime's native model IDs (e.g. Codex maps to `gpt-5.6-sol`/`gpt-5.6-terra`/`gpt-5.6-luna`). When unset (`null`) it reads as `\"claude\"`. The supported values include `claude`, `codex`, `qwen`, `opencode`, `copilot`, `hermes`, `kilo`, `pi`, and the Group-B runtimes (`cline`, `cursor`, `windsurf`, `augment`, `trae`, `codebuddy`, `antigravity`, `kimi`, `kimi-code`, `zcode`) which have no built-in defaults. Set this when you want GSD's profile tiers and effort argv to match a non-Claude runtime's catalog.",
+      "default": null
+    },
+    "safety.always_confirm_destructive": {
+      "type": "boolean",
+      "category": "Gates",
+      "description": "Safety rail that forces a confirmation prompt before any destructive action is taken, regardless of the workflow mode. Destructive actions include skipping incomplete plans during a phase transition, discarding uncommitted state, or overwriting work. Even in `yolo` mode, this setting makes GSD pause and ask before throwing work away — set to `false` only if you explicitly want destructive actions to proceed without prompts.",
+      "default": true
+    },
+    "safety.always_confirm_external_services": {
+      "type": "boolean",
+      "category": "Gates",
+      "description": "Safety rail that forces a confirmation prompt before any action that touches external services (network calls, deploys, API writes, anything that leaves the machine). Enabling this prevents an automated workflow from mutating production or third-party state without a human saying yes, which is especially important for stateful or billable services.",
+      "default": true
+    },
+    "search_gitignored": {
+      "type": "boolean",
+      "category": "Planning",
+      "description": "The top-level form of planning.search_gitignored — both keys do exactly the same thing and are equivalent. It controls whether broad ripgrep searches include files hidden by .gitignore via --no-ignore. If you set both this and planning.search_gitignored to different values, this top-level one wins.",
+      "default": false
+    },
+    "security.injection_blocking": {
+      "type": "boolean",
+      "category": "Security",
+      "description": "Toggles the read-injection scanner hook between advisory and blocking mode. The hook scans content that agents fetch with `Read`, `WebFetch`, or `WebSearch` for prompt-injection payloads hidden in untrusted sources. When `false` (the default), HIGH-confidence detections are only logged, so you can see what was flagged without interrupting work. When `true`, a HIGH-confidence detection emits a `decision: \"block\"` that halts the agent's next step — a circuit-breaker. Note the hook runs after the fetch, so blocking cannot retroactively redact content already in the transcript. Set this to `true` when you want untrusted-source injection attempts to stop the agent rather than just being noted.",
+      "default": false
+    },
+    "ship.pr_body_sections": {
+      "type": "array",
+      "category": "Ship",
+      "description": "A list of extra project-specific sections that GSD appends to the bottom of every pull request body it generates. Each entry defines a heading and how its content is produced — from a source file, a template string, or a fallback value — so your team can add custom checklists, testing notes, or deployment notes without editing GSD's built-in sections.",
+      "default": []
+    },
+    "statusline.context_position": {
+      "type": "string | null",
+      "category": "Statusline",
+      "description": "Sets where the context indicator appears in the statusline relative to other status elements, choosing either the 'front' (beginning) or 'end' (tail). Change this if you want the context readout prioritized at the start of the status bar or prefer it tucked out of the way at the end.",
+      "default": null,
+      "allowedValues": [
+        {
+          "value": "end",
+          "meaning": "Place the context indicator at the end of the statusline. Keeps the leading status area focused on other signals, with the context readout shown last."
+        },
+        {
+          "value": "front",
+          "meaning": "Place the context indicator at the front of the statusline. Use this when you want the context readout to be the first thing you see."
+        },
+        {
+          "value": null,
+          "meaning": ""
+        }
+      ]
+    },
+    "statusline.show_context_tokens": {
+      "type": "boolean",
+      "category": "Statusline",
+      "description": "Controls whether the statusline shows a live readout of context-token usage, giving you a sense of how much of the model's context window is in use. Turn this on when you want to monitor context consumption in real time while working. It is a simple boolean toggle.",
+      "default": null
+    },
+    "statusline.show_git": {
+      "type": "boolean",
+      "category": "Statusline",
+      "description": "Controls whether the statusline displays git-related status information, such as the current branch or repo state. Enable this when you want a quick git reference visible alongside GSD's own status indicators. It is a simple boolean toggle.",
+      "default": null
+    },
+    "statusline.show_last_command": {
+      "type": "boolean",
+      "category": "Statusline",
+      "description": "Controls whether the GSD statusline displays the last GSD command that was run, so you can see at a glance what action triggered the current state. Enable this when you want a quick reminder of the most recent command visible in your status bar. It is a boolean toggle with no enumerated value list.",
+      "default": null
+    },
+    "statusline.state_format": {
+      "type": "string | null",
+      "category": "Statusline",
+      "description": "Chooses how much detail the statusline shows about GSD's internal state: 'full' displays a complete readout, while 'compact' trims it to the essentials. Pick 'compact' for a minimal status bar or 'full' when you want every status field visible.",
+      "default": null,
+      "allowedValues": [
+        {
+          "value": "full",
+          "meaning": "Show a full, detailed readout of GSD's state in the statusline. Best when you want maximum information visible at all times."
+        },
+        {
+          "value": "compact",
+          "meaning": "Show a trimmed-down, compact version of GSD's state. Reduces clutter when you only need the most important signals."
+        },
+        {
+          "value": null,
+          "meaning": ""
+        }
+      ]
+    },
+    "tavily_search": {
+      "type": "boolean",
+      "category": "Discovery",
+      "description": "Enables Tavily as a web search provider for the research agent, optimized for retrieving concise, relevant search results with good coverage of current information. Turn this on when you want a search engine focused on answer-quality results during planning research. It only takes effect if a Tavily API key is configured (TAVILY_API_KEY or ~/.gsd/tavily_api_key).",
+      "default": false
+    },
+    "workflow.agent_hint_routing": {
+      "type": "boolean",
+      "category": "Workflow",
+      "description": "Honors the agent_hint field in a plan's frontmatter by routing that plan to a specific executor agent or model instead of the default. This is a no-op for plans that do not declare an agent_hint, so it is safe to leave on. Keep it on when you occasionally pin a plan to a particular agent, and it has no effect otherwise.",
+      "default": true
+    },
+    "workflow.ai_integration_phase": {
+      "type": "boolean",
+      "category": "Workflow",
+      "description": "Prompts for an AI-SPEC design contract before planning phases that involve AI systems. When enabled, GSD requires a written design covering model selection, prompts, fallbacks, and evaluation before an AI-related phase can be planned, so architectural tradeoffs are made explicit early. Turn it off if your project does not build AI systems or if you design those systems outside GSD.",
+      "default": true
+    },
+    "workflow.api_coverage_gate": {
+      "type": "boolean",
+      "category": "Workflow",
+      "description": "Requires an explicit API-coverage decision before a phase that integrates an external API, SDK, or service can seal. At plan time, the planner is prompted to enumerate the API surface into a COVERAGE.md matrix; at verify time, a blocking gate fails the seal unless the matrix exists and every non-integrated capability is an explicit, reasoned opt-out. This is independent of `workflow.ai_integration_phase` — it applies to any external-API integration, not only AI.",
+      "default": true
+    },
+    "workflow.assumption_delta": {
+      "type": "boolean",
+      "category": "Workflow",
+      "description": "Enables the assumption-delta architecture checkpoint during planning. When GSD detects a pluralization, optionality, or chosen/alternative signal in the phase scope, it prompts the planner to re-ask whether the primary key or identity model still names the right thing before the plan is built on top of it. This is advisory only — it never blocks — and helps catch design-rename drift early.",
+      "default": true
+    },
+    "workflow.auto_advance": {
+      "type": "boolean",
+      "category": "Workflow",
+      "description": "Makes GSD automatically move on to the next phase once the current one completes successfully, without waiting for you to start it manually. This keeps a long milestone running end to end, but you lose the chance to inspect the finished phase and change direction before the next one begins. Use it only when you trust the full chain of phases.",
+      "default": false
+    },
+    "workflow.auto_prune_state": {
+      "type": "boolean",
+      "category": "Workflow",
+      "description": "Tells GSD to automatically trim the project STATE.md file on phase completion, keeping only the entries for the most recent few phases. This prevents the state file from growing without bound on long-running projects. Turn it on for milestones with many phases; turn it off if you want a full historical record in STATE.md.",
+      "default": false
+    },
+    "workflow.build_command": {
+      "type": "string | null",
+      "category": "Gates",
+      "description": "A custom shell command that GSD runs as the build gate during the post-merge check. When unset, the build step is either auto-detected or skipped. Set this to something like \"npm run build\" if your build is not auto-detected or needs specific arguments, and you want the build verified before merging.",
+      "default": null
+    },
+    "workflow.code_review": {
+      "type": "boolean",
+      "category": "Workflow",
+      "description": "Toggles the built-in code review step inside the `/gsd-ship` workflow. When enabled, the ship flow runs a code-review pass against the changes before opening or finalizing a pull request, giving you a structured quality gate before code lands on the base branch. Set it to `false` only if you have a fully separate review process and want ship to skip its own review step.",
+      "default": true
+    },
+    "workflow.code_review_command": {
+      "type": "string | null",
+      "category": "Workflow",
+      "description": "Path to an external code-review command that `/gsd-ship` uses instead of the built-in review. The diff is piped to the command over stdin, and the command must reply with JSON that includes a `verdict` field of either `\"APPROVED\"` or `\"REVISE\"`. A non-zero exit code or a `\"REVISE\"` verdict blocks the ship workflow. When this is unset (null), GSD's own built-in review flow runs instead.",
+      "default": null
+    },
+    "workflow.code_review_depth": {
+      "type": "string",
+      "category": "Workflow",
+      "description": "Controls how thorough the built-in code review in `/gsd-ship` is. A deeper review looks harder for subtle correctness, security, and design issues but takes longer and may surface more findings to address. Choose a level that matches how much scrutiny you want ship to apply before code is considered ready.",
+      "default": "standard",
+      "allowedValues": [
+        {
+          "value": "quick",
+          "meaning": "A lightweight review focused on obvious bugs, style problems, and glaring issues. Fastest option — useful for small, low-risk changes where you mainly want a sanity check."
+        },
+        {
+          "value": "standard",
+          "meaning": "A balanced review depth that weighs finding real issues against review time. The recommended default for everyday development."
+        },
+        {
+          "value": "deep",
+          "meaning": "The most thorough review, digging into edge cases, security implications, and design concerns. Use for sensitive code (auth, payments, anything security-critical) or before a major release."
+        }
+      ]
+    },
+    "workflow.context_coverage_gate": {
+      "type": "boolean",
+      "category": "Gates",
+      "description": "Enables a decision-coverage gate that checks whether the work honored the project's stated decisions before the phase can seal. When off, this coverage check is skipped, so phases are not blocked by decisions that were not explicitly addressed. Keep it on when your project tracks decisions tightly; turn it off if it is producing noisy or unhelpful failures.",
+      "default": true
+    },
+    "workflow.context_guard_mode": {
+      "type": "string",
+      "category": "Workflow",
+      "description": "Controls how GSD reacts when the executor's context window is running low during a phase. In warn mode it alerts you and recommends pausing; in auto mode it pauses on its own before the next wave; off disables the guard entirely. The guard is heuristic and meant to prevent degraded output from an overstuffed context.",
+      "default": "warn",
+      "allowedValues": [
+        {
+          "value": "warn",
+          "meaning": "The orchestrator warns you when context pressure is high and recommends running /gsd-pause-work, but leaves the choice to you. This is the recommended default because it informs you without surprising you with an automatic pause."
+        },
+        {
+          "value": "auto",
+          "meaning": "The orchestrator automatically pauses the phase before the next wave when context pressure is high. Use this when you want hands-free protection against degraded output and do not mind the workflow stopping for a handoff."
+        },
+        {
+          "value": "off",
+          "meaning": "Disables the context exhaustion guard entirely. Only use this when you have verified the phase fits comfortably and you want to avoid any guard interference, accepting the risk of quality loss if context runs out."
+        }
+      ]
+    },
+    "workflow.cross_ai_command": {
+      "type": "string | null",
+      "category": "Workflow",
+      "description": "The shell command GSD uses to run plans through an external AI tool when cross-AI execution is enabled. The plan's task prompt is piped to this command via stdin. If cross-AI execution is on and this is empty, GSD reports an error and asks you to set it. Only fill this in when you have a specific external AI workflow.",
+      "default": null
+    },
+    "workflow.cross_ai_execution": {
+      "type": "boolean",
+      "category": "Workflow",
+      "description": "Enables running certain plans through an external AI command instead of GSD's own executor. Plans marked with cross_ai: true in their frontmatter are then handed off to that external tool, which can be useful for specialized or legacy workflows. Leave this off unless you have deliberately set up an external cross-AI command.",
+      "default": false
+    },
+    "workflow.cross_ai_timeout": {
+      "type": "number",
+      "category": "Workflow",
+      "description": "How long, in seconds, GSD waits for the external cross-AI command to finish a single plan before treating it as timed out. Increase this for large or slow external AI tools; decrease it to fail faster on hung commands. The default of 300 seconds (5 minutes) works for most setups.",
+      "default": 300
+    },
+    "workflow.discuss_mode": {
+      "type": "string",
+      "category": "Planning",
+      "description": "Controls what the discuss phase actually does. In discuss mode, GSD asks you interactive questions to clarify scope and approach. In assumptions mode, it instead analyzes the codebase and surfaces the assumptions it detected, without quizzing you. Pick the style that fits how you like to share context.",
+      "default": "discuss",
+      "allowedValues": [
+        {
+          "value": "discuss",
+          "meaning": "Runs an interactive question-and-answer session to explore the phase's scope, constraints, and preferences. Choose this when you prefer to steer the phase by answering targeted questions, or when the work has many valid tradeoffs."
+        },
+        {
+          "value": "assumptions",
+          "meaning": "GSD examines the codebase and reports the assumptions it is making instead of asking you questions. Use this when you would rather review and correct a list of detected assumptions than answer a long Q&A."
+        }
+      ]
+    },
+    "workflow.drift_action": {
+      "type": "string",
+      "category": "Workflow",
+      "description": "What the codebase drift gate does when the structural-drift threshold (`workflow.drift_threshold`) is exceeded. With `\"warn\"`, GSD prints an advisory and recommends refreshing the structure map; with `\"auto-remap\"`, GSD additionally spawns a codebase-mapper agent to regenerate STRUCTURE.md automatically. Choose `\"auto-remap\"` only if you trust the mapper to refresh structure without manual review.",
+      "default": "warn",
+      "allowedValues": [
+        {
+          "value": "warn",
+          "meaning": "Print an advisory when structural drift exceeds the threshold. The default — you decide when to refresh STRUCTURE.md."
+        },
+        {
+          "value": "auto-remap",
+          "meaning": "Automatically spawn a codebase-mapper agent to refresh STRUCTURE.md when drift is detected. Convenient, but runs the mapper without a manual review gate."
+        }
+      ]
+    },
+    "workflow.drift_threshold": {
+      "type": "number",
+      "category": "Workflow",
+      "description": "The minimum number of new structural elements (directories, barrel exports, migrations, routes, etc.) that must appear before the codebase drift gate fires its warn or auto-remap action. Raising this reduces noise in fast-growing projects; lowering it makes drift detection more sensitive. This threshold is shared by both the execute-time drift gate and the plan-time precheck.",
+      "default": 3
+    },
+    "workflow.human_verify_mode": {
+      "type": "string",
+      "category": "Review",
+      "description": "Chooses when GSD asks a human to review the work it has done. In mid-flight mode, verification checkpoints happen during the phase so problems are caught early. In end-of-phase mode, all verification happens in one pass at the end. Mid-flight is safer for risky changes; end-of-phase is faster and less interruptive.",
+      "default": "end-of-phase",
+      "allowedValues": [
+        {
+          "value": "end-of-phase",
+          "meaning": "Verification happens once after the whole phase completes. This keeps execution fast and unbroken, and is fine when you trust the plan and the work is reversible. Problems are caught later, in a single review pass."
+        },
+        {
+          "value": "mid-flight",
+          "meaning": "Verification checkpoints happen during the phase so you can catch mistakes early, before later tasks build on top of bad work. Use this on high-risk phases or when a wrong step would be expensive to undo."
+        }
+      ]
+    },
+    "workflow.inline_plan_threshold": {
+      "type": "number",
+      "category": "Workflow",
+      "description": "Plans with this many tasks or fewer are executed inline by the orchestrator instead of spawning a separate subagent, which avoids the token overhead of launching an agent for a tiny job. Set it to 0 to always spawn subagents, or raise it to inline more small plans. The default of two keeps very cheap plans fast.",
+      "default": 2
+    },
+    "workflow.max_discuss_passes": {
+      "type": "number",
+      "category": "Planning",
+      "description": "Limits how many rounds of questions GSD will go through in the discuss phase before it stops and moves on. A higher number allows a deeper, more thorough exploration of the phase, while a lower number keeps the discussion short. The default of three is usually enough to surface the key issues without fatigue.",
+      "default": 3
+    },
+    "workflow.mvp_mode": {
+      "type": "boolean",
+      "category": "Workflow",
+      "description": "Persists the MVP flag in config so every phase is framed as a vertical slice one user-visible capability at a time (UI, then API, then database) without needing the --mvp flag on each CLI command. When on, the planner, executor, verifier, and discovery surfaces all treat phases this way. Use it when your whole milestone is structured as thin end-to-end slices.",
+      "default": false
+    },
+    "workflow.node_repair": {
+      "type": "boolean",
+      "category": "Workflow",
+      "description": "Lets GSD automatically retry and fix a failed plan task (a node) before reporting the failure to you. When on, the executor diagnoses the failure and attempts corrective edits, which can save you from stepping in on routine compilation errors, test flakiness, or small logic mistakes. Turn it off if you want to inspect and fix every failure yourself.",
+      "default": true
+    },
+    "workflow.node_repair_budget": {
+      "type": "number",
+      "category": "Workflow",
+      "description": "Sets how many times GSD may automatically retry a single failed task before it gives up and escalates the failure to you. A higher budget can recover from flaky or multi-step problems, but it also means a truly stuck task will waste more time before you see it. The default of two strikes a balance between resilience and quick escalation.",
+      "default": 2
+    },
+    "workflow.nyquist_validation": {
+      "type": "boolean",
+      "category": "Workflow",
+      "description": "Enables Nyquist-inspired validation coverage auditing during the workflow. When on, GSD analyzes your tests and requirements to estimate how well they sample the possible behaviors of the code, and flags areas where coverage is too sparse to give confidence. Turn it off if the coverage-audit noise outweighs its value for a fast-moving project.",
+      "default": true
+    },
+    "workflow.pattern_mapper": {
+      "type": "boolean",
+      "category": "Workflow",
+      "description": "Runs a pattern mapper step before planning when research or other context is available. The pattern mapper looks across your codebase and project signals to surface recurring patterns, conventions, and anti-patterns that the planner should respect, so new work fits the existing design rather than contradicting it.",
+      "default": true
+    },
+    "workflow.plan_bounce": {
+      "type": "boolean",
+      "category": "Workflow",
+      "description": "Enables an external plan-bounce validation step against each generated PLAN.md. When on, every plan is passed through the command set in `workflow.plan_bounce_script`, and a non-zero exit code blocks the workflow from proceeding. This lets you enforce custom structural or policy rules on plans (required sections, estimation limits, banned approaches) before execution begins.",
+      "default": false
+    },
+    "workflow.plan_bounce_passes": {
+      "type": "number",
+      "category": "Workflow",
+      "description": "How many iterative plan-bounce passes GSD runs against a plan. Each pass re-validates the (possibly revised) plan through the bounce script, so a value greater than 1 lets a plan be reworked and re-checked up to this many times before it is finally rejected. Use a higher value when your script produces fixable findings and you want GSD to attempt corrections first.",
+      "default": 2
+    },
+    "workflow.plan_bounce_script": {
+      "type": "string | null",
+      "category": "Workflow",
+      "description": "Path to the executable script used for plan-bounce validation when `workflow.plan_bounce` is enabled. GSD runs this script with the path of the PLAN.md file as its first argument and pipes the plan content over stdin; the script must exit 0 for the plan to pass. Set it to null (the default) when you are not using plan-bounce validation.",
+      "default": null
+    },
+    "workflow.plan_check": {
+      "type": "boolean",
+      "category": "Planning",
+      "description": "Enables a dedicated checker agent that reviews a finished plan for correctness, consistency, and completeness before execution begins. When on, the plan gets a second pair of eyes that can catch missing steps, contradictions, or unsafe approaches. Leave this on for confidence, or turn it off to shave a little time on plans you already trust.",
+      "default": true
+    },
+    "workflow.plan_chunked": {
+      "type": "boolean",
+      "category": "Workflow",
+      "description": "Enables chunked planning mode. Instead of running one long-lived planner task, GSD splits planning into a short outline task followed by several short per-plan tasks (roughly 3–5 minutes each). Each plan is committed individually, so a crash or interruption does not lose the entire planning session. This is especially helpful on Windows, where long-lived tasks can hang on stdio issues.",
+      "default": false
+    },
+    "workflow.plan_drift_precheck": {
+      "type": "boolean",
+      "category": "Workflow",
+      "description": "Runs a non-blocking codebase-drift check before `/gsd:plan-phase` spawns the planner. If your project's recorded structure (STRUCTURE.md) is stale — meaning directories, routes, or other structural elements have grown beyond `workflow.drift_threshold` — GSD shows an advisory pointing you to `/gsd:map-codebase`. It never blocks planning and never spawns the mapper automatically, so it is safe to leave on in autonomous and CI runs.",
+      "default": true
+    },
+    "workflow.plan_review_convergence": {
+      "type": "boolean",
+      "category": "Workflow",
+      "description": "Enables the automated plan→review→replan convergence loop in `/gsd-plan-review-convergence`. When enabled, GSD repeatedly runs plan-phase and an external AI review lane, feeding the review findings back into the planner, until the reviewers raise no further HIGH concerns (up to a bounded number of cycles). This replaces a manual back-and-forth with an automated loop. When disabled, the convergence command exits early with instructions to turn it on.",
+      "default": false
+    },
+    "workflow.post_planning_gaps": {
+      "type": "boolean",
+      "category": "Workflow",
+      "description": "Runs a post-planning gap report after all plans are generated (plan-phase step 13e). It scans REQUIREMENTS.md and CONTEXT.md decisions against every PLAN.md and prints a unified table showing which items are planned, missing, or only partially covered. This is non-blocking and purely informational — it helps you notice requirements that slipped through the cracks before execution starts.",
+      "default": true
+    },
+    "workflow.research": {
+      "type": "boolean",
+      "category": "Workflow",
+      "description": "When true, GSD runs a research agent before planning whenever research artifacts are missing or explicitly refreshed. The research agent gathers codebase and domain context so the planner starts from facts rather than assumptions. Keep this on unless you always want to skip the research step and plan directly.",
+      "default": true
+    },
+    "workflow.research_before_questions": {
+      "type": "boolean",
+      "category": "Planning",
+      "description": "Makes GSD do a codebase research pass before it starts the interactive discussion questions for a phase. This gives the agent context so its questions are better targeted and less generic. It adds a little time to the discuss phase but usually yields a much sharper understanding of the work.",
+      "default": false
+    },
+    "workflow.schema_drift_gate": {
+      "type": "boolean",
+      "category": "Workflow",
+      "description": "Enables the drift gates that run after each execution wave. Two checks happen: a schema-drift gate that blocks verification if schema-relevant files changed but no database push command ran, and a codebase-drift gate that warns when structural additions exceed `workflow.drift_threshold`. Turn both off together only if drift detection routinely fires false positives on your project.",
+      "default": true
+    },
+    "workflow.schema_push_detection": {
+      "type": "boolean",
+      "category": "Workflow",
+      "description": "Enables ORM schema-push detection during planning. When GSD detects schema-relevant files (migrations, model definitions, ORM config) inside the phase scope, it injects a blocking push task into the plan so the database is migrated as part of execution rather than forgotten. Turn this off only if your project manages database schema entirely outside GSD's awareness.",
+      "default": true
+    },
+    "workflow.security_asvs_level": {
+      "type": "number",
+      "category": "Security",
+      "description": "Sets the OWASP ASVS (Application Security Verification Standard) level GSD uses for security review guidance. Level 1 is opportunistic and appropriate for most apps; Level 2 adds standard rigor for apps handling sensitive data; Level 3 is comprehensive and meant for high-assurance, regulated, or high-threat systems. The level scales both how aggressively the planner considers threats and how deeply the auditor verifies mitigations.",
+      "default": 1,
+      "allowedValues": [
+        {
+          "value": 1,
+          "meaning": "Level 1 — opportunistic. A lightweight security baseline suitable for most applications and internal tools."
+        },
+        {
+          "value": 2,
+          "meaning": "Level 2 — standard. Adds systematic verification for apps that handle personal or business-sensitive data."
+        },
+        {
+          "value": 3,
+          "meaning": "Level 3 — comprehensive. The deepest assurance level, intended for regulated, high-threat, or security-critical systems."
+        }
+      ]
+    },
+    "workflow.security_block_on": {
+      "type": "string",
+      "category": "Security",
+      "description": "The minimum open threat severity that will block a phase from advancing. The auditor counts only open threats at or above this severity toward the blocking gate. Raising the bar to `\"critical\"` means only the most severe findings block progress, while lowering it to `\"low\"` makes the gate stricter. Set it to `\"none\"` to disable severity-based blocking entirely (threats are still tracked, they just never block).",
+      "default": "high",
+      "allowedValues": [
+        {
+          "value": "critical",
+          "meaning": "Only critical-severity findings block advancement. Least strict severity gate — useful while triaging a large backlog of legacy findings."
+        },
+        {
+          "value": "high",
+          "meaning": "High-severity and critical findings block advancement. The recommended default for most teams."
+        },
+        {
+          "value": "medium",
+          "meaning": "Medium, high, and critical findings block advancement. Stricter — adopted once a project wants to treat moderate risks as release blockers."
+        },
+        {
+          "value": "low",
+          "meaning": "Low and above block advancement. Very strict — even minor findings must be resolved before the phase can advance."
+        },
+        {
+          "value": "none",
+          "meaning": "Severity never blocks advancement. Threats are still tracked, but the gate is effectively disabled. Use when another process owns enforcement."
+        }
+      ]
+    },
+    "workflow.security_enforcement": {
+      "type": "boolean",
+      "category": "Security",
+      "description": "Enables threat-model-anchored security verification through `/gsd-secure-phase`. When on, GSD runs security checks tied to your project's threat model before a phase can advance, using the ASVS level and severity gate configured by the other `workflow.security_*` keys. Turning this off disables security checks entirely — only do that for early prototypes or non-production experiments where security findings would be noise.",
+      "default": true
+    },
+    "workflow.skip_discuss": {
+      "type": "boolean",
+      "category": "Planning",
+      "description": "Skips the discuss phase entirely, moving straight from planning to execution without the usual clarification step. This saves time on trivial or well-understood phases, but you lose the chance to catch misunderstandings early. Only turn this on when the phase's intent is already crystal clear.",
+      "default": false
+    },
+    "workflow.smart_zone_tokens": {
+      "type": "number",
+      "category": "Workflow",
+      "description": "Sets the token budget GSD uses to decide whether a phase is large enough to warrant splitting. When a phase's estimate exceeds this number, GSD recommends breaking it into smaller phases. It is an advisory policy default, not a hard limit, so the warning is a nudge to consider splitting rather than a blocker.",
+      "default": 100000
+    },
+    "workflow.specless_probe_fallback": {
+      "type": "boolean",
+      "category": "Planning",
+      "description": "Controls what happens when a phase's SPEC is missing its Edge Coverage or Prosections sections. When on (the default), GSD runs a probing pass to discover those predicates and writes them into the plan. When off, the fallback is skipped and a visible marker is emitted so you know the probe was intentionally not run.",
+      "default": true
+    },
+    "workflow.subagent_timeout": {
+      "type": "number",
+      "category": "Workflow",
+      "description": "Sets the timeout in milliseconds for parallel subagent tasks such as codebase mapping. If a subagent takes longer than this, GSD stops it and reports a timeout. Increase this for very large codebases or slower models; the default of 300000 (5 minutes) fits most projects.",
+      "default": 300000
+    },
+    "workflow.tdd_mode": {
+      "type": "boolean",
+      "category": "Workflow",
+      "description": "Enables test-driven-development mode for eligible tasks. When on, the planner annotates qualifying tasks with `type:tdd`, and the executor enforces the RED/GREEN/REFRACTOR gate sequence: write a failing test first, make it pass, then refactor. Turn this on when you want TDD discipline applied automatically, and off when you want the planner to choose its own task types.",
+      "default": false
+    },
+    "workflow.test_command": {
+      "type": "string | null",
+      "category": "Gates",
+      "description": "A custom shell command that GSD runs as the regression and test gate. When unset, GSD auto-detects the right command from your Makefile, package.json, Cargo.toml, go.mod, or pyproject.toml. Set this only when auto-detection picks the wrong command or you need special arguments for a one-shot test run.",
+      "default": null
+    },
+    "workflow.test_gate_timeout": {
+      "type": "number",
+      "category": "Gates",
+      "description": "How long, in seconds, GSD lets the test runner run during the regression gate before aborting it. If tests are stuck in watch or dev mode instead of running once, the run is cut off with a warning. The default is 600 seconds (10 minutes); raise it for slow test suites or lower it to catch stuck runners sooner.",
+      "default": 600
+    },
+    "workflow.text_mode": {
+      "type": "boolean",
+      "category": "General",
+      "description": "Switches GSD's interactive prompts from structured AskUserQuestion menus to plain numbered text lists. This is primarily a compatibility and readability option for terminals or environments that cannot render the structured menus. Most users should leave this off.",
+      "default": false
+    },
+    "workflow.ui_phase": {
+      "type": "boolean",
+      "category": "Workflow",
+      "description": "Enables the UI design-contract gate during planning for frontend phases. When on, `/gsd-plan-phase` generates a UI-SPEC.md that captures the visual and interaction contract before implementation begins, so the UI has an agreed-upon design to build against. Turn it off for backend-only projects or phases that have no user interface.",
+      "default": true
+    },
+    "workflow.ui_review": {
+      "type": "boolean",
+      "category": "Workflow",
+      "description": "Enables the retrospective UI audit against implemented frontend code. When on, GSD runs a structured visual and behavioral audit of finished UI work against its UI-SPEC.md contract, catching layout, accessibility, and interaction drift. Turn it off if your project has no UI or you perform UI reviews through another tool.",
+      "default": true
+    },
+    "workflow.ui_safety_gate": {
+      "type": "boolean",
+      "category": "Workflow",
+      "description": "Blocks planning/execution when a UI-SPEC contract is unmet. Unlike `workflow.ui_phase` (which generates the spec), this key is the enforcement gate: when on, failing to satisfy the UI-SPEC.md prevents the phase from sealing. With both keys on, GSD generates the contract and enforces it — the intended default. Setting `ui_phase:true` and `ui_safety_gate:false` generates a spec in pipelines but does not block manual planning.",
+      "default": true
+    },
+    "workflow.use_worktrees": {
+      "type": "boolean",
+      "category": "Git",
+      "description": "Runs each parallel executor agent in its own isolated git worktree so concurrent edits do not collide. This is the safe way to get parallelism on a shared branch, but it adds overhead and can complicate merge handling. Turn it off to run sequentially on the main working tree, which is simpler and recommended for solo developers.",
+      "default": true
+    },
+    "workflow.verifier": {
+      "type": "boolean",
+      "category": "Workflow",
+      "description": "When true, GSD runs a verifier agent after execution to check that the phase's deliverables match its plan and acceptance criteria. It is one of the core quality gates that catches drift between what was planned and what was built. Keep it on unless you intentionally want no automated post-execution verification.",
+      "default": true
+    },
+    "workflow.windows_enforce": {
+      "type": "boolean",
+      "category": "Workflow",
+      "description": "Enables the blocking ship-pre gate for the broken-windows ledger (`.planning/WINDOWS.md`). When `true`, `/gsd-ship` blocks while the ledger has any open entry, forcing the team to disposition each tracked deviation before shipping. When `false` (the default), windows are still tracked — the executor and verifier populate the ledger — but ship does not block, letting teams adopt tracking first and enforce later.",
+      "default": false
+    },
+    "workflow.worktree_skip_hooks": {
+      "type": "boolean",
+      "category": "Git",
+      "description": "Lets executor commits inside worktrees bypass pre-commit hooks when they would otherwise fail or slow things down. By default hooks run on each task commit to catch issues early; this setting opts out of that behavior only where the project explicitly chooses to. Enable it only if your hooks are incompatible with the worktree workflow.",
+      "default": false
+    }
+  }
+}
