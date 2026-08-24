@@ -83,5 +83,27 @@
     "tsx": "4.23.0",
     "vite": "8.1.4",
     "vitest": "4.1.10"
-  }
+  },
+  "license": "MIT",
+  "author": "FiredMosquito831",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/FiredMosquito831/open-gsd-core-config-manager.git"
+  },
+  "homepage": "https://github.com/FiredMosquito831/open-gsd-core-config-manager#readme",
+  "bugs": {
+    "url": "https://github.com/FiredMosquito831/open-gsd-core-config-manager/issues"
+  },
+  "keywords": [
+    "gsd",
+    "open-gsd",
+    "gsd-core",
+    "config",
+    "config-editor",
+    "configuration-manager",
+    "claude",
+    "developer-tools",
+    "local-first",
+    "json-schema"
+  ]
 }

@@ -49,7 +49,8 @@
     "claude_md_assembly.blocks": {
       "type": "object | null",
       "category": "General",
-      "description": "A map of named content blocks that are assembled into CLAUDE.md, where each key is a block/section name and its value is the markdown content for that section. Use this to inject modular, reusable snippets — such as coding standards or project conventions — into the assembled instruction file without hand-editing the whole thing."
+      "description": "A map of named content blocks that are assembled into CLAUDE.md, where each key is a block/section name and its value is the markdown content for that section. Use this to inject modular, reusable snippets — such as coding standards or project conventions — into the assembled instruction file without hand-editing the whole thing.",
+      "defaultNote": "No single default — this is a namespace/map key; its sub-keys carry their own defaults (see the specialized editor in the app, or gsd-core docs)."
     },
     "claude_md_assembly.mode": {
       "type": "string | null",
@@ -196,7 +197,8 @@
     "dynamic_routing": {
       "type": "object | null",
       "category": "Model & Routing",
-      "description": "Enables dynamic model routing with failure-tier escalation (#3024). When `enabled` is true, the resolver picks a model from a tier-mapped table (`tier_models`) based on each agent's default routing tier (light/standard/heavy), and escalates an agent to the next tier up on an orchestrator-detected soft failure — up to `max_escalations` times. `escalate_on_failure` turns this retry-and-escalate behavior on or off. Dynamic routing is ignored unless `enabled` is true. Use this to let the system automatically retry failed agents on stronger models instead of failing the phase."
+      "description": "Enables dynamic model routing with failure-tier escalation (#3024). When `enabled` is true, the resolver picks a model from a tier-mapped table (`tier_models`) based on each agent's default routing tier (light/standard/heavy), and escalates an agent to the next tier up on an orchestrator-detected soft failure — up to `max_escalations` times. `escalate_on_failure` turns this retry-and-escalate behavior on or off. Dynamic routing is ignored unless `enabled` is true. Use this to let the system automatically retry failed agents on stronger models instead of failing the phase.",
+      "defaultNote": "No single default — this is a namespace/map key; its sub-keys carry their own defaults (see the specialized editor in the app, or gsd-core docs)."
     },
     "effort.agent_overrides": {
       "type": "object",
@@ -350,7 +352,8 @@
     "features": {
       "type": "object | null",
       "category": "Features",
-      "description": "A namespace object that holds toggles for optional GSD capabilities, where each key is a feature name and each value is a boolean turning that feature on or off. Add feature flags here — such as 'thinking_partner' or 'global_learnings' — to enable advanced behaviors without changing core workflow settings."
+      "description": "A namespace object that holds toggles for optional GSD capabilities, where each key is a feature name and each value is a boolean turning that feature on or off. Add feature flags here — such as 'thinking_partner' or 'global_learnings' — to enable advanced behaviors without changing core workflow settings.",
+      "defaultNote": "No single default — this is a namespace/map key; its sub-keys carry their own defaults (see the specialized editor in the app, or gsd-core docs)."
     },
     "features.global_learnings": {
       "type": "boolean",
@@ -478,7 +481,8 @@
     "granularities": {
       "type": "object | null",
       "category": "Planning",
-      "description": "Per-phase-type overrides of planning granularity (e.g. deeper planning for execution than for research)."
+      "description": "Per-phase-type overrides of planning granularity (e.g. deeper planning for execution than for research).",
+      "defaultNote": "No single default — this is a namespace/map key; its sub-keys carry their own defaults (see the specialized editor in the app, or gsd-core docs)."
     },
     "granularity": {
       "type": "string",
@@ -674,7 +678,8 @@
         "sourceEvidence": [
           "docs/CONFIGURATION.md#model_overrides"
         ]
-      }
+      },
+      "defaultNote": "No single default — this is a namespace/map key; its sub-keys carry their own defaults (see the specialized editor in the app, or gsd-core docs)."
     },
     "model_policy.budget": {
       "type": "string | null",
@@ -766,7 +771,8 @@
         "sourceEvidence": [
           "docs/CONFIGURATION.md#model_policy.runtime_tiers.<runtime>.<tier>"
         ]
-      }
+      },
+      "defaultNote": "No single default — this is a namespace/map key; its sub-keys carry their own defaults (see the specialized editor in the app, or gsd-core docs)."
     },
     "model_profile": {
       "type": "string",
@@ -817,12 +823,14 @@
         "sourceEvidence": [
           "docs/CONFIGURATION.md#model_profile_overrides.<runtime>.<tier>"
         ]
-      }
+      },
+      "defaultNote": "No single default — this is a namespace/map key; its sub-keys carry their own defaults (see the specialized editor in the app, or gsd-core docs)."
     },
     "models": {
       "type": "object | null",
       "category": "Model & Routing",
-      "description": "A coarse per-phase-type map that sets the model tier for all agents belonging to a phase type, so you can tune at the phase level without learning the agent taxonomy. Each key is one of the six phase types — `planning`, `discuss`, `research`, `execution`, `verification`, `completion` — and each value is a tier alias: `opus`, `sonnet`, `haiku`, or `inherit`. For example, `{\"planning\":\"opus\",\"execution\":\"sonnet\",\"verification\":\"sonnet\"}` runs planners on Opus and everything else on Sonnet. This is simpler than per-agent overrides but less precise; per-agent `model_overrides` wins over it, and it wins over the profile table."
+      "description": "A coarse per-phase-type map that sets the model tier for all agents belonging to a phase type, so you can tune at the phase level without learning the agent taxonomy. Each key is one of the six phase types — `planning`, `discuss`, `research`, `execution`, `verification`, `completion` — and each value is a tier alias: `opus`, `sonnet`, `haiku`, or `inherit`. For example, `{\"planning\":\"opus\",\"execution\":\"sonnet\",\"verification\":\"sonnet\"}` runs planners on Opus and everything else on Sonnet. This is simpler than per-agent overrides but less precise; per-agent `model_overrides` wins over it, and it wins over the profile table.",
+      "defaultNote": "No single default — this is a namespace/map key; its sub-keys carry their own defaults (see the specialized editor in the app, or gsd-core docs)."
     },
     "parallelization": {
       "type": "boolean | object",
@@ -875,7 +883,8 @@
     "phase_commit_docs": {
       "type": "object | null",
       "category": "Planning",
-      "description": "A per-phase override that lets you set commit_docs for a single phase without changing the global default. For example, phase_commit_docs.03 forces a specific behavior just for phase 3. This per-phase value outranks both the explicit config setting and any gitignore auto-detection, so it's the most targeted way to control whether one particular phase's planning is committed."
+      "description": "A per-phase override that lets you set commit_docs for a single phase without changing the global default. For example, phase_commit_docs.03 forces a specific behavior just for phase 3. This per-phase value outranks both the explicit config setting and any gitignore auto-detection, so it's the most targeted way to control whether one particular phase's planning is committed.",
+      "defaultNote": "No single default — this is a namespace/map key; its sub-keys carry their own defaults (see the specialized editor in the app, or gsd-core docs)."
     },
     "phase_id_convention": {
       "type": "string | null",
