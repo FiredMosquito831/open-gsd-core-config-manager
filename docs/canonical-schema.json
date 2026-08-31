@@ -6,7 +6,7 @@
   "version": "1.11.0",
   "generatedFrom": {
     "gsdCoreTag": "v1.11.0",
-    "tool": "gsd-config-manager"
+    "tool": "open-gsd-core-config-manager"
   },
   "keys": {
     "agent_skills": {

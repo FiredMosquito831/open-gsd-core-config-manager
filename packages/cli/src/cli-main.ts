@@ -27,7 +27,7 @@ export async function main(argv: string[] = process.argv): Promise<void> {
 
   const program = new Command();
   program
-    .name('gsd-config-manager')
+    .name('open-gsd-core-config-manager')
     .option('--port <number>', 'port to bind (default: OS-assigned)')
     // Declaring `--no-open` alone makes `opts.open` default to `true`,
     // becoming `false` only when the flag is explicitly passed — do not

@@ -22,7 +22,7 @@ const VERSION = (pkg as { version?: string }).version ?? '0.0.0';
 export async function healthRoutes(app: FastifyInstance): Promise<void> {
   app.get('/health', async () => ({
     ok: true,
-    name: 'gsd-config-manager',
+    name: 'open-gsd-core-config-manager',
     version: VERSION,
     pid: process.pid,
   }));

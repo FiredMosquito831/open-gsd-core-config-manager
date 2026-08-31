@@ -27,7 +27,7 @@ import { join, resolve } from 'node:path';
 
 /** Resolves the OS-conventional per-user app-data root for this app. */
 export function appDataRoot(): string {
-  return envPaths('gsd-config-manager', { suffix: '' }).data;
+  return envPaths('open-gsd-core-config-manager', { suffix: '' }).data;
 }
 
 /**

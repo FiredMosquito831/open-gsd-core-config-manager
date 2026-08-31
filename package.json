@@ -1,10 +1,10 @@
 {
-  "name": "gsd-config-manager",
+  "name": "open-gsd-core-config-manager",
   "version": "0.1.0",
   "type": "module",
   "description": "Zero-config-friendly desktop-grade tool for viewing, understanding, and safely editing GSD (open-gsd/gsd-core) configuration files.",
   "bin": {
-    "gsd-config-manager": "./dist/cli.js",
+    "open-gsd-core-config-manager": "./dist/cli.js",
     "gsd-config-editor": "./dist/cli.js"
   },
   "files": [

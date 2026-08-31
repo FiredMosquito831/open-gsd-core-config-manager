@@ -206,7 +206,7 @@ export function registerSignalHandlers(handle: BootstrapHandle, deps: RegisterSi
   // real mechanism, `GenerateConsoleCtrlEvent`, requires a console that
   // does not exist here). When an IPC channel is present — true ONLY when
   // a parent explicitly spawns with `stdio: [..., 'ipc']`, which a real
-  // `npx gsd-config-manager` launch from a shell never does — also accept
+  // `npx open-gsd-core-config-manager` launch from a shell never does — also accept
   // an IPC message equal to `'SIGINT'` or `'SIGTERM'` as an equivalent
   // trigger for the exact same `onSignal` path, so the automated teardown
   // suite can still exercise the real awaited-close/ordering/port-release

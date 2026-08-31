@@ -107,7 +107,7 @@ describe('tarball contents (DIST-03)', () => {
     const pkg = JSON.parse(readFileSync(join(REPO_ROOT, 'package.json'), 'utf8')) as {
       bin: Record<string, string>;
     };
-    const binPath = pkg.bin['gsd-config-manager'].replace(/^\.\//, '');
+    const binPath = pkg.bin['open-gsd-core-config-manager'].replace(/^\.\//, '');
     const result = packDryRun();
     expect(result.files.some((f) => f.path === binPath)).toBe(true);
   });
@@ -214,7 +214,7 @@ describe('extracted-tarball smoke run (DIST-01, DIST-03, DIST-04)', () => {
       // and never reaches the child's own `process.on('SIGINT', ...)`
       // handler (no attached Win32 console exists anywhere in this
       // git-bash-hosted process tree to deliver a real console-control
-      // event). A real `npx gsd-config-manager` launch from a shell never
+      // event). A real `npx open-gsd-core-config-manager` launch from a shell never
       // gets an IPC channel, so this is purely a test-harness affordance —
       // it exercises the identical awaited-close/ordering/port-release
       // production code path, just triggered via the documented equivalent

@@ -105,12 +105,12 @@ function withPathLock<T>(key: string, fn: () => Promise<T>): Promise<T> {
  * stable lock path and hold it across the whole transaction.
  */
 function transactionLockPath(resolvedConfigPath: string): string {
-  return join(tmpdir(), 'gsd-config-manager-save-locks', `${createHash('sha256').update(resolvedConfigPath).digest('hex')}.lock`);
+  return join(tmpdir(), 'open-gsd-core-config-manager-save-locks', `${createHash('sha256').update(resolvedConfigPath).digest('hex')}.lock`);
 }
 
 async function withTransactionLock<T>(resolvedConfigPath: string, fn: () => Promise<T>): Promise<T> {
   const lockPath = transactionLockPath(resolvedConfigPath);
-  await mkdir(join(tmpdir(), 'gsd-config-manager-save-locks'), { recursive: true });
+  await mkdir(join(tmpdir(), 'open-gsd-core-config-manager-save-locks'), { recursive: true });
   await writeFile(lockPath, '', { flag: 'a' });
   const release = await lock(lockPath, { retries: { retries: 50, factor: 1.2, minTimeout: 10, maxTimeout: 250 }, stale: 30_000 });
   try {
@@ -122,7 +122,7 @@ async function withTransactionLock<T>(resolvedConfigPath: string, fn: () => Prom
 
 /** Opaque revision of the exact on-disk document bytes. */
 export function configRevision(content: string | null): string {
-  return createHash('sha256').update(content === null ? 'gsd-config-manager:missing' : `gsd-config-manager:content:${content}`).digest('hex');
+  return createHash('sha256').update(content === null ? 'open-gsd-core-config-manager:missing' : `open-gsd-core-config-manager:content:${content}`).digest('hex');
 }
 
 /** The frozen server-layer save-result envelope (D-10). */

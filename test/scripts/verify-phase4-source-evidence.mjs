@@ -84,7 +84,7 @@ const MATRIX = [
 
 function fail(message) { throw new Error(`STATIC SOURCE EVIDENCE FAILURE: ${message}`); }
 async function fetchText(path) {
-  const response = await fetch(RAW_ROOT + path, { headers: { 'User-Agent': 'gsd-config-manager-phase4-evidence' } });
+  const response = await fetch(RAW_ROOT + path, { headers: { 'User-Agent': 'open-gsd-core-config-manager-phase4-evidence' } });
   if (!response.ok) fail(`unable to retrieve ${path} (${response.status})`);
   return response.text();
 }

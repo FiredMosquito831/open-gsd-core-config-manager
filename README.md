@@ -5,7 +5,7 @@
 One command. A local, private, browser-based editor for every GSD config across all of your projects:
 
 ```bash
-npx gsd-config-manager
+npx open-gsd-core-config-manager
 ```
 
 That's it. A helper starts on `127.0.0.1` (loopback only — nothing leaves your machine), your browser opens, and every setting is organized into categories with plain-language explanations of what it does and what every option means.
@@ -51,13 +51,13 @@ Requirements: **Node.js ≥ 20.19**.
 
 ```bash
 # launch (builds on first run)
-npx gsd-config-manager
+npx open-gsd-core-config-manager
 
 # don't auto-open the browser
-npx gsd-config-manager --no-open
+npx open-gsd-core-config-manager --no-open
 
 # fixed port (default: OS-assigned ephemeral port)
-npx gsd-config-manager --port 4321
+npx open-gsd-core-config-manager --port 4321
 ```
 
 Then: click **Add** → *Add existing config…* (or scan a folder), pick any project's `.planning/config.json`, and start exploring.

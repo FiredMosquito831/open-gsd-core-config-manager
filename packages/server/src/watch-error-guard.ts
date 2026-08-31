@@ -45,12 +45,12 @@ export function installWatchErrorHandler(): void {
     if (isWatchPermissionError(err)) {
       const e = err as NodeJS.ErrnoException;
       console.error(
-        `[gsd-config-manager] suppressed fs.watch ${e.code} (a tracked directory ` +
+        `[open-gsd-core-config-manager] suppressed fs.watch ${e.code} (a tracked directory ` +
           `could not be watched; status is derived on load, so the UI stays correct): ${e.message}`,
       );
       return;
     }
-    console.error('[gsd-config-manager] uncaught exception:', err);
+    console.error('[open-gsd-core-config-manager] uncaught exception:', err);
     process.exit(1);
   });
 }
