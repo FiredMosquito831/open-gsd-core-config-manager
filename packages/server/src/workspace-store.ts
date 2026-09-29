@@ -15,7 +15,7 @@
  * changes and notifies subscribers so the UI can show "file changed on disk"
  * and offer reload, avoiding silently overwriting external edits.
  */
-import { existsSync, mkdirSync, readFileSync, renameSync, statSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, readFileSync, renameSync, statSync } from 'node:fs';
 import { open, readdir, lstat, mkdir } from 'node:fs/promises';
 import { lock } from 'proper-lockfile';
 import { writeWithRetry } from '../../config-io/src/atomic-write.js';
@@ -198,6 +198,43 @@ function loadPersisted(root: string): { configs: PersistedWorkspace['configs']; 
   }
 }
 
+/**
+ * The app-data directory is derived from the package name, so renaming the
+ * package moves it — which silently orphans a user's tracked-config list
+ * (they see an empty sidebar and cannot tell that their data still exists).
+ * The name this app shipped under before the rename to
+ * `open-gsd-core-config-manager`; the bytes are copied across untouched, never
+ * moved, so a rollback still finds the original.
+ */
+const LEGACY_APP_DATA_DIRNAME = 'gsd-config-manager';
+
+/**
+ * Adopt a pre-rename workspace store when — and only when — the current one
+ * has never been written. Deliberately NOT a general "merge" or a migration
+ * framework: it copies the file verbatim, so a legacy list that has since
+ * diverged from the new one can never be merged incorrectly, and it only ever
+ * fires once (afterwards the new file exists and the branch is unreachable).
+ *
+ * Only ever called for the real default app-data root; a test-injected root
+ * must never reach into the developer's actual store.
+ */
+function adoptLegacyWorkspaceStoreIfUnwritten(root: string): void {
+  const target = configFilePath(root);
+  if (existsSync(target)) return;
+
+  const legacyRoot = join(dirname(root), LEGACY_APP_DATA_DIRNAME, 'Data');
+  const legacy = configFilePath(legacyRoot);
+  if (!existsSync(legacy)) return;
+
+  try {
+    mkdirSync(dirname(target), { recursive: true });
+    copyFileSync(legacy, target);
+  } catch {
+    // A failed adoption must never break startup — the app simply starts
+    // empty, exactly as it would have if the file had never existed.
+  }
+}
+
 async function withWorkspaceLock<T>(root: string, fn: () => Promise<T>): Promise<T> {
   const file = configFilePath(root);
   const lockTarget = `${file}.guard`;
@@ -270,6 +307,9 @@ export function createWorkspaceStore(opts: WorkspaceStoreOptions = {}): Workspac
   const root = opts.appDataRoot ?? defaultAppDataRoot();
   const activeSchemaManager = opts.activeSchemaManager;
   const atomicWrite = opts.write ?? writeWithRetry;
+  // Only for the real default root — a test-injected root must never adopt
+  // from the developer's actual app-data directory.
+  if (opts.appDataRoot === undefined) adoptLegacyWorkspaceStoreIfUnwritten(root);
   const loaded = loadPersisted(root);
   const registry = opts.registry ?? createRegistry({ seed: loaded.configs.map((p) => ({ id: p.id, path: p.path, name: nameFor(p.path) })) });
   let recoveryWarning = loaded.warning;
