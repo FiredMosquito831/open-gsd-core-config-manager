@@ -6,12 +6,14 @@ import { pickerStatus, pickDirectory } from '../../api/picker';
 import { Button } from '../common/Button';
 import { useFocusModal } from '../../lib/focusModal';
 import { useToastStore } from '../../state/toastStore';
+import { useUiStore } from '../../state/uiStore';
 
 interface CreateConfigDialogProps {
   onClose: () => void;
 }
 
 export function CreateConfigDialog({ onClose }: CreateConfigDialogProps) {
+  const setActiveConfigId = useUiStore((state) => state.setActiveConfigId);
   const [projectDir, setProjectDir] = useState('');
   const [preview, setPreview] = useState<{ targetPath: string; exists: boolean } | null>(null);
   const [confirmed, setConfirmed] = useState(false);
@@ -67,8 +69,10 @@ export function CreateConfigDialog({ onClose }: CreateConfigDialogProps) {
     setSubmitting(true);
     setError(null);
     try {
-      await createConfig(projectDir, preview?.exists ?? false);
+      const created = await createConfig(projectDir, preview?.exists ?? false);
       await queryClient.invalidateQueries({ queryKey: ['workspace', 'configs'] });
+      // Select it so the editor lands on the config just created.
+      setActiveConfigId(created.id);
       useToastStore.getState().push('success', 'Config created', preview?.targetPath ?? projectDir);
       onClose();
     } catch (err) {

@@ -109,6 +109,12 @@ export function useConfigDraft(activeConfigId: string, loadResult: LoadedConfig,
   const dismissRuntimeNotice = useCallback(() => update(activeConfigId, (draft) => { draft.runtimeNotice = null; }), [activeConfigId]);
   const saveDraft = useCallback(async (): Promise<'saved' | 'blocked'> => {
     const current = entryFor(activeConfigId);
+    // Nothing to persist: bail BEFORE clearing snapshotId/serverErrors and
+    // before calling saveConfig. Without this, a click on the always-visible
+    // Save button (or a stray Ctrl+S) on a clean draft wrote a real snapshot
+    // of an unchanged file — phantom entries in the version history, which is
+    // the app's headline safety feature.
+    if (Object.keys(current.changes).length === 0 && current.resets.size === 0) return 'saved';
     const candidate = buildProjectSaveCandidate(loadResult, Object.entries(current.changes).map(([path, value]) => ({ path, value } as ProjectChange)), Array.from(current.resets));
     const clientResult = validator(candidate);
     update(activeConfigId, (draft) => { draft.serverErrors = []; draft.snapshotId = undefined; });

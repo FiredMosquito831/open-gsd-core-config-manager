@@ -25,6 +25,7 @@ export function AddConfigMenu() {
   const firstItemRef = useRef<HTMLButtonElement>(null);
   const trackConfigOpen = useUiStore((state) => state.trackConfigOpen);
   const setTrackConfigOpen = useUiStore((state) => state.setTrackConfigOpen);
+  const setActiveConfigId = useUiStore((state) => state.setActiveConfigId);
 
   const closeMenu = () => {
     setOpen(false);
@@ -58,8 +59,12 @@ export function AddConfigMenu() {
   ];
 
   const handleTrack = async (path: string) => {
-    await trackWorkspace(path);
+    const config = await trackWorkspace(path);
     await queryClient.invalidateQueries({ queryKey: ['workspace', 'configs'] });
+    // Select the config we just added. Without this the user adds a config,
+    // sees it appear in the sidebar, and the editor stays on whatever it was
+    // showing before — on a first run that is an empty pane and a dead end.
+    setActiveConfigId(config.id);
     useToastStore.getState().push('success', 'Config added');
     setTrackConfigOpen(false);
     closeMenu();

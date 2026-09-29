@@ -37,7 +37,9 @@ function statusText(status: SaveStatus, errorCount: number, changedCount: number
 export function SaveBar({ status, errorCount = 0, changedCount = 0, onSave }: SaveBarProps) {
   const saving = status === 'saving';
   const blocked = status === 'blocked';
-  const disabled = saving || blocked;
+  // 'clean' was missing here: the loudest control on screen stayed enabled and
+  // primary-styled while announcing "No changes to save".
+  const disabled = saving || blocked || status === 'clean';
 
   return (
     <div className="gsd-save-bar" role="region" aria-label="Save configuration">

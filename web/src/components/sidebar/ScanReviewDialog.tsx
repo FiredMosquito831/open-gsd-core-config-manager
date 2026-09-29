@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { Button } from '../common/Button';
 import { useFocusModal } from '../../lib/focusModal';
 import { useToastStore } from '../../state/toastStore';
+import { useUiStore } from '../../state/uiStore';
 import type { ScanCandidate } from '../../api/workspace';
 
 interface ScanReviewDialogProps {
@@ -15,6 +16,7 @@ interface ScanReviewDialogProps {
 }
 
 export function ScanReviewDialog({ candidates, track, onDone, onCancel }: ScanReviewDialogProps) {
+  const setActiveConfigId = useUiStore((state) => state.setActiveConfigId);
   const [selected, setSelected] = useState<Set<string>>(() => new Set(candidates.filter((c) => c.status === 'new').map((c) => c.path)));
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -38,9 +40,13 @@ export function ScanReviewDialog({ candidates, track, onDone, onCancel }: ScanRe
     setSubmitting(true);
     setError(null);
     const failedPaths: string[] = [];
+    let firstAdded: { id?: string } | null = null;
     for (const path of selected) {
       try {
-        await track(path);
+        const tracked = (await track(path)) as { id?: string } | null;
+        // Select the first config that landed so the scan flow also ends with
+        // the editor showing something, not an empty pane.
+        if (!firstAdded && tracked?.id) firstAdded = tracked;
       } catch {
         failedPaths.push(path);
       }
@@ -56,6 +62,7 @@ export function ScanReviewDialog({ candidates, track, onDone, onCancel }: ScanRe
       return;
     }
     useToastStore.getState().push('success', 'Configs added', `${selected.size} config(s) tracked.`);
+    if (firstAdded?.id) setActiveConfigId(firstAdded.id);
     onDone();
   };
 

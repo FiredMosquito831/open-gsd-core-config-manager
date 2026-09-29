@@ -91,18 +91,22 @@
 :root[data-theme='light'] {
   color-scheme: light;
 
-  --gsd-bg: #f8fafc;
+  /* Light ramp: canvas recedes, cards lift off it. Previously surface and
+     surface-elevated were both #ffffff on a #f8fafc canvas — 1.05:1 — which
+     made every card, dialog, listbox and the sticky save bar invisible. */
+  --gsd-bg: #eef1f6;
   --gsd-surface: #ffffff;
   --gsd-surface-elevated: #ffffff;
-  --gsd-surface-hover: #eef2f7;
-  --gsd-bg-muted: #f1f5f9;
+  --gsd-surface-hover: #f4f6fa;
+  --gsd-bg-muted: #e6eaf1;
 
-  --gsd-border: #dde3ec;
-  --gsd-border-strong: #c4cede;
+  --gsd-border: #c9d2e0;
+  --gsd-border-strong: #a9b6c9;
 
   --gsd-text: #0f172a;
   --gsd-text-muted: #5b6b81;
-  --gsd-text-faint: #8894a6;
+  /* 3.07:1 on white failed AA for the metadata it actually renders. */
+  --gsd-text-faint: #667485;
 
   --gsd-accent: #15803d;
   --gsd-accent-hover: #166534;
@@ -291,9 +295,19 @@ label[for],
 .gsd-schema-alert { border-color: var(--gsd-danger); }
 .gsd-schema-recovery { border-color: var(--gsd-danger); }
 .gsd-schema-live { min-height: 1.5em; }
+/* The rail track is only --gsd-rail-width (2.5rem/40px) wide. An auto-width
+   button holding a nowrap "Bundled · gsd-core v1.15.0" string overflowed the
+   track and painted over the sidebar (rail z-index:10 > pane z-index:1).
+   The rail now shows the glyph only; full context lives in aria-label,
+   the title tooltip, and the Schema workspace card. */
 .gsd-schema-status-control { display: grid; gap: 4px; }
-.gsd-schema-status-control__button { width: auto; min-width: 44px; min-height: 44px; }
-.gsd-schema-status-control__text { font-size: var(--gsd-fs-meta); white-space: nowrap; }
+.gsd-schema-status-control__button {
+  width: 100%;
+  min-width: 0;
+  min-height: 40px;
+  aspect-ratio: 1;
+}
+.gsd-schema-status-control__text { display: none; }
 .gsd-schema-status-control__warning { font-size: var(--gsd-fs-meta); color: var(--gsd-warning); }
 .gsd-schema-review { display: grid; grid-template-columns: minmax(280px, 320px) minmax(0, 1fr); gap: 24px; min-width: 0; }
 .gsd-schema-review__summary { position: sticky; top: 16px; align-self: start; display: grid; gap: 8px; padding: 16px; background: var(--gsd-surface); border-radius: 10px; }
