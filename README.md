@@ -45,22 +45,73 @@ GSD's `config.json` is powerful but opaque: dozens of nested keys, magic enum va
 - GSD's optional search providers (Brave, Firecrawl, Exa, Tavily, Ref, Perplexity, Jina) need API keys, deliverable via **either** an environment variable (`<PREFIX>_API_KEY`) **or** a key file (`~/.gsd/<prefix>_api_key`). The tool detects both channels, shows their status inline in the editor, and can store keys to either or both — masked, mode `0600`, never logged.
 - Raw JSON editing (CodeMirror), global search across keys/descriptions/option meanings, dark-first theme with light mode, keyboard shortcuts (`Ctrl+S`, `/`).
 
-## Getting started
+## Installation
 
-Requirements: **Node.js ≥ 20.19**.
+Requires **Node.js ≥ 20.19**. No account, no config, no build step on your machine.
+
+### Run once, no install (recommended to try it)
 
 ```bash
-# launch (builds on first run)
 npx open-gsd-core-config-manager
-
-# don't auto-open the browser
-npx open-gsd-core-config-manager --no-open
-
-# fixed port (default: OS-assigned ephemeral port)
-npx open-gsd-core-config-manager --port 4321
 ```
 
-Then: click **Add** → *Add existing config…* (or scan a folder), pick any project's `.planning/config.json`, and start exploring.
+`npx` downloads the package into a cache, runs it, and your browser opens. Nothing is added to your project.
+
+### Install globally (available as a command everywhere)
+
+```bash
+npm install -g open-gsd-core-config-manager
+open-gsd-core-config-manager
+```
+
+Also installs a shorter alias, `gsd-config-editor` — identical binary.
+
+### Install into a project (as a dev dependency)
+
+```bash
+npm install --save-dev open-gsd-core-config-manager
+npx open-gsd-core-config-manager
+```
+
+Use this if you want the version pinned by your project's lockfile.
+
+### Options
+
+```bash
+open-gsd-core-config-manager --no-open        # don't auto-open the browser
+open-gsd-core-config-manager --port 4321      # fixed port (default: OS-assigned ephemeral)
+open-gsd-core-config-manager --help           # full flag list
+```
+
+The server prints its URL on startup. It binds `127.0.0.1` only, so that URL is reachable from your machine and nowhere else.
+
+## Getting started
+
+Run the command, then: click **Add** → *Add existing config…* (or **Scan a folder…** to discover configs automatically), pick any project's `.planning/config.json`, and start exploring. The **Search providers** card at the top of the editor is where you set API keys for the optional search integrations.
+
+## Uninstalling
+
+```bash
+npm uninstall -g open-gsd-core-config-manager   # global install
+npm uninstall open-gsd-core-config-manager      # project install
+```
+
+The npm package and its command are removed. **Your data is not** — this tool deliberately never deletes your work:
+
+| What | Where | Safe to delete? |
+|---|---|---|
+| Config snapshots / version history | `~/Library/Application Support/open-gsd-core-config-manager` (macOS) · `%LOCALAPPDATA%\open-gsd-core-config-manager\Data` (Windows) · `~/.local/share/open-gsd-core-config-manager` (Linux) | Yes, if you don't need restore history |
+| Search-provider API keys | `~/.gsd/<provider>_api_key` | Only if you want the keys gone — **losing these means re-issuing them at the provider** |
+| Your `.planning/config.json` files | your projects | **Never touched by this tool** |
+
+Delete the app-data directory to remove the tool completely:
+
+```bash
+# macOS / Linux
+rm -rf ~/.local/share/open-gsd-core-config-manager        # or ~/Library/Application Support/…
+# Windows PowerShell
+Remove-Item -Recurse -Force "$env:LOCALAPPDATA\open-gsd-core-config-manager"
+```
 
 ## Security model
 
