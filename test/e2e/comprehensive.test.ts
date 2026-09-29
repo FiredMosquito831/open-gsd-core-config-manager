@@ -19,7 +19,7 @@ test.describe.configure({ retries: 2 });
 
 test.describe('GSD Config Manager - Core Features', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/', { waitUntil: 'networkidle', timeout: 60000 });
+    await page.goto('/', { waitUntil: 'load', timeout: 60000 });
     await expect(page.locator('.gsd-sidebar__heading:has-text("Tracked configs")')).toBeVisible({ timeout: 30000 });
     await selectFirstReadyConfig(page);
   });
@@ -205,7 +205,7 @@ test.describe('GSD Config Manager - Core Features', () => {
 
 test.describe('GSD Config Manager - Specialized Editors', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/', { waitUntil: 'networkidle', timeout: 60000 });
+    await page.goto('/', { waitUntil: 'load', timeout: 60000 });
     await expect(page.locator('.gsd-sidebar__heading:has-text("Tracked configs")')).toBeVisible({ timeout: 30000 });
     await selectFirstReadyConfig(page);
   });
@@ -402,7 +402,7 @@ test.describe('GSD Config Manager - Specialized Editors', () => {
 
 test.describe('GSD Config Manager - UI Responsiveness', () => {
   test('Resize - sidebar collapse/expand', async ({ page }) => {
-    await page.goto('/', { waitUntil: 'networkidle', timeout: 60000 });
+    await page.goto('/', { waitUntil: 'load', timeout: 60000 });
     // .gsd-sidebar__heading matches both "Tracked configs" and "Chapters"; take the first.
     await expect(page.locator('.gsd-sidebar__heading').first()).toBeVisible({ timeout: 30000 });
 
@@ -416,7 +416,7 @@ test.describe('GSD Config Manager - UI Responsiveness', () => {
   });
 
   test('Resize - chapter pane collapse/expand', async ({ page }) => {
-    await page.goto('/', { waitUntil: 'networkidle', timeout: 60000 });
+    await page.goto('/', { waitUntil: 'load', timeout: 60000 });
     await expect(page.locator('.gsd-chapter-nav')).toBeVisible({ timeout: 30000 });
 
     // Collapse chapter pane

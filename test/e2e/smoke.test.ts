@@ -17,7 +17,7 @@ async function selectFirstReadyConfig(page: import('@playwright/test').Page) {
 
 test.describe('GSD Config Manager - Smoke Tests', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/', { waitUntil: 'networkidle', timeout: 60000 });
+    await page.goto('/', { waitUntil: 'load', timeout: 60000 });
     await expect(page.locator('.gsd-sidebar__heading:has-text("Tracked configs")')).toBeVisible({ timeout: 30000 });
     await selectFirstReadyConfig(page);
   });
@@ -32,7 +32,7 @@ test.describe('GSD Config Manager - Smoke Tests', () => {
     page.on('console', msg => console.log(`[${msg.type()}] ${msg.text()}`));
     page.on('pageerror', error => console.log(`[PAGE ERROR] ${error.message}`));
 
-    await page.goto('/', { waitUntil: 'networkidle', timeout: 60000 });
+    await page.goto('/', { waitUntil: 'load', timeout: 60000 });
     await expect(page.locator('button[aria-label*="Open schema maintenance"]')).toBeVisible({ timeout: 30000 });
     await page.click('button[aria-label*="Open schema maintenance"]', { force: true });
     // Debug: wait and print HTML
