@@ -133,7 +133,7 @@ async function renderWithActiveConfig() {
   vi.mocked(getSchema).mockResolvedValue(testSchema);
   vi.mocked(loadConfig).mockResolvedValue(loadResult);
 
-  renderWeb(<App connected />);
+  renderWeb(<App />);
   await waitFor(() => screen.getByText('p'));
   fireEvent.click(screen.getByText('p'));
   await waitFor(() => screen.getByRole('tab', { name: 'Core' }));

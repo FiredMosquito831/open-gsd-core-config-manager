@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FAQ — GSD Config Manager</title>
+  <meta name="description" content="Answers about privacy, offline use, unknown keys, snapshot storage, gsd-core version tracking, headless use and uninstalling.">
+  <link rel="canonical" href="https://gsd.danubelabs.net/faq.html">
+  <meta name="robots" content="index,follow">
+  <meta name="theme-color" content="#071018">
+  <meta name="color-scheme" content="dark">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="GSD Config Manager">
+  <meta property="og:title" content="FAQ — GSD Config Manager">
+  <meta property="og:description" content="Answers about privacy, offline use, unknown keys, snapshot storage, gsd-core version tracking, headless use and uninstalling.">
+  <meta property="og:url" content="https://gsd.danubelabs.net/faq.html">
+  <meta property="og:image" content="https://gsd.danubelabs.net/og.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="GSD Config Manager — schema-driven configuration reference">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="FAQ — GSD Config Manager">
+  <meta name="twitter:description" content="Answers about privacy, offline use, unknown keys, snapshot storage, gsd-core version tracking, headless use and uninstalling.">
+  <meta name="twitter:image" content="https://gsd.danubelabs.net/og.png">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/assets/style.css">
+</head>
+<body class="page-faq">
+  <a class="skip-link" href="#main">Skip to content</a>
+  <div class="grid-overlay" aria-hidden="true"></div>
+
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <a class="brand" href="/" aria-label="GSD Config Manager home">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 28 28" role="img" focusable="false">
+            <rect x="1.5" y="1.5" width="25" height="25" fill="none" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M1.5 9.5h25M1.5 18.5h25M9.5 1.5v25M18.5 1.5v25" stroke="currentColor" stroke-width="1" opacity=".45"/>
+            <rect x="9.5" y="9.5" width="9" height="9" fill="currentColor"/>
+          </svg>
+        </span>
+        <span class="brand-type">
+          <span class="brand-name">GSD<span class="brand-slash">/</span>CONFIG</span>
+          <span class="brand-sub">manager &amp; schema reference</span>
+        </span>
+      </a>
+      <nav class="site-nav" aria-label="Primary">
+        <a href="/schema.html" >Schema<span>01</span></a>
+        <a href="/cli.html" >CLI<span>02</span></a>
+        <a href="/history.html" >Safety<span>03</span></a>
+        <a href="/faq.html" aria-current="page">FAQ<span>04</span></a>
+        <a href="/about.html" >About<span>05</span></a>
+      </nav>
+      <a class="header-cta" href="https://github.com/FiredMosquito831/open-gsd-core-config-manager" rel="noopener">GitHub <span aria-hidden="true">↗</span></a>
+    </div>
+  </header>
+
+  <main id="main">
+<section class="page-head">
+  <div class="wrap">
+    <p class="eyebrow">REFERENCE / 04</p>
+    <h1>FAQ</h1>
+    <p class="lede">Short answers about privacy, safety, schema tracking and day-to-day use.</p>
+  </div>
+</section>
+
+<section class="wrap section faq-list">
+  <details class="faq-item" open>
+    <summary>Is my configuration uploaded anywhere?</summary>
+    <div><p>No. The helper binds <code>127.0.0.1</code> only and serves the UI from your machine. There is no account system, no analytics and no telemetry. Your <code>config.json</code>, its snapshots and any API keys stay local.</p></div>
+  </details>
+  <details class="faq-item">
+    <summary>Does the tool work offline?</summary>
+    <div><p>Yes, after the package is downloaded. <code>npx</code> needs network access the first time; the editor itself does not. The only outbound request the app makes is the schema-update check you explicitly trigger, which reads allowlisted release metadata for gsd-core and never executes remote code.</p></div>
+  </details>
+  <details class="faq-item">
+    <summary>Which gsd-core version does the schema cover?</summary>
+    <div><p>The bundled schema tracks gsd-core <strong>v1.11.0</strong> and documents <strong>201 keys</strong> across 24 categories: 192 carry canonical defaults and 9 are structural map keys whose sub-keys hold their own defaults. 26 keys are enumerated and carry a per-option meaning.</p></div>
+  </details>
+  <details class="faq-item">
+    <summary>Can I use it if gsd-core ships a newer release?</summary>
+    <div><p>Use <strong>Schema maintenance → Check for updates</strong> in the editor. It checks the latest stable gsd-core release, renders the proposed changes in plain language, and lets you activate the refreshed schema or keep the current one. Unknown keys are never rejected by validation, so a newer config still loads and saves even before you refresh.</p></div>
+  </details>
+  <details class="faq-item">
+    <summary>What happens to keys the schema does not know about?</summary>
+    <div><p>They are preserved. The canonical schema deliberately does not set <code>additionalProperties: false</code>, and edits are applied to the original parsed object rather than rebuilt from a key list. Unknown and future keys are surfaced in a dedicated section of the editor instead of being dropped.</p></div>
+  </details>
+  <details class="faq-item">
+    <summary>What if my config is already invalid?</summary>
+    <div><p>The editor reports the validation problem and blocks saves until the document passes. It never writes a document that fails schema validation, and the existing file remains as it was.</p></div>
+  </details>
+  <details class="faq-item">
+    <summary>Where does version history live, and for how long?</summary>
+    <div><p>Snapshots live in the OS app-data directory, under <code>snapshots/&lt;sha256 of the config path&gt;</code>. The default policy keeps the last 50 snapshots per config and skips recording when the content is identical to the most recent snapshot. History is never written inside your project or its <code>.git</code>.</p></div>
+  </details>
+  <details class="faq-item">
+    <summary>Can it edit my global defaults file?</summary>
+    <div><p>The global defaults at <code>~/.gsd/defaults.json</code> (or under <code>GSD_HOME</code>) are <strong>read</strong> as a provenance layer, so the editor can tell you whether a value comes from the schema default, the global defaults, or a project override. The tracked documents the tool saves are project configs.</p></div>
+  </details>
+  <details class="faq-item">
+    <summary>Does it work on Windows?</summary>
+    <div><p>Yes. The write pipeline adds a retry wrapper for transient Windows rename failures (<code>EPERM</code>, <code>EBUSY</code>, <code>EACCES</code>) that the pinned atomic-write library does not handle itself. Snapshots live under <code>%LOCALAPPDATA%</code>.</p></div>
+  </details>
+  <details class="faq-item">
+    <summary>Can I run it on a headless machine?</summary>
+    <div><p>Pass <code>--no-open</code>; the server prints its loopback URL and keeps running. You still need a browser on the same machine (or a forwarded port) to use the UI. The host cannot be changed to a network interface.</p></div>
+  </details>
+  <details class="faq-item">
+    <summary>Are API keys stored securely?</summary>
+    <div><p>Search-provider keys can live in an environment variable or in <code>~/.gsd/&lt;prefix&gt;_api_key</code>. When the tool writes a key file it uses mode <code>0600</code>, displays keys masked, and never logs them. Provider keys are also flagged sensitive in the schema and shown read-only where appropriate.</p></div>
+  </details>
+  <details class="faq-item">
+    <summary>Why are some keys read-only?</summary>
+    <div><p>Keys marked sensitive or unsupported by the schema's editor metadata are displayed but not editable in the form UI. They can still be changed through the raw JSON editor, where validation applies as usual. The explorer marks these keys with a <strong>read-only</strong> badge.</p></div>
+  </details>
+  <details class="faq-item">
+    <summary>How do I uninstall it?</summary>
+    <div><p>Run <code>npm uninstall -g open-gsd-core-config-manager</code> (or uninstall it from your project). Your configs are untouched. Snapshots and stored key files remain until you delete the app-data directory or the key files yourself.</p></div>
+  </details>
+  <details class="faq-item">
+    <summary>Is this affiliated with Anthropic or open-gsd?</summary>
+    <div><p>No. It is an independent MIT-licensed tool for editing configuration of <a href="https://github.com/open-gsd/gsd-core" rel="noopener">open-gsd/gsd-core</a>. GSD and Claude are products of their respective owners.</p></div>
+  </details>
+</section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-grid">
+      <div class="footer-brand">
+        <span class="mono-label">GSD CONFIG MANAGER</span>
+        <p>Local-first tooling for <a href="https://github.com/open-gsd/gsd-core" rel="noopener">open-gsd/gsd-core</a> configuration.</p>
+        <p class="footer-fine">MIT licensed · no account · no telemetry</p>
+      </div>
+      <div class="footer-col">
+        <span class="mono-label">Reference</span>
+        <a href="/schema.html">Schema explorer</a>
+        <a href="/cli.html">CLI reference</a>
+        <a href="/history.html">Atomic writes &amp; history</a>
+        <a href="/canonical-schema.json">canonical-schema.json</a>
+      </div>
+      <div class="footer-col">
+        <span class="mono-label">Project</span>
+        <a href="https://github.com/FiredMosquito831/open-gsd-core-config-manager" rel="noopener">Source on GitHub</a>
+        <a href="https://www.npmjs.com/package/open-gsd-core-config-manager" rel="noopener">npm package</a>
+        <a href="https://github.com/FiredMosquito831/open-gsd-core-config-manager/blob/master/SECURITY.md" rel="noopener">Security policy</a>
+        <a href="https://github.com/FiredMosquito831/open-gsd-core-config-manager/blob/master/LICENSE" rel="noopener">License</a>
+      </div>
+      <div class="footer-col footer-meta">
+        <span class="mono-label">Build</span>
+        <span>tool v0.1.0</span>
+        <span>schema gsd-core v1.11.0</span>
+        <span>201 keys · 24 categories</span>
+      </div>
+    </div>
+    <div class="wrap footer-bottom">
+      <span class="mono-label">Not affiliated with Anthropic. GSD is an open-source project by open-gsd.</span>
+      <span class="mono-label">gsd.danubelabs.net/faq.html</span>
+    </div>
+  </footer>
+
+  <script src="/assets/site.js" defer></script>
+</body>
+</html>

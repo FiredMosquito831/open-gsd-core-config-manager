@@ -5,6 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- Generated static documentation site in `docs/` (GitHub Pages), built by
+  `scripts/build_site.py` from `docs/canonical-schema.json` and `package.json`:
+  - Home page with install command and safety model
+  - Searchable, filterable schema explorer covering all 201 canonical keys,
+    with URL state (`q`, `cat`, `type`, `edit`, `key`) and deep links
+  - CLI reference, atomic-write/version-history explainer, FAQ, and
+    about/security pages
+  - Custom 404, `sitemap.xml`, `robots.txt`, `CNAME` (`gsd.danubelabs.net`)
+  - Per-page canonical, Open Graph/Twitter metadata and JSON-LD
+    `SoftwareApplication`
+  - Real 1200×630 `docs/og.png`, rendered from live schema stats
+- Real site screenshots under `site/static/screenshots/`, captured with
+  Playwright against the locally served site (desktop and 390px mobile).
+- `test/site/site-integrity.test.ts` — verifies every canonical key is rendered,
+  every enum option meaning is present, page metadata/canonical URLs are
+  correct, referenced assets exist, and `og.png` is 1200×630.
+- CI job that rebuilds the site and runs `scripts/check_site.py` (stale-output
+  check, internal link and asset sweep).
+- `SECURITY.md` and `CONTRIBUTING.md`.
+- `requirements-site.txt` for site-only Python dependencies.
+
+### Changed
+- README rewritten around the documentation site, schema reference, npx
+  quickstart, safety properties and real screenshots.
+- `docs/README.md` now documents how the generated site relates to the
+  canonical schema.
+
 ## [0.1.0] - 2026-08-24
 
 ### Added

@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="error-page">
+  <div class="wrap error-grid">
+    <div>
+      <p class="eyebrow">ERROR / 404</p>
+      <h1>Key not found<span class="accent">.</span></h1>
+      <p class="lede">This path is not in the schema. The page may have moved, or the link may point at a key that does not exist in gsd-core v{{ schema_version }}.</p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="/">Back to home <span aria-hidden="true">→</span></a>
+        <a class="btn btn-ghost" href="/schema.html">Search the schema</a>
+      </div>
+    </div>
+    <div class="error-panel" aria-hidden="true">
+      <div class="error-code">404</div>
+      <pre><code>{
+  "path": "/unknown",
+  "exists": false,
+  "suggestion": "schema.html"
+}</code></pre>
+    </div>
+  </div>
+</section>
+{% endblock %}

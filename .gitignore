@@ -20,3 +20,8 @@ desktop.ini
 
 # UI audit scratch (screenshots, workflow dumps) — never ship
 .tmp-ui-audit/
+
+# Python site tooling
+__pycache__/
+*.pyc
+.venv/

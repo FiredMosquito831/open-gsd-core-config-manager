@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CLI reference — open-gsd-core-config-manager</title>
+  <meta name="description" content="Install and run the GSD Config Manager: npx, global and project installs, --port, --no-open, exit codes, environment variables and data locations.">
+  <link rel="canonical" href="https://gsd.danubelabs.net/cli.html">
+  <meta name="robots" content="index,follow">
+  <meta name="theme-color" content="#071018">
+  <meta name="color-scheme" content="dark">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="GSD Config Manager">
+  <meta property="og:title" content="CLI reference — open-gsd-core-config-manager">
+  <meta property="og:description" content="Install and run the GSD Config Manager: npx, global and project installs, --port, --no-open, exit codes, environment variables and data locations.">
+  <meta property="og:url" content="https://gsd.danubelabs.net/cli.html">
+  <meta property="og:image" content="https://gsd.danubelabs.net/og.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="GSD Config Manager — schema-driven configuration reference">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="CLI reference — open-gsd-core-config-manager">
+  <meta name="twitter:description" content="Install and run the GSD Config Manager: npx, global and project installs, --port, --no-open, exit codes, environment variables and data locations.">
+  <meta name="twitter:image" content="https://gsd.danubelabs.net/og.png">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/assets/style.css">
+</head>
+<body class="page-cli">
+  <a class="skip-link" href="#main">Skip to content</a>
+  <div class="grid-overlay" aria-hidden="true"></div>
+
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <a class="brand" href="/" aria-label="GSD Config Manager home">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 28 28" role="img" focusable="false">
+            <rect x="1.5" y="1.5" width="25" height="25" fill="none" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M1.5 9.5h25M1.5 18.5h25M9.5 1.5v25M18.5 1.5v25" stroke="currentColor" stroke-width="1" opacity=".45"/>
+            <rect x="9.5" y="9.5" width="9" height="9" fill="currentColor"/>
+          </svg>
+        </span>
+        <span class="brand-type">
+          <span class="brand-name">GSD<span class="brand-slash">/</span>CONFIG</span>
+          <span class="brand-sub">manager &amp; schema reference</span>
+        </span>
+      </a>
+      <nav class="site-nav" aria-label="Primary">
+        <a href="/schema.html" >Schema<span>01</span></a>
+        <a href="/cli.html" aria-current="page">CLI<span>02</span></a>
+        <a href="/history.html" >Safety<span>03</span></a>
+        <a href="/faq.html" >FAQ<span>04</span></a>
+        <a href="/about.html" >About<span>05</span></a>
+      </nav>
+      <a class="header-cta" href="https://github.com/FiredMosquito831/open-gsd-core-config-manager" rel="noopener">GitHub <span aria-hidden="true">↗</span></a>
+    </div>
+  </header>
+
+  <main id="main">
+<section class="page-head">
+  <div class="wrap">
+    <p class="eyebrow">REFERENCE / 02</p>
+    <div class="page-head-grid">
+      <div>
+        <h1>CLI reference</h1>
+        <p class="lede">The package is a single command that starts a loopback-only helper and opens the editor. Flags are intentionally small: choose a port or skip the browser launch.</p>
+      </div>
+      <dl class="page-stats">
+        <div><dt>Package</dt><dd class="sm">v0.1.0</dd></div>
+        <div><dt>Node</dt><dd class="sm">&gt;=20.19</dd></div>
+        <div><dt>Bins</dt><dd class="sm">2</dd></div>
+        <div><dt>Bind host</dt><dd class="sm">127.0.0.1</dd></div>
+      </dl>
+    </div>
+  </div>
+</section>
+
+<section class="wrap section">
+  <div class="section-head split">
+    <div>
+      <p class="eyebrow">01 / QUICKSTART</p>
+      <h2>Run it without installing.</h2>
+    </div>
+    <p class="section-aside"><code>npx</code> downloads the package into a cache, runs it, and opens your browser. Nothing is added to your project.</p>
+  </div>
+  <div class="terminal" role="img" aria-label="Terminal session showing the command starting the local server and printing a loopback URL.">
+    <div class="terminal-bar"><span></span><span></span><span></span><span class="terminal-title">terminal</span></div>
+    <pre><code><span class="t-dim">$</span> npx open-gsd-core-config-manager
+
+GSD Config Manager
+
+  <span class="t-cyan">➜  Local:   http://127.0.0.1:&lt;port&gt;</span>
+  <span class="t-dim">➜  Press Ctrl+C to stop</span></code></pre>
+  </div>
+  <div class="install install-wide">
+    <span class="install-prompt" aria-hidden="true">$</span>
+    <code>npx open-gsd-core-config-manager</code>
+    <button class="copy-btn" type="button" data-copy="npx open-gsd-core-config-manager" aria-label="Copy command">Copy</button>
+  </div>
+</section>
+
+<section class="wrap section">
+  <div class="section-head">
+    <p class="eyebrow">02 / INSTALLATION</p>
+    <h2>Three ways to run the same binary.</h2>
+  </div>
+  <div class="grid-3">
+    <article class="card code-card">
+      <h3>One-off</h3>
+      <pre><code>npx open-gsd-core-config-manager</code></pre>
+      <p>Best for trying it. Cached by npx; not added to any project.</p>
+    </article>
+    <article class="card code-card">
+      <h3>Global</h3>
+      <pre><code>npm install -g open-gsd-core-config-manager
+open-gsd-core-config-manager</code></pre>
+      <p>Also installs the alias <code>gsd-config-editor</code> — the same binary.</p>
+    </article>
+    <article class="card code-card">
+      <h3>Project dev dependency</h3>
+      <pre><code>npm install --save-dev open-gsd-core-config-manager
+npx open-gsd-core-config-manager</code></pre>
+      <p>Pins the version through your project's lockfile.</p>
+    </article>
+  </div>
+</section>
+
+<section class="wrap section">
+  <div class="section-head">
+    <p class="eyebrow">03 / FLAGS</p>
+    <h2>Command-line options.</h2>
+  </div>
+  <div class="table-wrap">
+    <table class="ref-table">
+      <caption class="visually-hidden">Command-line flags</caption>
+      <thead><tr><th scope="col">Flag</th><th scope="col">Argument</th><th scope="col">Behavior</th></tr></thead>
+      <tbody>
+        <tr>
+          <th scope="row"><code>--port &lt;number&gt;</code></th>
+          <td>Integer 0–65535</td>
+          <td>Bind an explicit loopback port. Omit it (or pass <code>0</code>) to let the OS assign a free ephemeral port. A non-numeric value or one above 65535 exits with status 1.</td>
+        </tr>
+        <tr>
+          <th scope="row"><code>--no-open</code></th>
+          <td>—</td>
+          <td>Do not launch the default browser. The printed Local URL still works; useful over SSH or on headless machines.</td>
+        </tr>
+        <tr>
+          <th scope="row"><code>-h, --help</code></th>
+          <td>—</td>
+          <td>Print the generated help and exit.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="callout">
+    <span class="mono-label">BINDING</span>
+    <p>The host is the loopback literal <code>127.0.0.1</code> in the source. No flag or environment variable changes it, so the server is never reachable from another machine.</p>
+  </div>
+  <div class="callout">
+    <span class="mono-label">PORT IN USE</span>
+    <p>If an explicitly requested port is already taken, the process reports <code>Port &lt;n&gt; is already in use.</code> and exits with status 1. Run without <code>--port</code> to get a free one.</p>
+  </div>
+</section>
+
+<section class="wrap section">
+  <div class="section-head">
+    <p class="eyebrow">04 / ENVIRONMENT</p>
+    <h2>Environment variables.</h2>
+  </div>
+  <div class="table-wrap">
+    <table class="ref-table">
+      <caption class="visually-hidden">Environment variables</caption>
+      <thead><tr><th scope="col">Variable</th><th scope="col">Read by</th><th scope="col">Effect</th></tr></thead>
+      <tbody>
+        <tr>
+          <th scope="row"><code>NO_COLOR</code></th>
+          <td>Terminal output</td>
+          <td>Disables ANSI styling and switches Unicode symbols to ASCII, following the no-color.org convention. Plain mode is also used automatically when stdout is not a TTY.</td>
+        </tr>
+        <tr>
+          <th scope="row"><code>GSD_HOME</code></th>
+          <td>Global defaults discovery</td>
+          <td>Overrides the home directory used to locate <code>~/.gsd/defaults.json</code>, mirroring gsd-core's own loader. Useful for isolated environments and tests.</td>
+        </tr>
+        <tr>
+          <th scope="row"><code>&lt;PREFIX&gt;_API_KEY</code></th>
+          <td>Search providers</td>
+          <td>The environment-variable channel for optional search-provider keys (for example <code>BRAVE_API_KEY</code>). The tool detects and displays status; keys are never logged.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="wrap section">
+  <div class="section-head">
+    <p class="eyebrow">05 / FILES</p>
+    <h2>What the tool reads and writes.</h2>
+  </div>
+  <div class="table-wrap">
+    <table class="ref-table">
+      <caption class="visually-hidden">Files and locations</caption>
+      <thead><tr><th scope="col">Path</th><th scope="col">Role</th><th scope="col">Touched by this tool?</th></tr></thead>
+      <tbody>
+        <tr><th scope="row"><code>&lt;project&gt;/.planning/config.json</code></th><td>The GSD config you edit</td><td>Read; written only on a confirmed, validated save or restore.</td></tr>
+        <tr><th scope="row"><code>~/.gsd/defaults.json</code></th><td>Global defaults, used as a provenance layer</td><td>Read only.</td></tr>
+        <tr><th scope="row"><code>~/.gsd/&lt;prefix&gt;_api_key</code></th><td>Optional search-provider key file</td><td>Written only when you save a key from the API-keys workspace; mode <code>0600</code>.</td></tr>
+        <tr><th scope="row">OS app-data directory</th><td>Snapshot history (<code>snapshots/&lt;sha256(path)&gt;</code>)</td><td>Written after a successful save, outside your project.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="path-grid">
+    <div><span class="mono-label">WINDOWS</span><code>%LOCALAPPDATA%\open-gsd-core-config-manager\Data</code></div>
+    <div><span class="mono-label">MACOS</span><code>~/Library/Application Support/open-gsd-core-config-manager</code></div>
+    <div><span class="mono-label">LINUX</span><code>~/.local/share/open-gsd-core-config-manager</code></div>
+  </div>
+</section>
+
+<section class="wrap section">
+  <div class="section-head">
+    <p class="eyebrow">06 / LIFECYCLE</p>
+    <h2>Startup, shutdown and exit codes.</h2>
+  </div>
+  <div class="grid-2">
+    <article class="card">
+      <h3>Startup sequence</h3>
+      <ol class="steps">
+        <li>Create a launch context with a random UUID.</li>
+        <li>Build the guarded server and bind <code>127.0.0.1</code>.</li>
+        <li>Read the assigned port back and seal the allowed origin.</li>
+        <li>Print the Local URL, then open the browser.</li>
+        <li>If opening the browser fails, print the URL to open manually — the server keeps running.</li>
+      </ol>
+    </article>
+    <article class="card">
+      <h3>Shutdown and exits</h3>
+      <p>On <code>SIGINT</code> or <code>SIGTERM</code> the server closes before the process exits, releasing the port. Saved changes are already on disk.</p>
+      <table class="mini-table">
+        <caption class="visually-hidden">Exit codes</caption>
+        <tbody>
+          <tr><th scope="row"><code>0</code></th><td>Clean exit after shutdown.</td></tr>
+          <tr><th scope="row"><code>1</code></th><td>Invalid <code>--port</code>, port already in use, or startup failure.</td></tr>
+        </tbody>
+      </table>
+    </article>
+  </div>
+</section>
+
+<section class="wrap section">
+  <div class="section-head">
+    <p class="eyebrow">07 / REMOVAL</p>
+    <h2>Uninstall without losing your work.</h2>
+  </div>
+  <div class="grid-2">
+    <article class="card code-card">
+      <h3>Remove the package</h3>
+      <pre><code>npm uninstall -g open-gsd-core-config-manager
+# or, for a project install
+npm uninstall open-gsd-core-config-manager</code></pre>
+    </article>
+    <article class="card">
+      <h3>What remains</h3>
+      <p>Removing the package does not delete snapshots, stored API keys, or any <code>.planning/config.json</code>. Delete the app-data directory if you no longer need restore history. Losing key files means re-issuing keys at the provider.</p>
+    </article>
+  </div>
+</section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-grid">
+      <div class="footer-brand">
+        <span class="mono-label">GSD CONFIG MANAGER</span>
+        <p>Local-first tooling for <a href="https://github.com/open-gsd/gsd-core" rel="noopener">open-gsd/gsd-core</a> configuration.</p>
+        <p class="footer-fine">MIT licensed · no account · no telemetry</p>
+      </div>
+      <div class="footer-col">
+        <span class="mono-label">Reference</span>
+        <a href="/schema.html">Schema explorer</a>
+        <a href="/cli.html">CLI reference</a>
+        <a href="/history.html">Atomic writes &amp; history</a>
+        <a href="/canonical-schema.json">canonical-schema.json</a>
+      </div>
+      <div class="footer-col">
+        <span class="mono-label">Project</span>
+        <a href="https://github.com/FiredMosquito831/open-gsd-core-config-manager" rel="noopener">Source on GitHub</a>
+        <a href="https://www.npmjs.com/package/open-gsd-core-config-manager" rel="noopener">npm package</a>
+        <a href="https://github.com/FiredMosquito831/open-gsd-core-config-manager/blob/master/SECURITY.md" rel="noopener">Security policy</a>
+        <a href="https://github.com/FiredMosquito831/open-gsd-core-config-manager/blob/master/LICENSE" rel="noopener">License</a>
+      </div>
+      <div class="footer-col footer-meta">
+        <span class="mono-label">Build</span>
+        <span>tool v0.1.0</span>
+        <span>schema gsd-core v1.11.0</span>
+        <span>201 keys · 24 categories</span>
+      </div>
+    </div>
+    <div class="wrap footer-bottom">
+      <span class="mono-label">Not affiliated with Anthropic. GSD is an open-source project by open-gsd.</span>
+      <span class="mono-label">gsd.danubelabs.net/cli.html</span>
+    </div>
+  </footer>
+
+  <script src="/assets/site.js" defer></script>
+</body>
+</html>

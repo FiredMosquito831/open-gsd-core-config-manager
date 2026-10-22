@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-head">
+  <div class="wrap">
+    <p class="eyebrow">REFERENCE / 04</p>
+    <h1>FAQ</h1>
+    <p class="lede">Short answers about privacy, safety, schema tracking and day-to-day use.</p>
+  </div>
+</section>
+
+<section class="wrap section faq-list">
+  <details class="faq-item" open>
+    <summary>Is my configuration uploaded anywhere?</summary>
+    <div><p>No. The helper binds <code>127.0.0.1</code> only and serves the UI from your machine. There is no account system, no analytics and no telemetry. Your <code>config.json</code>, its snapshots and any API keys stay local.</p></div>
+  </details>
+  <details class="faq-item">
+    <summary>Does the tool work offline?</summary>
+    <div><p>Yes, after the package is downloaded. <code>npx</code> needs network access the first time; the editor itself does not. The only outbound request the app makes is the schema-update check you explicitly trigger, which reads allowlisted release metadata for gsd-core and never executes remote code.</p></div>
+  </details>
+  <details class="faq-item">
+    <summary>Which gsd-core version does the schema cover?</summary>
+    <div><p>The bundled schema tracks gsd-core <strong>v{{ schema_version }}</strong> and documents <strong>{{ stats.key_count }} keys</strong> across {{ stats.categories }} categories: {{ stats.defaults }} carry canonical defaults and {{ stats.structural }} are structural map keys whose sub-keys hold their own defaults. {{ stats.enums }} keys are enumerated and carry a per-option meaning.</p></div>
+  </details>
+  <details class="faq-item">
+    <summary>Can I use it if gsd-core ships a newer release?</summary>
+    <div><p>Use <strong>Schema maintenance → Check for updates</strong> in the editor. It checks the latest stable gsd-core release, renders the proposed changes in plain language, and lets you activate the refreshed schema or keep the current one. Unknown keys are never rejected by validation, so a newer config still loads and saves even before you refresh.</p></div>
+  </details>
+  <details class="faq-item">
+    <summary>What happens to keys the schema does not know about?</summary>
+    <div><p>They are preserved. The canonical schema deliberately does not set <code>additionalProperties: false</code>, and edits are applied to the original parsed object rather than rebuilt from a key list. Unknown and future keys are surfaced in a dedicated section of the editor instead of being dropped.</p></div>
+  </details>
+  <details class="faq-item">
+    <summary>What if my config is already invalid?</summary>
+    <div><p>The editor reports the validation problem and blocks saves until the document passes. It never writes a document that fails schema validation, and the existing file remains as it was.</p></div>
+  </details>
+  <details class="faq-item">
+    <summary>Where does version history live, and for how long?</summary>
+    <div><p>Snapshots live in the OS app-data directory, under <code>snapshots/&lt;sha256 of the config path&gt;</code>. The default policy keeps the last 50 snapshots per config and skips recording when the content is identical to the most recent snapshot. History is never written inside your project or its <code>.git</code>.</p></div>
+  </details>
+  <details class="faq-item">
+    <summary>Can it edit my global defaults file?</summary>
+    <div><p>The global defaults at <code>~/.gsd/defaults.json</code> (or under <code>GSD_HOME</code>) are <strong>read</strong> as a provenance layer, so the editor can tell you whether a value comes from the schema default, the global defaults, or a project override. The tracked documents the tool saves are project configs.</p></div>
+  </details>
+  <details class="faq-item">
+    <summary>Does it work on Windows?</summary>
+    <div><p>Yes. The write pipeline adds a retry wrapper for transient Windows rename failures (<code>EPERM</code>, <code>EBUSY</code>, <code>EACCES</code>) that the pinned atomic-write library does not handle itself. Snapshots live under <code>%LOCALAPPDATA%</code>.</p></div>
+  </details>
+  <details class="faq-item">
+    <summary>Can I run it on a headless machine?</summary>
+    <div><p>Pass <code>--no-open</code>; the server prints its loopback URL and keeps running. You still need a browser on the same machine (or a forwarded port) to use the UI. The host cannot be changed to a network interface.</p></div>
+  </details>
+  <details class="faq-item">
+    <summary>Are API keys stored securely?</summary>
+    <div><p>Search-provider keys can live in an environment variable or in <code>~/.gsd/&lt;prefix&gt;_api_key</code>. When the tool writes a key file it uses mode <code>0600</code>, displays keys masked, and never logs them. Provider keys are also flagged sensitive in the schema and shown read-only where appropriate.</p></div>
+  </details>
+  <details class="faq-item">
+    <summary>Why are some keys read-only?</summary>
+    <div><p>Keys marked sensitive or unsupported by the schema's editor metadata are displayed but not editable in the form UI. They can still be changed through the raw JSON editor, where validation applies as usual. The explorer marks these keys with a <strong>read-only</strong> badge.</p></div>
+  </details>
+  <details class="faq-item">
+    <summary>How do I uninstall it?</summary>
+    <div><p>Run <code>npm uninstall -g open-gsd-core-config-manager</code> (or uninstall it from your project). Your configs are untouched. Snapshots and stored key files remain until you delete the app-data directory or the key files yourself.</p></div>
+  </details>
+  <details class="faq-item">
+    <summary>Is this affiliated with Anthropic or open-gsd?</summary>
+    <div><p>No. It is an independent MIT-licensed tool for editing configuration of <a href="{{ upstream_url }}" rel="noopener">open-gsd/gsd-core</a>. GSD and Claude are products of their respective owners.</p></div>
+  </details>
+</section>
+{% endblock %}
+{% block scripts %}
+  <script src="/assets/site.js" defer></script>
+{% endblock %}

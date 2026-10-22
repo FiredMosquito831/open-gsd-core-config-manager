@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>GSD Config Manager — social card</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; }
+    html, body { width: 1200px; height: 630px; overflow: hidden; }
+    body {
+      background: #050c12;
+      color: #e7f1f3;
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      position: relative;
+      padding: 56px 64px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .grid {
+      position: absolute; inset: 0;
+      background-image:
+        linear-gradient(rgba(90,170,185,.09) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(90,170,185,.09) 1px, transparent 1px),
+        linear-gradient(rgba(90,190,205,.12) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(90,190,205,.12) 1px, transparent 1px);
+      background-size: 32px 32px, 32px 32px, 160px 160px, 160px 160px;
+    }
+    .glow {
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse 60% 70% at 12% 20%, rgba(56,223,238,.16), transparent 65%);
+    }
+    .top, .bottom { position: relative; z-index: 1; }
+    .brand { display: flex; align-items: center; gap: 16px; }
+    .mark { width: 44px; height: 44px; }
+    .brand-text { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: 15px; letter-spacing: .16em; font-weight: 700; }
+    .brand-text span { color: #38dfee; }
+    .brand-sub { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: 11px; letter-spacing: .18em; color: #627d86; margin-top: 3px; text-transform: uppercase; }
+    .eyebrow { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: 13px; letter-spacing: .2em; color: #38dfee; margin-bottom: 22px; }
+    h1 { font-size: 74px; line-height: 1.02; letter-spacing: -.035em; font-weight: 600; max-width: 950px; }
+    h1 em { font-style: normal; color: #38dfee; display: block; }
+    .lede { font-size: 22px; color: #9db4bb; margin-top: 24px; max-width: 780px; line-height: 1.45; }
+    .rule { height: 1px; background: rgba(56,223,238,.28); margin-bottom: 22px; }
+    .bottom { display: flex; align-items: flex-end; justify-content: space-between; gap: 32px; }
+    .stats { display: flex; gap: 40px; }
+    .stat b { display: block; font-family: ui-monospace, Consolas, monospace; font-size: 30px; color: #7ceef8; line-height: 1; }
+    .stat span { display: block; font-family: ui-monospace, Consolas, monospace; font-size: 10px; letter-spacing: .14em; color: #627d86; text-transform: uppercase; margin-top: 8px; }
+    .url { font-family: ui-monospace, Consolas, monospace; font-size: 14px; color: #9db4bb; border: 1px solid rgba(56,223,238,.32); padding: 12px 18px; }
+    .url b { color: #38dfee; font-weight: 400; }
+    .corner { position: absolute; width: 14px; height: 14px; border-color: #38dfee; border-style: solid; opacity: .8; z-index: 2; }
+    .c1 { top: 24px; left: 24px; border-width: 1px 0 0 1px; }
+    .c2 { top: 24px; right: 24px; border-width: 1px 1px 0 0; }
+    .c3 { bottom: 24px; left: 24px; border-width: 0 0 1px 1px; }
+    .c4 { bottom: 24px; right: 24px; border-width: 0 1px 1px 0; }
+  </style>
+</head>
+<body>
+  <div class="grid"></div>
+  <div class="glow"></div>
+  <span class="corner c1"></span><span class="corner c2"></span><span class="corner c3"></span><span class="corner c4"></span>
+
+  <div class="top">
+    <div class="brand">
+      <svg class="mark" viewBox="0 0 28 28" aria-hidden="true">
+        <rect x="1.5" y="1.5" width="25" height="25" fill="none" stroke="#38dfee" stroke-width="1.5"/>
+        <path d="M1.5 9.5h25M1.5 18.5h25M9.5 1.5v25M18.5 1.5v25" stroke="#38dfee" stroke-width="1" opacity=".45"/>
+        <rect x="9.5" y="9.5" width="9" height="9" fill="#38dfee"/>
+      </svg>
+      <div>
+        <div class="brand-text">GSD<span>/</span>CONFIG</div>
+        <div class="brand-sub">manager &amp; schema reference</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="top" style="margin-top: 20px;">
+    <p class="eyebrow">CONFIG TOOL / GSD-CORE v__VERSION__</p>
+    <h1>Every config key.<em>Explained. Validated. Reversible.</em></h1>
+    <p class="lede">__KEYS__ keys documented in plain language, validated before write, saved atomically with a 50-snapshot history.</p>
+  </div>
+
+  <div class="bottom">
+    <div style="flex:1">
+      <div class="rule"></div>
+      <div class="stats">
+        <div class="stat"><b>__KEYS__</b><span>keys</span></div>
+        <div class="stat"><b>__DEFAULTS__</b><span>defaults</span></div>
+        <div class="stat"><b>__ENUMS__</b><span>enums</span></div>
+        <div class="stat"><b>50</b><span>snapshots</span></div>
+      </div>
+    </div>
+    <div class="url"><b>npx</b> open-gsd-core-config-manager</div>
+  </div>
+</body>
+</html>
