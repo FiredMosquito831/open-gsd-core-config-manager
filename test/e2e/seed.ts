@@ -7,7 +7,7 @@
  * repository fixture, copied to an OS temp directory so tests never mutate the
  * checked-in fixture.
  */
-import { copyFileSync, mkdirSync, mkdtempSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -25,7 +25,13 @@ async function seed(request: APIRequestContext): Promise<void> {
   const dir = mkdtempSync(join(tmpdir(), 'gsd-config-manager-e2e-'));
   const target = join(dir, '.planning', 'config.json');
   mkdirSync(join(dir, '.planning'), { recursive: true });
-  copyFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'fixtures', 'project-config.json'), target);
+  const fixture = JSON.parse(
+    readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'fixtures', 'project-config.json'), 'utf8'),
+  ) as Record<string, unknown>;
+  // The shared fixture predates the `models` key; give the specialized-editor
+  // tests a populated per-phase map without changing the fixture other tests use.
+  fixture.models ??= { planning: 'opus', execution: 'sonnet', verification: 'sonnet' };
+  writeFileSync(target, JSON.stringify(fixture, null, 2) + "\n");
 
   const added = await request.post('/api/workspace/configs/track', { data: { path: target } });
   if (!added.ok() && added.status() !== 409) {
