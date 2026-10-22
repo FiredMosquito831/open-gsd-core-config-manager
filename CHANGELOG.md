@@ -30,6 +30,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `requirements-site.txt` for site-only Python dependencies.
 
 ### Changed
+- CI verifies the checked-in bundled and canonical schemas instead of running
+  `build:schema`, which requires a local gsd-core installation that a clean
+  runner does not have.
 - README rewritten around the documentation site, schema reference, npx
   quickstart, safety properties and real screenshots.
 - `docs/README.md` now documents how the generated site relates to the
