@@ -1,0 +1,4 @@
+# Site-only dependencies (not part of the npm package).
+# Install with: python -m pip install -r requirements-site.txt
+Jinja2==3.1.6
+MarkupSafe==3.0.2

@@ -41,7 +41,7 @@ afterEach(() => {
 });
 
 function renderApp() {
-  return render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><App connected /></QueryClientProvider>);
+  return render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><App /></QueryClientProvider>);
 }
 
 describe('AppShell', () => {
@@ -94,7 +94,7 @@ describe('AppShell', () => {
   });
 
   it('shows the editor empty state when no config is selected', () => {
-    renderWeb(<App connected />);
+    renderWeb(<App />);
 
     expect(screen.getByLabelText('Tracked configurations')).toBeTruthy();
     expect(screen.getByLabelText('Chapters')).toBeTruthy();

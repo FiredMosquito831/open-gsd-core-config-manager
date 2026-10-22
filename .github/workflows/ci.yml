@@ -27,14 +27,41 @@ jobs:
       - name: Unit tests
         run: npm run test:unit
 
-      - name: Build schema
-        run: npm run build:schema
+      # Regenerating the schema requires a local gsd-core installation
+      # (~/.claude/gsd-core), which a clean runner does not have. The bundled
+      # schema is a checked-in artifact: verify it parses instead.
+      - name: Verify bundled schema
+        run: |
+          node -e "const fs=require('fs'); const s=JSON.parse(fs.readFileSync('packages/schema-data/bundled-schema.json','utf8')); if (!s || typeof s !== 'object') process.exit(1); console.log('bundled schema OK');"
+          node -e "const fs=require('fs'); const s=JSON.parse(fs.readFileSync('docs/canonical-schema.json','utf8')); if (!s.keys || Object.keys(s.keys).length === 0) process.exit(1); console.log('canonical schema OK:', Object.keys(s.keys).length, 'keys');"
 
       - name: Build CLI
         run: npm run build:cli
 
       - name: Build client
         run: npm run build:client
+
+      - name: Documentation site tests
+        run: npm run test:site
+
+  site:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install site dependencies
+        run: python -m pip install -r requirements-site.txt
+
+      - name: Verify docs/ is up to date
+        run: python scripts/build_site.py --check
+
+      - name: Check site links, metadata and social card
+        run: python scripts/check_site.py
 
   e2e:
     runs-on: ubuntu-latest

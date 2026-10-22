@@ -1,0 +1,361 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GSD Config Manager — every config key, explained and validated</title>
+  <meta name="description" content="Understand and safely edit any GSD (open-gsd/gsd-core) config.json. Every key documented in plain language, validated before write, atomic saves and full snapshot history. Run npx open-gsd-core-config-manager.">
+  <link rel="canonical" href="https://gsd.danubelabs.net/">
+  <meta name="robots" content="index,follow">
+  <meta name="theme-color" content="#071018">
+  <meta name="color-scheme" content="dark">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="GSD Config Manager">
+  <meta property="og:title" content="GSD Config Manager — every config key, explained and validated">
+  <meta property="og:description" content="Understand and safely edit any GSD (open-gsd/gsd-core) config.json. Every key documented in plain language, validated before write, atomic saves and full snapshot history. Run npx open-gsd-core-config-manager.">
+  <meta property="og:url" content="https://gsd.danubelabs.net/">
+  <meta property="og:image" content="https://gsd.danubelabs.net/og.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="GSD Config Manager — schema-driven configuration reference">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="GSD Config Manager — every config key, explained and validated">
+  <meta name="twitter:description" content="Understand and safely edit any GSD (open-gsd/gsd-core) config.json. Every key documented in plain language, validated before write, atomic saves and full snapshot history. Run npx open-gsd-core-config-manager.">
+  <meta name="twitter:image" content="https://gsd.danubelabs.net/og.png">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/assets/style.css">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "GSD Config Manager",
+    "alternateName": "open-gsd-core-config-manager",
+    "description": "Understand and safely edit any GSD (open-gsd/gsd-core) config.json. Every key documented in plain language, validated before write, atomic saves and full snapshot history. Run npx open-gsd-core-config-manager.",
+    "url": "https://gsd.danubelabs.net",
+    "downloadUrl": "https://www.npmjs.com/package/open-gsd-core-config-manager",
+    "codeRepository": "https://github.com/FiredMosquito831/open-gsd-core-config-manager",
+    "softwareVersion": "0.1.0",
+    "applicationCategory": "DeveloperApplication",
+    "operatingSystem": "Windows, macOS, Linux",
+    "isAccessibleForFree": true,
+    "license": "https://opensource.org/licenses/MIT",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "author": { "@type": "Person", "name": "FiredMosquito831" },
+    "sameAs": ["https://www.npmjs.com/package/open-gsd-core-config-manager", "https://github.com/open-gsd/gsd-core"]
+  }
+  </script>
+</head>
+<body class="page-index">
+  <a class="skip-link" href="#main">Skip to content</a>
+  <div class="grid-overlay" aria-hidden="true"></div>
+
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <a class="brand" href="/" aria-label="GSD Config Manager home">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 28 28" role="img" focusable="false">
+            <rect x="1.5" y="1.5" width="25" height="25" fill="none" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M1.5 9.5h25M1.5 18.5h25M9.5 1.5v25M18.5 1.5v25" stroke="currentColor" stroke-width="1" opacity=".45"/>
+            <rect x="9.5" y="9.5" width="9" height="9" fill="currentColor"/>
+          </svg>
+        </span>
+        <span class="brand-type">
+          <span class="brand-name">GSD<span class="brand-slash">/</span>CONFIG</span>
+          <span class="brand-sub">manager &amp; schema reference</span>
+        </span>
+      </a>
+      <nav class="site-nav" aria-label="Primary">
+        <a href="/schema.html" >Schema<span>01</span></a>
+        <a href="/cli.html" >CLI<span>02</span></a>
+        <a href="/history.html" >Safety<span>03</span></a>
+        <a href="/faq.html" >FAQ<span>04</span></a>
+        <a href="/about.html" >About<span>05</span></a>
+      </nav>
+      <a class="header-cta" href="https://github.com/FiredMosquito831/open-gsd-core-config-manager" rel="noopener">GitHub <span aria-hidden="true">↗</span></a>
+    </div>
+  </header>
+
+  <main id="main">
+<section class="hero">
+  <div class="wrap hero-grid">
+    <div class="hero-copy">
+      <p class="eyebrow"><span class="dot" aria-hidden="true"></span>LOCAL CONFIG TOOL<span class="sep">/</span>GSD-CORE v1.11.0</p>
+      <h1>Every GSD config key.<br><span class="accent">Explained. Validated. Reversible.</span></h1>
+      <p class="lede">Understand and safely edit any <code>config.json</code> from <a href="https://github.com/open-gsd/gsd-core" rel="noopener">open-gsd/gsd-core</a> — without reading the gsd-core source. Plain-language docs for every key, validation before every write, atomic saves, and a full snapshot history.</p>
+      <div class="install" role="group" aria-label="Install command">
+        <span class="install-prompt" aria-hidden="true">$</span>
+        <code id="install-cmd">npx open-gsd-core-config-manager</code>
+        <button class="copy-btn" type="button" data-copy="npx open-gsd-core-config-manager" aria-label="Copy install command">Copy</button>
+      </div>
+      <p class="install-note">Requires Node.js &gt;=20.19 · bind addresses are loopback-only · nothing to deploy</p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="/schema.html">Explore the schema <span aria-hidden="true">→</span></a>
+        <a class="btn btn-ghost" href="/history.html">How saves stay safe</a>
+      </div>
+    </div>
+    <aside class="hero-panel" aria-label="Project facts">
+      <div class="panel-head"><span class="mono-label">REPOSITORY READOUT</span><span class="status-led" aria-hidden="true"></span></div>
+      <dl class="readout">
+        <div><dt>Canonical keys</dt><dd>201</dd></div>
+        <div><dt>With defaults</dt><dd>192</dd></div>
+        <div><dt>Enumerated keys</dt><dd>26</dd></div>
+        <div><dt>Categories</dt><dd>24</dd></div>
+        <div><dt>Schema tracks</dt><dd class="sm">gsd-core v1.11.0</dd></div>
+        <div><dt>Tool version</dt><dd class="sm">v0.1.0</dd></div>
+      </dl>
+      <p class="panel-foot">Generated from <a href="/canonical-schema.json">canonical-schema.json</a>, the same data the editor renders.</p>
+    </aside>
+  </div>
+</section>
+
+<section class="wrap section">
+  <div class="section-head">
+    <p class="eyebrow">01 / THE PROBLEM</p>
+    <h2>A config file should not require archaeology.</h2>
+  </div>
+  <div class="grid-3">
+    <article class="card">
+      <div class="card-index">A</div>
+      <h3>Opaque keys</h3>
+      <p>Dozens of nested settings, magic enum values and model-routing maps. What a key does is often discoverable only by reading source code.</p>
+    </article>
+    <article class="card">
+      <div class="card-index">B</div>
+      <h3>Risky hand-edits</h3>
+      <p>A mistyped value or a partial write can leave a project's configuration invalid, with no record of what changed or how to get back.</p>
+    </article>
+    <article class="card">
+      <div class="card-index">C</div>
+      <h3>Scattered projects</h3>
+      <p>Every project carries its own <code>.planning/config.json</code>. Keeping track of them by hand means context-switching and fragile edits.</p>
+    </article>
+  </div>
+</section>
+
+<section class="wrap section">
+  <div class="section-head split">
+    <div>
+      <p class="eyebrow">02 / THE TOOL</p>
+      <h2>Explain, then edit.</h2>
+    </div>
+    <p class="section-aside">A local helper serves the UI on <code>127.0.0.1</code> and opens your browser. Config files never leave your machine.</p>
+  </div>
+  <div class="grid-2">
+    <article class="feature">
+      <span class="feature-num">01</span>
+      <h3>Documentation for every key</h3>
+      <p>Human labels, one-line summaries and full descriptions. Enumerated values carry a per-option meaning, so choices are explained before you make them.</p>
+    </article>
+    <article class="feature">
+      <span class="feature-num">02</span>
+      <h3>Provenance before change</h3>
+      <p>See the effective value, the canonical default, and where the current value comes from: the schema default, global defaults at <code>~/.gsd/defaults.json</code>, or a project override.</p>
+    </article>
+    <article class="feature">
+      <span class="feature-num">03</span>
+      <h3>Structured editors</h3>
+      <p>Maps and arrays get dedicated controls — agent skill maps, per-runtime model tiers, reviewer instances — instead of raw JSON editing.</p>
+    </article>
+    <article class="feature">
+      <span class="feature-num">04</span>
+      <h3>Multiple projects</h3>
+      <p>Track any number of configs, add one by absolute path, scan a folder to discover them, or create a fresh config.</p>
+    </article>
+    <article class="feature">
+      <span class="feature-num">05</span>
+      <h3>Schema maintenance</h3>
+      <p>The bundled schema tracks gsd-core releases. Check for a newer release, review proposed changes in plain language, then activate or keep your current schema.</p>
+    </article>
+    <article class="feature">
+      <span class="feature-num">06</span>
+      <h3>Two-channel API keys</h3>
+      <p>Optional search providers read keys from an environment variable or a <code>~/.gsd/&lt;prefix&gt;_api_key</code> file. The tool detects both, stores keys mode <code>0600</code>, masks them, and never logs them.</p>
+    </article>
+  </div>
+</section>
+
+<section class="wrap section">
+  <div class="section-head">
+    <p class="eyebrow">03 / SAFETY MODEL</p>
+    <h2>Four checks between you and a broken config.</h2>
+  </div>
+  <ol class="safety-list">
+    <li>
+      <span class="safety-num">01</span>
+      <div>
+        <h3>Validate before write</h3>
+        <p>Ajv validates the full document against the canonical schema. On failure the save stops before any file operation — no partial write on invalid input.</p>
+      </div>
+    </li>
+    <li>
+      <span class="safety-num">02</span>
+      <div>
+        <h3>Atomic replacement</h3>
+        <p>Saves take an advisory lock, then write through <code>write-file-atomic</code>: a temp file in the same directory, fsync, then rename over the target. Transient Windows lock errors are retried with backoff.</p>
+      </div>
+    </li>
+    <li>
+      <span class="safety-num">03</span>
+      <div>
+        <h3>Stale-write detection</h3>
+        <p>Every save carries the revision you started from. If the file changed on disk in the meantime, the write is rejected with a conflict instead of clobbering the newer version.</p>
+      </div>
+    </li>
+    <li>
+      <span class="safety-num">04</span>
+      <div>
+        <h3>Snapshot history</h3>
+        <p>The content replaced by a successful save is recorded as a full JSON snapshot with a sequence number, timestamp and content hash — up to 50 kept per config, with structural diff and confirmed restore.</p>
+      </div>
+    </li>
+  </ol>
+  <p class="section-link"><a href="/history.html">Read the full write pipeline <span aria-hidden="true">→</span></a></p>
+</section>
+
+<section class="wrap section">
+  <div class="section-head split">
+    <div>
+      <p class="eyebrow">04 / THE REFERENCE</p>
+      <h2>201 keys, generated from real data.</h2>
+    </div>
+    <p class="section-aside">No key list is typed by hand. The explorer reads the canonical schema that ships with the tool.</p>
+  </div>
+  <div class="schema-teaser">
+    <div class="teaser-cats">
+      <a href="/schema.html?cat=capabilities">
+        <span class="cat-name">Capabilities</span>
+        <span class="cat-count">3</span>
+      </a>
+      <a href="/schema.html?cat=claude-orchestration">
+        <span class="cat-name">Claude Orchestration</span>
+        <span class="cat-count">3</span>
+      </a>
+      <a href="/schema.html?cat=code-quality">
+        <span class="cat-name">Code Quality</span>
+        <span class="cat-count">4</span>
+      </a>
+      <a href="/schema.html?cat=discovery">
+        <span class="cat-name">Discovery</span>
+        <span class="cat-count">7</span>
+      </a>
+      <a href="/schema.html?cat=effort">
+        <span class="cat-name">Effort</span>
+        <span class="cat-count">6</span>
+      </a>
+      <a href="/schema.html?cat=external-job">
+        <span class="cat-name">External Job</span>
+        <span class="cat-count">5</span>
+      </a>
+      <a href="/schema.html?cat=features">
+        <span class="cat-name">Features</span>
+        <span class="cat-count">3</span>
+      </a>
+      <a href="/schema.html?cat=gates">
+        <span class="cat-name">Gates</span>
+        <span class="cat-count">14</span>
+      </a>
+      <a href="/schema.html?cat=general">
+        <span class="cat-name">General</span>
+        <span class="cat-count">13</span>
+      </a>
+      <a href="/schema.html?cat=git">
+        <span class="cat-name">Git</span>
+        <span class="cat-count">8</span>
+      </a>
+      <a href="/schema.html?cat=graphify">
+        <span class="cat-name">Graphify</span>
+        <span class="cat-count">4</span>
+      </a>
+      <a href="/schema.html?cat=hooks">
+        <span class="cat-name">Hooks</span>
+        <span class="cat-count">2</span>
+      </a>
+    </div>
+    <div class="teaser-more">
+      <p><strong>24 categories.</strong> 192 keys carry canonical defaults; 9 are structural map keys whose sub-keys hold their own defaults.</p>
+      <a class="btn btn-primary" href="/schema.html">Open the schema explorer <span aria-hidden="true">→</span></a>
+    </div>
+  </div>
+</section>
+
+<section class="wrap section">
+  <div class="section-head">
+    <p class="eyebrow">05 / INTERFACE</p>
+    <h2>Built for reading, not decoding.</h2>
+  </div>
+  <figure class="shot-frame">
+    <div class="shot-chrome" aria-hidden="true">
+      <span></span><span></span><span></span>
+      <span class="shot-url">schema explorer · gsd.danubelabs.net/schema.html</span>
+    </div>
+    <img src="/assets/screenshots/schema-desktop.png" width="1440" height="960" loading="lazy" alt="GSD Config Manager schema explorer showing searchable configuration keys with filters and plain-language descriptions.">
+    <figcaption>Schema explorer: every key with type, default, allowed values and plain-language documentation.</figcaption>
+  </figure>
+  <div class="shot-row">
+    <figure class="shot-frame">
+      <img src="/assets/screenshots/home-desktop.png" width="1440" height="960" loading="lazy" alt="GSD Config Manager home page with the npx install command and safety guarantees.">
+      <figcaption>Home — install in one command.</figcaption>
+    </figure>
+    <figure class="shot-frame">
+      <img src="/assets/screenshots/history-desktop.png" width="1440" height="960" loading="lazy" alt="Atomic writes and version history page explaining the save pipeline.">
+      <figcaption>Safety — the write pipeline, step by step.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="wrap section cta-section">
+  <div class="cta-box">
+    <div>
+      <p class="eyebrow">START HERE</p>
+      <h2>Open a config, understand every key.</h2>
+      <p>One command starts the local editor. No account, no hosted service, no telemetry.</p>
+    </div>
+    <div class="cta-actions">
+      <div class="install install-compact">
+        <span class="install-prompt" aria-hidden="true">$</span>
+        <code>npx open-gsd-core-config-manager</code>
+        <button class="copy-btn" type="button" data-copy="npx open-gsd-core-config-manager" aria-label="Copy install command">Copy</button>
+      </div>
+      <a class="btn btn-ghost" href="https://github.com/FiredMosquito831/open-gsd-core-config-manager" rel="noopener">View source <span aria-hidden="true">↗</span></a>
+    </div>
+  </div>
+</section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-grid">
+      <div class="footer-brand">
+        <span class="mono-label">GSD CONFIG MANAGER</span>
+        <p>Local-first tooling for <a href="https://github.com/open-gsd/gsd-core" rel="noopener">open-gsd/gsd-core</a> configuration.</p>
+        <p class="footer-fine">MIT licensed · no account · no telemetry</p>
+      </div>
+      <div class="footer-col">
+        <span class="mono-label">Reference</span>
+        <a href="/schema.html">Schema explorer</a>
+        <a href="/cli.html">CLI reference</a>
+        <a href="/history.html">Atomic writes &amp; history</a>
+        <a href="/canonical-schema.json">canonical-schema.json</a>
+      </div>
+      <div class="footer-col">
+        <span class="mono-label">Project</span>
+        <a href="https://github.com/FiredMosquito831/open-gsd-core-config-manager" rel="noopener">Source on GitHub</a>
+        <a href="https://www.npmjs.com/package/open-gsd-core-config-manager" rel="noopener">npm package</a>
+        <a href="https://github.com/FiredMosquito831/open-gsd-core-config-manager/blob/master/SECURITY.md" rel="noopener">Security policy</a>
+        <a href="https://github.com/FiredMosquito831/open-gsd-core-config-manager/blob/master/LICENSE" rel="noopener">License</a>
+      </div>
+      <div class="footer-col footer-meta">
+        <span class="mono-label">Build</span>
+        <span>tool v0.1.0</span>
+        <span>schema gsd-core v1.11.0</span>
+        <span>201 keys · 24 categories</span>
+      </div>
+    </div>
+    <div class="wrap footer-bottom">
+      <span class="mono-label">Not affiliated with Anthropic. GSD is an open-source project by open-gsd.</span>
+      <span class="mono-label">gsd.danubelabs.net/</span>
+    </div>
+  </footer>
+
+  <script src="/assets/site.js" defer></script>
+</body>
+</html>

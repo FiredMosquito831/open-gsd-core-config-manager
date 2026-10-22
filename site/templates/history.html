@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-head">
+  <div class="wrap">
+    <p class="eyebrow">REFERENCE / 03</p>
+    <div class="page-head-grid">
+      <div>
+        <h1>Atomic writes &amp; version history</h1>
+        <p class="lede">A data-safety-critical tool should behave like one. Every save passes four checkpoints, and the file it replaces is kept as a full snapshot you can diff and restore.</p>
+      </div>
+      <dl class="page-stats">
+        <div><dt>Retention</dt><dd class="sm">50</dd></div>
+        <div><dt>Snapshot format</dt><dd class="sm">full JSON</dd></div>
+        <div><dt>Write retries</dt><dd class="sm">5</dd></div>
+        <div><dt>Conflict code</dt><dd class="sm">409</dd></div>
+      </dl>
+    </div>
+  </div>
+</section>
+
+<section class="wrap section">
+  <div class="section-head">
+    <p class="eyebrow">01 / PIPELINE</p>
+    <h2>From draft to disk, in order.</h2>
+  </div>
+  <ol class="pipeline">
+    <li>
+      <span class="pipeline-step">STEP 01</span>
+      <h3>Acquire the advisory lock</h3>
+      <p><code>proper-lockfile</code> takes a lock beside the target path, with retries and a stale timeout. Concurrent saves to the same config are serialized.</p>
+    </li>
+    <li>
+      <span class="pipeline-step">STEP 02</span>
+      <h3>Validate the whole document</h3>
+      <p>Ajv 2020-12 compiles the canonical schema once, then validates the complete config. If validation fails, a typed error is thrown before any write call — no partial file on invalid input.</p>
+    </li>
+    <li>
+      <span class="pipeline-step">STEP 03</span>
+      <h3>Write atomically</h3>
+      <p><code>write-file-atomic</code> writes to a temp file in the same directory, fsyncs it, then renames it over the target. The rename is atomic, so a crash leaves either the old file or the new one — never a half-written one.</p>
+    </li>
+    <li>
+      <span class="pipeline-step">STEP 04</span>
+      <h3>Release, then snapshot</h3>
+      <p>The lock is released in a <code>finally</code> block. After a successful save, the previous on-disk content is recorded as a snapshot. A snapshot failure is reported as a warning and never invalidates the save.</p>
+    </li>
+  </ol>
+  <div class="callout callout-wide">
+    <span class="mono-label">WHY SAME-DIRECTORY TEMP FILES</span>
+    <p>A temp file on another filesystem would turn the final rename into a non-atomic copy-plus-delete (and risk <code>EXDEV</code>). The writer deliberately never overrides the library's same-directory default.</p>
+  </div>
+</section>
+
+<section class="wrap section">
+  <div class="section-head split">
+    <div>
+      <p class="eyebrow">02 / FAILURE MODES</p>
+      <h2>What happens when something goes wrong.</h2>
+    </div>
+    <p class="section-aside">Each failure has a defined, non-destructive outcome. Nothing silently resets your history.</p>
+  </div>
+  <div class="table-wrap">
+    <table class="ref-table">
+      <caption class="visually-hidden">Failure modes and outcomes</caption>
+      <thead><tr><th scope="col">Situation</th><th scope="col">Outcome</th></tr></thead>
+      <tbody>
+        <tr><th scope="row">The document fails schema validation</th><td>The save is blocked and the field errors are returned. The file on disk is untouched.</td></tr>
+        <tr><th scope="row">The process crashes during a write</th><td>The target is never modified in place; the atomic rename means the previous complete file survives.</td></tr>
+        <tr><th scope="row">The file changed on disk while you were editing</th><td>The save carries the revision you started from. A mismatch returns HTTP 409 and asks you to review the current file rather than overwrite it.</td></tr>
+        <tr><th scope="row">Two helpers or two tabs save at once</th><td>An advisory lock plus an in-process path queue and a cross-process transaction lock serialize the whole read → write → snapshot sequence, so history entries are not dropped.</td></tr>
+        <tr><th scope="row">Snapshot recording fails</th><td>The save still succeeds; the caller receives a warning built only from the error code and message. No config content is logged.</td></tr>
+        <tr><th scope="row">The config has keys the schema does not know</th><td>Validation does not reject unknown keys — the schema never sets <code>additionalProperties: false</code>. Unknown and future keys are preserved on save and shown in the editor.</td></tr>
+        <tr><th scope="row">Windows briefly locks the target during rename</th><td>Transient <code>EPERM</code>, <code>EBUSY</code> and <code>EACCES</code> errors are retried up to five times with exponential backoff starting at 50&nbsp;ms.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="wrap section">
+  <div class="section-head">
+    <p class="eyebrow">03 / SNAPSHOTS</p>
+    <h2>Full copies, not a fragile diff chain.</h2>
+  </div>
+  <div class="grid-2">
+    <article class="card">
+      <h3>What is stored</h3>
+      <p>One complete JSON file per snapshot, plus a per-config <code>index.json</code>. Each index entry carries:</p>
+      <ul class="bullets">
+        <li><strong>seq</strong> — monotonic sequence starting at 1</li>
+        <li><strong>timestamp</strong> — ISO-8601 time the snapshot was recorded</li>
+        <li><strong>contentHash</strong> — SHA-256 of the snapshotted content</li>
+        <li><strong>file</strong> — the snapshot's filename, <code>&lt;seq&gt;.json</code></li>
+      </ul>
+      <p>Snapshots are written under the OS app-data directory, keyed by the SHA-256 of the config's absolute path — never inside your project or its <code>.git</code>.</p>
+    </article>
+    <article class="card">
+      <h3>Retention and de-duplication</h3>
+      <p>The default policy keeps the last <strong>50</strong> snapshots per config and skips recording when the content hash matches the most recent snapshot. The index format carried sequence, timestamp and hash from the beginning, so retention changes need no migration.</p>
+      <p>A malformed index throws rather than silently resetting: history degrades to a warning, it is not erased.</p>
+    </article>
+  </div>
+  <div class="snapshot-diagram" role="img" aria-label="Diagram: a save captures the previous content as snapshot N, then writes the new content; a restore validates the selected snapshot and writes it through the same atomic pipeline.">
+    <div class="snap-node"><span class="snap-label">PREVIOUS FILE</span><code>{ … }</code></div>
+    <div class="snap-arrow"><span>save</span><span aria-hidden="true">→</span></div>
+    <div class="snap-node snap-node-accent"><span class="snap-label">SNAPSHOT N</span><code>seq · time · sha256</code></div>
+    <div class="snap-arrow"><span>then write</span><span aria-hidden="true">→</span></div>
+    <div class="snap-node"><span class="snap-label">NEW FILE</span><code>{ … }</code></div>
+  </div>
+</section>
+
+<section class="wrap section">
+  <div class="section-head">
+    <p class="eyebrow">04 / RESTORE</p>
+    <h2>Restoring is another safe write.</h2>
+  </div>
+  <div class="two-col-text">
+    <div>
+      <p>Restore does not copy bytes behind the editor's back. The selected snapshot is loaded, validated against the active schema, and written through the same lock → validate → atomic-write pipeline as an ordinary save.</p>
+      <p>It also requires the current revision you were shown. If the file changed since, the restore is rejected with a conflict instead of overwriting a newer edit.</p>
+    </div>
+    <div>
+      <p>Before any of that, the UI computes a <strong>structural diff</strong> between the snapshot and the current document — key-by-key, not text-line-by-line — so reordering or formatting noise does not masquerade as a change.</p>
+      <p>Nothing is touched until you confirm the restore. The confirmation flow restores focus on cancel and supports Escape.</p>
+    </div>
+  </div>
+  <div class="callout">
+    <span class="mono-label">FIRST SAVE</span>
+    <p>A brand-new config has no prior content, so there is nothing to snapshot. A stub file is touched only to satisfy the advisory lock; the real write still runs through validation and atomic replacement.</p>
+  </div>
+</section>
+
+<section class="wrap section">
+  <div class="section-head">
+    <p class="eyebrow">05 / GUARANTEES</p>
+    <h2>What this design does and does not promise.</h2>
+  </div>
+  <div class="grid-2">
+    <article class="card">
+      <h3>It does</h3>
+      <ul class="bullets">
+        <li>Block writes that fail schema validation.</li>
+        <li>Replace files atomically, never in place.</li>
+        <li>Refuse to overwrite a newer on-disk revision.</li>
+        <li>Keep the previous content of each successful save.</li>
+        <li>Store snapshots outside the tracked project.</li>
+      </ul>
+    </article>
+    <article class="card">
+      <h3>It does not</h3>
+      <ul class="bullets">
+        <li>Back up files you edit outside the tool.</li>
+        <li>Replace git history or version control.</li>
+        <li>Guarantee snapshot retention beyond the configured limit.</li>
+        <li>Upload, sync or share your configuration.</li>
+      </ul>
+    </article>
+  </div>
+</section>
+{% endblock %}
+{% block scripts %}
+  <script src="/assets/site.js" defer></script>
+{% endblock %}

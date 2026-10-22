@@ -51,7 +51,7 @@ describe('sidebar', () => {
       { id: '2', path: '/beta/.planning/config.json', name: 'beta/config.json', status: 'missing', problem: 'Config file not found' },
     ]);
 
-    renderWeb(<App connected />);
+    renderWeb(<App />);
 
     await waitFor(() => {
       expect(screen.getByText('alpha')).toBeTruthy();
@@ -74,7 +74,7 @@ describe('sidebar', () => {
     });
     vi.mocked(getSchema).mockResolvedValue(emptySchema);
 
-    renderWeb(<App connected />);
+    renderWeb(<App />);
 
     await waitFor(() => screen.getByText('alpha'));
     fireEvent.click(screen.getByText('alpha'));
@@ -89,7 +89,7 @@ describe('sidebar', () => {
       { id: '2', path: '/beta/.planning/config.json', name: 'beta/config.json', status: 'missing', problem: 'Config file not found' },
     ]);
 
-    renderWeb(<App connected />);
+    renderWeb(<App />);
 
     await waitFor(() => screen.getByText('beta'));
     const button = screen.getByText('beta').closest('button') as HTMLButtonElement;
@@ -107,7 +107,7 @@ describe('sidebar', () => {
     ]);
     vi.mocked(removeWorkspace).mockResolvedValue({});
 
-    renderWeb(<App connected />);
+    renderWeb(<App />);
 
     await waitFor(() => screen.getByText('beta'));
     fireEvent.click(screen.getByRole('button', { name: 'Remove' }));
@@ -132,7 +132,7 @@ describe('sidebar', () => {
       status: 'ok',
     });
 
-    renderWeb(<App connected />);
+    renderWeb(<App />);
 
     await waitFor(() => screen.getByText('beta'));
     fireEvent.click(screen.getByRole('button', { name: 'Locate again' }));
@@ -152,7 +152,7 @@ describe('add menu', () => {
     const { listWorkspaceConfigs } = await import('../../web/src/api/workspace.js');
     vi.mocked(listWorkspaceConfigs).mockResolvedValue([]);
 
-    renderWeb(<App connected />);
+    renderWeb(<App />);
 
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'Add' })).toBeTruthy();
@@ -176,7 +176,7 @@ describe('add menu', () => {
       status: 'ok',
     });
 
-    renderWeb(<App connected />);
+    renderWeb(<App />);
 
     await waitFor(() => screen.getByRole('button', { name: 'Add' }));
     fireEvent.click(screen.getByRole('button', { name: 'Add' }));
@@ -204,7 +204,7 @@ describe('add menu', () => {
       status: 'ok',
     });
 
-    renderWeb(<App connected />);
+    renderWeb(<App />);
 
     await waitFor(() => screen.getByRole('button', { name: 'Add' }));
     fireEvent.click(screen.getByRole('button', { name: 'Add' }));
@@ -236,7 +236,7 @@ describe('scan', () => {
       status: 'ok',
     });
 
-    renderWeb(<App connected />);
+    renderWeb(<App />);
 
     await waitFor(() => screen.getByRole('button', { name: 'Add' }));
     fireEvent.click(screen.getByRole('button', { name: 'Add' }));
@@ -285,7 +285,7 @@ describe('create', () => {
       status: 'ok',
     });
 
-    renderWeb(<App connected />);
+    renderWeb(<App />);
 
     await waitFor(() => screen.getByRole('button', { name: 'Create new config' }));
     fireEvent.click(screen.getByRole('button', { name: 'Create new config' }));

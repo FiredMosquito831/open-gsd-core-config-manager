@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { ensureTrackedConfig } from './seed.js';
 
 
 // The editor renders chapter content only once a tracked config is selected, so
@@ -18,7 +19,8 @@ async function selectFirstReadyConfig(page: import('@playwright/test').Page) {
 test.describe.configure({ retries: 2 });
 
 test.describe('GSD Config Manager - Core Features', () => {
-  test.beforeEach(async ({ page }) => {
+  test.beforeEach(async ({ page, request }) => {
+    await ensureTrackedConfig(request);
     await page.goto('/', { waitUntil: 'load', timeout: 60000 });
     await expect(page.locator('.gsd-sidebar__heading:has-text("Tracked configs")')).toBeVisible({ timeout: 30000 });
     await selectFirstReadyConfig(page);
@@ -204,7 +206,8 @@ test.describe('GSD Config Manager - Core Features', () => {
 });
 
 test.describe('GSD Config Manager - Specialized Editors', () => {
-  test.beforeEach(async ({ page }) => {
+  test.beforeEach(async ({ page, request }) => {
+    await ensureTrackedConfig(request);
     await page.goto('/', { waitUntil: 'load', timeout: 60000 });
     await expect(page.locator('.gsd-sidebar__heading:has-text("Tracked configs")')).toBeVisible({ timeout: 30000 });
     await selectFirstReadyConfig(page);

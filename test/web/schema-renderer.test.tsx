@@ -153,7 +153,7 @@ async function renderWithActiveConfig() {
     meta: { globalDefaultsPath: '', globalDefaultsFound: false },
   });
 
-  renderWeb(<App connected />);
+  renderWeb(<App />);
   await waitFor(() => screen.getByText('p'));
   fireEvent.click(screen.getByText('p'));
   await waitFor(() => screen.getByRole('tab', { name: 'Core' }));

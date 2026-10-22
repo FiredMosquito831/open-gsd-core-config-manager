@@ -26,7 +26,10 @@
     "build:client": "vite build",
     "build": "npm run build:cli && npm run build:client",
     "prepublishOnly": "npm run build",
-    "cli:start": "node dist/cli.js"
+    "cli:start": "node dist/cli.js",
+    "test:site": "vitest run test/site --reporter=dot",
+    "site:build": "python scripts/build_site.py",
+    "site:check": "python scripts/build_site.py --check && python scripts/check_site.py"
   },
   "dependencies": {
     "@codemirror/lang-json": "6.0.2",
@@ -90,7 +93,7 @@
     "type": "git",
     "url": "git+https://github.com/FiredMosquito831/open-gsd-core-config-manager.git"
   },
-  "homepage": "https://github.com/FiredMosquito831/open-gsd-core-config-manager#readme",
+  "homepage": "https://gsd.danubelabs.net/",
   "bugs": {
     "url": "https://github.com/FiredMosquito831/open-gsd-core-config-manager/issues"
   },
